@@ -48,7 +48,7 @@ func randomID() []byte {
 	 * >
 	 * > For example: '-AZ2060-'...
 	 *
-	 * https://wiki.theory.org/index.php/BitTorrentSpecification
+	 * https://wiki.theory.org/BitTorrentSpecification
 	 *
 	 * We encode the version number as:
 	 *  - First two digits for the major version number
@@ -58,17 +58,16 @@ func randomID() []byte {
 	prefix := []byte("-MC0008-")
 
 	var rando []byte
-	for i := 20 - len(prefix); i >= 0; i-- {
+	for i := 20 - len(prefix); i > 0; i-- {
 		rando = append(rando, randomDigit())
 	}
 
 	return append(prefix, rando...)
 }
 
+// randomDigit digit as byte (ASCII code range 0-9 digits)
 func randomDigit() byte {
-	var max, min int
-	max, min = '9', '0'
-	return byte(rand.Intn(max-min) + min)
+	return byte(rand.Intn(10) + '0')
 }
 
 func NewSink(deadline time.Duration, maxNLeeches int) *Sink {
