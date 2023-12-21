@@ -190,6 +190,7 @@ var protocolTest_validInstances = []struct {
 }
 
 func TestValidators(t *testing.T) {
+	t.Parallel()
 	for i, instance := range protocolTest_validInstances {
 		if isValid := instance.validator(&instance.msg); !isValid {
 			t.Errorf("False-positive for valid msg #%d!", i+1)
@@ -198,18 +199,21 @@ func TestValidators(t *testing.T) {
 }
 
 func TestNewFindNodeQuery(t *testing.T) {
+	t.Parallel()
 	if !validateFindNodeQueryMessage(NewFindNodeQuery([]byte("qwertyuopasdfghjklzx"), []byte("xzlkjhgfdsapouytrewq"))) {
 		t.Errorf("NewFindNodeQuery returned an invalid message!")
 	}
 }
 
 func TestNewPingResponse(t *testing.T) {
+	t.Parallel()
 	if !validatePingORannouncePeerResponseMessage(NewPingResponse([]byte("tt"), []byte("qwertyuopasdfghjklzx"))) {
 		t.Errorf("NewPingResponse returned an invalid message!")
 	}
 }
 
 func TestNewGetPeersResponseWithNodes(t *testing.T) {
+	t.Parallel()
 	if !validateGetPeersResponseMessage(NewGetPeersResponseWithNodes([]byte("tt"), []byte("qwertyuopasdfghjklzx"), []byte("token"), []CompactNodeInfo{})) {
 		t.Errorf("NewGetPeersResponseWithNodes returned an invalid message!")
 	}

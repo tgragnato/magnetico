@@ -5,6 +5,7 @@ import (
 )
 
 func TestRandomDigit(t *testing.T) {
+	t.Parallel()
 	for i := 0; i < 100; i++ {
 		digit := randomDigit()
 		if digit < '0' || digit > '9' {
@@ -14,6 +15,7 @@ func TestRandomDigit(t *testing.T) {
 }
 
 func TestPeerId(t *testing.T) {
+	t.Parallel()
 	for i := 0; i < 100; i++ {
 		peerId := randomID()
 		lenPeerId := len(peerId)

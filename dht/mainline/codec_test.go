@@ -203,6 +203,7 @@ var codecTest_validInstances = []struct {
 }
 
 func TestUnmarshal(t *testing.T) {
+	t.Parallel()
 	for i, instance := range codecTest_validInstances {
 		msg := Message{}
 		err := bencode.Unmarshal(instance.data, &msg)
@@ -218,6 +219,7 @@ func TestUnmarshal(t *testing.T) {
 }
 
 func TestMarshal(t *testing.T) {
+	t.Parallel()
 	for i, instance := range codecTest_validInstances {
 		data, err := bencode.Marshal(instance.msg)
 		if err != nil {

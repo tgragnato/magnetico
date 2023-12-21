@@ -29,6 +29,7 @@ var validDates = []struct {
 }
 
 func TestParseISO8601(t *testing.T) {
+	t.Parallel()
 	for i, date := range validDates {
 		_, gr, err := ParseISO8601(date.date)
 		if err != nil {
