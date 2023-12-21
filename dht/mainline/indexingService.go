@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+const ZERO_PORT = 0
+
 var (
 	StatsPrintClock = 10 * time.Second
 )
@@ -164,11 +166,12 @@ func (is *IndexingService) onFindNodeResponse(response *Message, addr *net.UDPAd
 		if uint(len(is.routingTable)) >= is.maxNeighbors {
 			break
 		}
-		if node.Addr.Port == 0 { // Ignore nodes who "use" port 0.
+		if node.Addr.Port == ZERO_PORT {
 			continue
 		}
 
-		is.routingTable[string(node.ID)] = &node.Addr
+		addr := node.Addr
+		is.routingTable[string(node.ID)] = &addr
 
 		target := make([]byte, 20)
 		_, err := rand.Read(target)
@@ -177,7 +180,7 @@ func (is *IndexingService) onFindNodeResponse(response *Message, addr *net.UDPAd
 		}
 		is.protocol.SendMessage(
 			NewSampleInfohashesQuery(is.nodeID, []byte("aa"), target),
-			&node.Addr,
+			&addr,
 		)
 	}
 }
@@ -201,7 +204,7 @@ func (is *IndexingService) onGetPeersResponse(msg *Message, addr *net.UDPAddr) {
 
 	peerAddrs := make([]net.TCPAddr, 0)
 	for _, peer := range msg.R.Values {
-		if peer.Port == 0 {
+		if peer.Port == ZERO_PORT {
 			continue
 		}
 
@@ -247,10 +250,11 @@ func (is *IndexingService) onSampleInfohashesResponse(msg *Message, addr *net.UD
 		if uint(len(is.routingTable)) >= is.maxNeighbors {
 			break
 		}
-		if node.Addr.Port == 0 { // Ignore nodes who "use" port 0.
+		if node.Addr.Port == 0 {
 			continue
 		}
-		is.routingTable[string(node.ID)] = &node.Addr
+		addr := node.Addr
+		is.routingTable[string(node.ID)] = &addr
 
 		// TODO
 		/*
@@ -261,7 +265,7 @@ func (is *IndexingService) onSampleInfohashesResponse(msg *Message, addr *net.UD
 			}
 			is.protocol.SendMessage(
 				NewSampleInfohashesQuery(is.nodeID, []byte("aa"), target),
-				&node.Addr,
+				&addr,
 			)
 		*/
 	}

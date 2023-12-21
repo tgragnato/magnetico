@@ -191,7 +191,8 @@ var protocolTest_validInstances = []struct {
 
 func TestValidators(t *testing.T) {
 	for i, instance := range protocolTest_validInstances {
-		if isValid := instance.validator(&instance.msg); !isValid {
+		msg := instance.msg
+		if isValid := instance.validator(&msg); !isValid {
 			t.Errorf("False-positive for valid msg #%d!", i+1)
 		}
 	}
