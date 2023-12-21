@@ -456,7 +456,6 @@ func (l *Leech) OnError(err error) {
 	l.ev.OnError(l.infoHash, err)
 }
 
-// TODO: add bounds checking!
 func toBigEndian(i uint, n int) []byte {
 	b := make([]byte, n)
 	switch n {
