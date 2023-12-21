@@ -29,6 +29,7 @@ var operationsTest_instances = []struct {
 }
 
 func TestDecoder(t *testing.T) {
+	t.Parallel()
 	for i, instance := range operationsTest_instances {
 		buf := bytes.NewBuffer(instance.dump)
 		err := bencode.NewDecoder(buf).Decode(&struct{}{})

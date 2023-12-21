@@ -20,6 +20,7 @@ type schemaRStruct struct {
 
 // TestSchemaUnsuppliedNil tests that unsupplied values yield nil.
 func TestSchemaUnsuppliedNil(t *testing.T) {
+	t.Parallel()
 	ss := new(schemaStruct)
 	if err := decoder.Decode(ss, make(map[string][]string)); err != nil {
 		t.Error("decoding error", err.Error())
@@ -38,6 +39,7 @@ func TestSchemaUnsuppliedNil(t *testing.T) {
 
 // TestSchemaInvalidUint64 tests that an invalid uint64 value yields nil.
 func TestSchemaInvalidUint64(t *testing.T) {
+	t.Parallel()
 	dict := make(map[string][]string)
 	dict["puint64"] = []string{"-1"}
 
@@ -50,6 +52,7 @@ func TestSchemaInvalidUint64(t *testing.T) {
 
 // TestSchemaInvalidBool tests that an invalid bool value yields nil.
 func TestSchemaInvalidBool(t *testing.T) {
+	t.Parallel()
 	dict := make(map[string][]string)
 	dict["pbool"] = []string{"yyy"}
 
@@ -63,6 +66,7 @@ func TestSchemaInvalidBool(t *testing.T) {
 // TestSchemaOverflow tests that integer values greater than the maximum value a field can store
 // leads to decoding errors, rather than silent overflows.
 func TestSchemaOverflow(t *testing.T) {
+	t.Parallel()
 	dict := make(map[string][]string)
 	dict["puint64"] = []string{"18446744073709551616"} // 18,446,744,073,709,551,615 + 1
 
@@ -75,6 +79,7 @@ func TestSchemaOverflow(t *testing.T) {
 
 // TestSchemaEmptyString tests that empty string yields nil.
 func TestSchemaEmptyString(t *testing.T) {
+	t.Parallel()
 	dict := make(map[string][]string)
 	dict["pstring"] = []string{""}
 
@@ -90,6 +95,7 @@ func TestSchemaEmptyString(t *testing.T) {
 
 // TestSchemaDefault tests if unsupplied values defaults to "zero" and doesn't err
 func TestSchemaDefault(t *testing.T) {
+	t.Parallel()
 	ss := new(schemaStruct)
 	if err := decoder.Decode(ss, make(map[string][]string)); err != nil {
 		t.Error("decoding error", err.Error())
@@ -107,6 +113,7 @@ func TestSchemaDefault(t *testing.T) {
 }
 
 func TestSchemaRequired(t *testing.T) {
+	t.Parallel()
 	rs := new(schemaRStruct)
 	err := decoder.Decode(rs, make(map[string][]string))
 	if err == nil {
