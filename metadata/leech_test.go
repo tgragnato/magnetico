@@ -2,10 +2,11 @@ package metadata
 
 import (
 	"bytes"
-	"github.com/anacrolix/torrent/bencode"
-	"github.com/anacrolix/torrent/metainfo"
 	"math"
 	"testing"
+
+	"github.com/anacrolix/torrent/bencode"
+	"github.com/anacrolix/torrent/metainfo"
 )
 
 func TestDecoder(t *testing.T) {

@@ -1,10 +1,11 @@
 package util
 
 import (
-	"golang.org/x/sys/unix"
 	"net"
 	"reflect"
 	"testing"
+
+	"golang.org/x/sys/unix"
 )
 
 func TestRoundToDecimal(t *testing.T) {
