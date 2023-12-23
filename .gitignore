@@ -1,2 +1,7 @@
 cmd/magneticod/magneticod
 cmd/magneticow/magneticow
+cover.out
+vendor/
+.idea/
+.DS_Store
+coverage.out

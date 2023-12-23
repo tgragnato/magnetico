@@ -12,7 +12,7 @@ vet:
 	go vet ./...
 
 test:
-	go test ./...
+	CGO_ENABLED=1 go test -v -race ./...
 
 format:
 	gofmt -w ./cmd/
@@ -20,3 +20,4 @@ format:
 	gofmt -w ./metadata/
 	gofmt -w ./persistence/
 	gofmt -w ./util/
+	gci write -s standard -s default -s "prefix(github.com/tgragnato/magnetico)" -s blank -s dot .

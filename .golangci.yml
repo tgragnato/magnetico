@@ -8,8 +8,10 @@ run:
 linters:
   enable:
     - gosec
+    - gci
 
 issues:
+  new: true
   exclude-rules:
 
     - linters:
