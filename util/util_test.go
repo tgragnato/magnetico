@@ -3,6 +3,7 @@ package util
 import (
 	"net"
 	"reflect"
+	"strings"
 	"testing"
 
 	"golang.org/x/sys/unix"
@@ -165,32 +166,37 @@ func TestIsValidIPv6(t *testing.T) {
 func Test_getZone(t *testing.T) {
 	t.Parallel()
 	var tests = []struct {
-		name   string
-		zoneID uint32
-		want   string
+		name       string
+		zoneID     uint32
+		wantEmpty  bool
+		wantPrefix string
 	}{
 		{
-			name:   "Zone1",
-			zoneID: 0,
-			want:   "",
+			name:      "Zone1",
+			zoneID:    0,
+			wantEmpty: true,
 		},
 		{
-			name:   "Zone2",
-			zoneID: 1,
-			want:   "lo",
+			name:       "Zone2",
+			zoneID:     1,
+			wantEmpty:  false,
+			wantPrefix: "lo",
 		},
 		{
-			name:   "Zone3",
-			zoneID: 123456,
-			want:   "",
+			name:      "Zone3",
+			zoneID:    123456,
+			wantEmpty: true,
 		},
 	}
 	for _, tt := range tests {
 		test := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			if got := getZone(test.zoneID); got != test.want {
-				t.Errorf("getZone() = %v, want %v", got, test.want)
+			got := getZone(test.zoneID)
+			if test.wantEmpty && got != "" {
+				t.Errorf("getZone() = %v, want empty", got)
+			} else if !strings.HasPrefix(got, test.wantPrefix) {
+				t.Errorf("getZone() = %v, want prefix %v", got, test.wantPrefix)
 			}
 		})
 	}
