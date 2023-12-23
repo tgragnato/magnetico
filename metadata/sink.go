@@ -1,14 +1,22 @@
 package metadata
 
 import (
+	"crypto/rand"
 	"log"
-	"math/rand"
 	"net"
 	"sync"
 	"time"
 
 	"github.com/tgragnato/magnetico/dht"
 	"github.com/tgragnato/magnetico/persistence"
+)
+
+const (
+	// PeerIDLength The peer_id is exactly 20 bytes (characters) long.
+	// https://wiki.theory.org/BitTorrentSpecification#peer_id
+	PeerIDLength = 20
+	// PeerPrefix Azureus-style
+	PeerPrefix = "-UT3600-"
 )
 
 type Metadata struct {
@@ -38,36 +46,25 @@ type Sink struct {
 }
 
 func randomID() []byte {
-	/* > The peer_id is exactly 20 bytes (characters) long.
-	 * >
-	 * > There are mainly two conventions how to encode client and client version information into the peer_id,
-	 * > Azureus-style and Shadow's-style.
-	 * >
-	 * > Azureus-style uses the following encoding: '-', two characters for client id, four ascii digits for version
-	 * > number, '-', followed by random numbers.
-	 * >
-	 * > For example: '-AZ2060-'...
-	 *
-	 * https://wiki.theory.org/BitTorrentSpecification
-	 *
-	 * We encode the version number as:
-	 *  - First two digits for the major version number
-	 *  - Last two digits for the minor version number
-	 *  - Patch version number is not encoded.
-	 */
-	prefix := []byte("-MC0008-")
-
+	prefix := []byte(PeerPrefix)
 	var rando []byte
-	for i := 20 - len(prefix); i > 0; i-- {
+
+	peace := PeerIDLength - len(prefix)
+	for i := peace; i > 0; i-- {
 		rando = append(rando, randomDigit())
 	}
 
 	return append(prefix, rando...)
 }
 
-// randomDigit digit as byte (ASCII code range 0-9 digits)
+// randomDigit as byte (ASCII code range 0-9 digits)
 func randomDigit() byte {
-	return byte(rand.Intn(10) + '0')
+	b := make([]byte, 1)
+	_, err := rand.Read(b)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return (b[0] % 10) + '0'
 }
 
 func NewSink(deadline time.Duration, maxNLeeches int) *Sink {

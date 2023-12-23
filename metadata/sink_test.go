@@ -17,10 +17,10 @@ func TestRandomDigit(t *testing.T) {
 func TestPeerId(t *testing.T) {
 	t.Parallel()
 	for i := 0; i < 100; i++ {
-		peerId := randomID()
-		lenPeerId := len(peerId)
-		if lenPeerId > 20 {
-			t.Errorf("peerId longer than 20 bytes: %s (%d)", peerId, lenPeerId)
+		peerID := randomID()
+		lenPeerID := len(peerID)
+		if lenPeerID > PeerIDLength {
+			t.Errorf("peerId longer than 20 bytes: %s (%d)", peerID, lenPeerID)
 		}
 	}
 }

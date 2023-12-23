@@ -7,12 +7,13 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// round iFloat to iDecimalPlaces decimal points
+// RoundToDecimal round iFloat to iDecimalPlaces decimal points
 func RoundToDecimal(iFloat float64, iDecimalPlaces int) float64 {
 	var multiplier float64 = 10
 	for i := 1; i < iDecimalPlaces; i++ {
-		multiplier = multiplier * 10
+		multiplier *= 10
 	}
+
 	return math.Round(iFloat*multiplier) / multiplier
 }
 
@@ -43,20 +44,37 @@ func SockaddrToUDPAddr(sockAddr unix.Sockaddr) *net.UDPAddr {
 		return &net.UDPAddr{
 			IP:   typedSocketAddr.Addr[:],
 			Port: typedSocketAddr.Port,
+			Zone: "",
 		}
 
 	case *unix.SockaddrInet6:
-		zone := ""
-		ifi, err := net.InterfaceByIndex(int(typedSocketAddr.ZoneId))
-		if err == nil && typedSocketAddr.ZoneId != 0 {
-			zone = ifi.Name
+		if !IsValidIPv6(string(typedSocketAddr.Addr[:])) {
+			return nil
 		}
+
 		return &net.UDPAddr{
 			IP:   typedSocketAddr.Addr[:],
 			Port: typedSocketAddr.Port,
-			Zone: zone,
+			Zone: getZone(typedSocketAddr.ZoneId),
 		}
+	default:
+		return nil
 	}
+}
 
-	return nil
+func IsValidIPv6(ip string) bool {
+	parsedIP := net.ParseIP(ip)
+	if parsedIP == nil || parsedIP.To4() != nil {
+		return false
+	}
+	return true
+}
+
+func getZone(zoneID uint32) string {
+	var zone = ""
+	ifi, err := net.InterfaceByIndex(int(zoneID))
+	if err == nil && zoneID != 0 {
+		zone = ifi.Name
+	}
+	return zone
 }

@@ -2,36 +2,37 @@ package metadata
 
 import (
 	"bytes"
+	"github.com/anacrolix/torrent/bencode"
+	"github.com/anacrolix/torrent/metainfo"
 	"math"
 	"testing"
-
-	"github.com/anacrolix/torrent/bencode"
 )
-
-var operationsTest_instances = []struct {
-	dump    []byte
-	surplus []byte
-}{
-	// No Surplus
-	{
-		dump:    []byte("d1:md11:ut_metadatai1ee13:metadata_sizei22528ee"),
-		surplus: []byte(""),
-	},
-	// Surplus is an ASCII string
-	{
-		dump:    []byte("d1:md11:ut_metadatai1ee13:metadata_sizei22528eeDENEME"),
-		surplus: []byte("DENEME"),
-	},
-	// Surplus is a bencoded dictionary
-	{
-		dump:    []byte("d1:md11:ut_metadatai1ee13:metadata_sizei22528eed3:inti1337ee"),
-		surplus: []byte("d3:inti1337ee"),
-	},
-}
 
 func TestDecoder(t *testing.T) {
 	t.Parallel()
-	for i, instance := range operationsTest_instances {
+
+	var operationInstances = []struct {
+		dump    []byte
+		surplus []byte
+	}{
+		// No Surplus
+		{
+			dump:    []byte("d1:md11:ut_metadatai1ee13:metadata_sizei22528ee"),
+			surplus: []byte(""),
+		},
+		// Surplus is an ASCII string
+		{
+			dump:    []byte("d1:md11:ut_metadatai1ee13:metadata_sizei22528eeDENEME"),
+			surplus: []byte("DENEME"),
+		},
+		// Surplus is a bencoded dictionary
+		{
+			dump:    []byte("d1:md11:ut_metadatai1ee13:metadata_sizei22528eed3:inti1337ee"),
+			surplus: []byte("d3:inti1337ee"),
+		},
+	}
+
+	for i, instance := range operationInstances {
 		buf := bytes.NewBuffer(instance.dump)
 		err := bencode.NewDecoder(buf).Decode(&struct{}{})
 		if err != nil {
@@ -47,7 +48,7 @@ func TestDecoder(t *testing.T) {
 
 func TestToBigEndian(t *testing.T) {
 	t.Parallel()
-	testCases := []struct {
+	tests := []struct {
 		name string
 		i    uint
 		n    int
@@ -68,11 +69,13 @@ func TestToBigEndian(t *testing.T) {
 		{"Test FourBytes3", 65535, 4, []byte{0, 0, 255, 255}},
 		{"Test FourBytes4", math.MaxUint64, 4, []byte{255, 255, 255, 255}},
 	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			got := toBigEndian(tc.i, tc.n)
-			if !bytes.Equal(got, tc.want) {
-				t.Errorf("toBigEndian(%d, %d) = %v; want %v", tc.i, tc.n, got, tc.want)
+	for _, tt := range tests {
+		testCase := tt
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			got := toBigEndian(testCase.i, testCase.n)
+			if !bytes.Equal(got, testCase.want) {
+				t.Errorf("toBigEndian(%d, %d) = %v; want %v", testCase.i, testCase.n, got, testCase.want)
 			}
 		})
 	}
@@ -109,13 +112,64 @@ func TestToBigEndianNegative(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		test := tt
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			defer func() {
-				if r := recover(); (r != nil) != tt.wantErr {
-					t.Errorf("toBigEndian() = %v, wantErr %v", r, tt.wantErr)
+				if r := recover(); (r != nil) != test.wantErr {
+					t.Errorf("toBigEndian() = %v, wantErr %v", r, test.wantErr)
 				}
 			}()
-			toBigEndian(tt.i, tt.n)
+			toBigEndian(test.i, test.n)
+		})
+	}
+}
+
+func TestValidateInfo(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		info    *metainfo.Info
+		wantErr bool
+	}{
+		{"valid info",
+			&metainfo.Info{
+				Pieces:      make([]byte, 20),
+				PieceLength: 1,
+				Length:      20,
+				Files:       []metainfo.FileInfo{{Length: 1, Path: []string{"file1"}}},
+			},
+			false,
+		}, {"invalid pieces length",
+			&metainfo.Info{
+				Pieces:      make([]byte, 21),
+				PieceLength: 1,
+				Length:      20,
+			},
+			true,
+		}, {"zero piece length with total length",
+			&metainfo.Info{
+				Pieces:      make([]byte, 20),
+				PieceLength: 0,
+				Length:      20,
+			},
+			true,
+		}, {"mismatch piece count and file lengths",
+			&metainfo.Info{
+				Pieces:      make([]byte, 20),
+				PieceLength: 1,
+				Length:      21,
+			},
+			true,
+		},
+	}
+	for _, tt := range tests {
+		test := tt
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			if err := validateInfo(test.info); (err != nil) != test.wantErr {
+				t.Errorf("validateInfo() error = %v, wantErr %v", err, test.wantErr)
+			}
 		})
 	}
 }

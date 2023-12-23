@@ -2,13 +2,14 @@ package mainline
 
 import (
 	"crypto/rand"
+	"encoding/binary"
 	"log"
 	"net"
 	"sync"
 	"time"
 )
 
-const ZERO_PORT = 0
+const ZeroPort = 0
 
 var (
 	StatsPrintClock = 10 * time.Second
@@ -166,7 +167,7 @@ func (is *IndexingService) onFindNodeResponse(response *Message, addr *net.UDPAd
 		if uint(len(is.routingTable)) >= is.maxNeighbors {
 			break
 		}
-		if node.Addr.Port == ZERO_PORT {
+		if node.Addr.Port == ZeroPort {
 			continue
 		}
 
@@ -204,7 +205,7 @@ func (is *IndexingService) onGetPeersResponse(msg *Message, addr *net.UDPAddr) {
 
 	peerAddrs := make([]net.TCPAddr, 0)
 	for _, peer := range msg.R.Values {
-		if peer.Port == ZERO_PORT {
+		if peer.Port == ZeroPort {
 			continue
 		}
 
@@ -227,7 +228,7 @@ func (is *IndexingService) onSampleInfohashesResponse(msg *Message, addr *net.UD
 		copy(infoHash[:], msg.R.Samples[i:(i+1)*20])
 
 		msg := NewGetPeersQuery(is.nodeID, infoHash[:])
-		t := uint16BE(is.counter)
+		t := toBigEndianBytes(is.counter)
 		msg.T = t[:]
 
 		is.protocol.SendMessage(msg, addr)
@@ -271,8 +272,9 @@ func (is *IndexingService) onSampleInfohashesResponse(msg *Message, addr *net.UD
 	}
 }
 
-func uint16BE(v uint16) (b [2]byte) {
-	b[0] = byte(v >> 8)
-	b[1] = byte(v)
-	return
+// toBigEndianBytes Convert UInt16 To BigEndianBytes
+func toBigEndianBytes(v uint16) [2]byte {
+	var b [2]byte
+	binary.BigEndian.PutUint16(b[:], v)
+	return b
 }
