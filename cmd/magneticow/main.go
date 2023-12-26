@@ -31,17 +31,18 @@ import (
 //go:embed static/** templates/*
 var fs embed.FS
 
-// Set a Decoder instance as a package global, because it caches
-// meta-data about structs, and an instance can be shared safely.
-var decoder = schema.NewDecoder()
-
-var templates map[string]*template.Template
-var database persistence.Database
+var (
+	// Set a Decoder instance as a package global, because it caches
+	// meta-data about structs, and an instance can be shared safely.
+	decoder   = schema.NewDecoder()
+	templates map[string]*template.Template
+	database  persistence.Database
+)
 
 var opts struct {
 	Addr     string
 	Database string
-	// Credentials is nil when no-auth cmd-line flag is supplied.
+	// Credentials are nil when no-auth cmd-line flag is supplied.
 	Credentials        map[string][]byte // TODO: encapsulate credentials and mutex for safety
 	CredentialsRWMutex sync.RWMutex
 	// CredentialsPath is nil when no-auth is supplied.
@@ -81,29 +82,29 @@ func main() {
 
 	router := mux.NewRouter()
 	router.HandleFunc("/",
-		BasicAuth(rootHandler, "magneticow"))
+		BasicAuth(rootHandler))
 
 	router.HandleFunc("/api/v0.1/statistics",
-		BasicAuth(apiStatistics, "magneticow"))
+		BasicAuth(apiStatistics))
 	router.HandleFunc("/api/v0.1/torrents",
-		BasicAuth(apiTorrents, "magneticow"))
+		BasicAuth(apiTorrents))
 	router.HandleFunc("/api/v0.1/torrents/{infohash:[a-f0-9]{40}}",
-		BasicAuth(apiTorrent, "magneticow"))
+		BasicAuth(apiTorrent))
 	router.HandleFunc("/api/v0.1/torrents/{infohash:[a-f0-9]{40}}/filelist",
-		BasicAuth(apiFilelist, "magneticow"))
+		BasicAuth(apiFileList))
 	router.Handle("/api/v0.1/torrents/{infohash:[a-f0-9]{40}}/readme",
 		apiReadmeHandler)
 
 	router.HandleFunc("/feed",
-		BasicAuth(feedHandler, "magneticow"))
+		BasicAuth(feedHandler))
 	router.PathPrefix("/static").HandlerFunc(
-		BasicAuth(staticHandler, "magneticow"))
+		BasicAuth(staticHandler))
 	router.HandleFunc("/statistics",
-		BasicAuth(statisticsHandler, "magneticow"))
+		BasicAuth(statisticsHandler))
 	router.HandleFunc("/torrents",
-		BasicAuth(torrentsHandler, "magneticow"))
+		BasicAuth(torrentsHandler))
 	router.HandleFunc("/torrents/{infohash:[a-f0-9]{40}}",
-		BasicAuth(torrentsInfohashHandler, "magneticow"))
+		BasicAuth(torrentsInfohashHandler))
 
 	templateFunctions := template.FuncMap{
 		"add": func(augend int, addends int) int {
@@ -114,9 +115,7 @@ func main() {
 			return minuend - subtrahend
 		},
 
-		"bytesToHex": func(bytes []byte) string {
-			return hex.EncodeToString(bytes)
-		},
+		"bytesToHex": hex.EncodeToString,
 
 		"unixTimeToYearMonthDay": func(s int64) string {
 			tm := time.Unix(s, 0)
@@ -130,9 +129,7 @@ func main() {
 			return tm.Format("02/01/2006")
 		},
 
-		"humanizeSize": func(s uint64) string {
-			return humanize.IBytes(s)
-		},
+		"humanizeSize": humanize.IBytes,
 
 		"humanizeSizeF": func(s int64) string {
 			if s < 0 {
@@ -147,12 +144,18 @@ func main() {
 	}
 
 	templates = make(map[string]*template.Template)
-	templates["feed"] = template.Must(template.New("feed").Funcs(templateFunctions).Parse(string(mustAsset("templates/feed.xml"))))
-	templates["homepage"] = template.Must(template.New("homepage").Funcs(templateFunctions).Parse(string(mustAsset("templates/homepage.html"))))
+	templates["feed"] = template.
+		Must(template.New("feed").
+			Funcs(templateFunctions).
+			Parse(string(mustAsset("templates/feed.xml"))))
+	templates["homepage"] = template.
+		Must(template.New("homepage").
+			Funcs(templateFunctions).
+			Parse(string(mustAsset("templates/homepage.html"))))
 
 	database, err = persistence.MakeDatabase(opts.Database)
 	if err != nil {
-		log.Fatalf("could not access to database %v", err)
+		log.Panicf("could not access to database %v", err)
 	}
 
 	decoder.IgnoreUnknownKeys(false)
@@ -182,7 +185,7 @@ func mustAsset(name string) []byte {
 func parseFlags() error {
 	var cmdFlags struct {
 		Addr     string `short:"a" long:"addr"        description:"Address (host:port) to serve on"  default:":8080"`
-		Database string `short:"d" long:"database"    description:"URL of the (magneticod) database"`
+		Database string `short:"d" long:"database"    description:"DSN of the database"`
 		Cred     string `short:"c" long:"credentials" description:"Path to the credentials file"`
 		NoAuth   bool   `          long:"no-auth"     description:"Disables authorisation"`
 	}
@@ -272,11 +275,11 @@ func loadCred(cred string) error {
 //
 //	The website says: "<realm>"
 //
-// Which is really stupid so you may want to set the realm to a message rather than
+// Which is really stupid, so you may want to set the realm to a message rather than
 // an actual realm.
 //
 // Source: https://stackoverflow.com/a/39591234/4466589
-func BasicAuth(handler http.HandlerFunc, realm string) http.HandlerFunc {
+func BasicAuth(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if opts.Credentials == nil { // --no-auth is supplied by the user.
 			handler(w, r)
@@ -285,7 +288,7 @@ func BasicAuth(handler http.HandlerFunc, realm string) http.HandlerFunc {
 
 		username, password, ok := r.BasicAuth()
 		if !ok { // No credentials provided
-			authenticate(w, realm)
+			authenticate(w)
 			return
 		}
 
@@ -293,12 +296,12 @@ func BasicAuth(handler http.HandlerFunc, realm string) http.HandlerFunc {
 		hashedPassword, ok := opts.Credentials[username]
 		opts.CredentialsRWMutex.RUnlock()
 		if !ok { // User not found
-			authenticate(w, realm)
+			authenticate(w)
 			return
 		}
 
 		if err := bcrypt.CompareHashAndPassword(hashedPassword, []byte(password)); err != nil { // Wrong password
-			authenticate(w, realm)
+			authenticate(w)
 			return
 		}
 
@@ -306,8 +309,8 @@ func BasicAuth(handler http.HandlerFunc, realm string) http.HandlerFunc {
 	}
 }
 
-func authenticate(w http.ResponseWriter, realm string) {
-	w.Header().Set("WWW-Authenticate", `Basic realm="`+realm+`"`)
-	w.WriteHeader(401)
+func authenticate(w http.ResponseWriter) {
+	w.Header().Set("WWW-Authenticate", `Basic realm="magneticow"`)
+	w.WriteHeader(http.StatusUnauthorized)
 	_, _ = w.Write([]byte("Unauthorised.\n"))
 }

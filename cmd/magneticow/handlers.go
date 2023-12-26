@@ -9,6 +9,14 @@ import (
 	"github.com/tgragnato/magnetico/persistence"
 )
 
+const (
+	ContentType     = "Content-Type"
+	ContentTypeHtml = "text/html; charset=utf-8"
+	ContentTypeJson = "application/json; charset=utf-8"
+	CacheKey        = "Cache-Control"
+	CacheValue      = "max-age=86400"
+)
+
 // DONE
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 	nTorrents, err := database.GetNumberOfTorrents()
@@ -26,25 +34,23 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 
 func torrentsHandler(w http.ResponseWriter, r *http.Request) {
 	data := mustAsset("templates/torrents.html")
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set(ContentType, ContentTypeHtml)
 	// Cache static resources for a day
-	w.Header().Set("Cache-Control", "max-age=86400")
+	w.Header().Set(CacheKey, CacheValue)
 	_, _ = w.Write(data)
 }
 
 func torrentsInfohashHandler(w http.ResponseWriter, r *http.Request) {
 	data := mustAsset("templates/torrent.html")
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	// Cache static resources for a day
-	w.Header().Set("Cache-Control", "max-age=86400")
+	w.Header().Set(ContentType, ContentTypeHtml)
+	w.Header().Set(CacheKey, CacheValue)
 	_, _ = w.Write(data)
 }
 
 func statisticsHandler(w http.ResponseWriter, r *http.Request) {
 	data := mustAsset("templates/statistics.html")
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	// Cache static resources for a day
-	w.Header().Set("Cache-Control", "max-age=86400")
+	w.Header().Set(ContentType, ContentTypeHtml)
+	w.Header().Set(CacheKey, CacheValue)
 	_, _ = w.Write(data)
 }
 
@@ -56,7 +62,7 @@ func feedHandler(w http.ResponseWriter, r *http.Request) {
 	case 1:
 		query = r.URL.Query()["query"][0]
 	default:
-		respondError(w, 400, "query supplied multiple times!")
+		respondError(w, http.StatusBadRequest, "query supplied multiple times!")
 		return
 	}
 
@@ -104,15 +110,15 @@ func staticHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var contentType string
-	if strings.HasSuffix(r.URL.Path, ".css") {
+	switch {
+	case strings.HasSuffix(r.URL.Path, ".css"):
 		contentType = "text/css; charset=utf-8"
-	} else if strings.HasSuffix(r.URL.Path, ".js") {
+	case strings.HasSuffix(r.URL.Path, ".js"):
 		contentType = "text/javascript; charset=utf-8"
-	} else { // fallback option
+	default:
 		contentType = http.DetectContentType(data)
 	}
-	w.Header().Set("Content-Type", contentType)
-	// Cache static resources for a day
-	w.Header().Set("Cache-Control", "max-age=86400")
+	w.Header().Set(ContentType, contentType)
+	w.Header().Set(CacheKey, CacheValue)
 	_, _ = w.Write(data)
 }

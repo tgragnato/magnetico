@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-
 	"regexp"
 
 	"github.com/anacrolix/torrent/bencode"
