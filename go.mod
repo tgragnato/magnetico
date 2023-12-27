@@ -36,7 +36,7 @@ require (
 	github.com/anacrolix/utp v0.2.0 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/benbjohnson/immutable v0.4.3 // indirect
-	github.com/bits-and-blooms/bitset v1.12.0 // indirect
+	github.com/bits-and-blooms/bitset v1.13.0 // indirect
 	github.com/bradfitz/iter v0.0.0-20191230175014-e8f45d346db8 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/edsrzf/mmap-go v1.1.0 // indirect
