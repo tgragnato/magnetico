@@ -66,7 +66,7 @@ func (h *ApiReadmeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	infohash, err := hex.DecodeString(infohashHex)
 	if err != nil {
-		respondError(w, http.StatusBadRequest, MsgCantDecode)
+		respondError(w, http.StatusBadRequest, "%s: %s", MsgCantDecode, err.Error())
 		return
 	}
 
@@ -159,7 +159,7 @@ func (h *ApiReadmeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Because .nfo files are right padded with \x00'es.
 	content = bytes.TrimRight(content, "\x00")
 
-	w.Header().Set(ContentType, ContentTypeHtml)
+	w.Header().Set(ContentType, ContentTypeText)
 	_, _ = w.Write(content)
 }
 
@@ -244,7 +244,7 @@ func apiTorrent(w http.ResponseWriter, r *http.Request) {
 
 	infohash, err := hex.DecodeString(infohashHex)
 	if err != nil {
-		respondError(w, http.StatusBadRequest, MsgCantDecode)
+		respondError(w, http.StatusBadRequest, "%s: %s", MsgCantDecode, err.Error())
 		return
 	}
 
@@ -268,7 +268,7 @@ func apiFileList(w http.ResponseWriter, r *http.Request) {
 
 	infohash, err := hex.DecodeString(infohashHex)
 	if err != nil {
-		respondError(w, http.StatusBadRequest, MsgCantDecode)
+		respondError(w, http.StatusBadRequest, "%s: %s", MsgCantDecode, err.Error())
 		return
 	}
 

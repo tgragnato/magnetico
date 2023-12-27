@@ -11,6 +11,7 @@ import (
 
 const (
 	ContentType     = "Content-Type"
+	ContentTypeText = "text/plain; charset=utf-8"
 	ContentTypeHtml = "text/html; charset=utf-8"
 	ContentTypeJson = "application/json; charset=utf-8"
 	CacheKey        = "Cache-Control"
