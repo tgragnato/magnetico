@@ -2,6 +2,7 @@ package metadata
 
 import (
 	"testing"
+	"time"
 )
 
 func TestRandomDigit(t *testing.T) {
@@ -23,4 +24,19 @@ func TestPeerId(t *testing.T) {
 			t.Errorf("peerId longer than 20 bytes: %s (%d)", peerID, lenPeerID)
 		}
 	}
+}
+
+func TestNewSink(t *testing.T) {
+	sink := NewSink(time.Second, 10)
+
+	if sink == nil ||
+		len(sink.PeerID) != 20 ||
+		sink.deadline != time.Second ||
+		sink.maxNLeeches != 10 ||
+		sink.drain == nil ||
+		sink.incomingInfoHashes == nil ||
+		sink.termination == nil {
+		t.Errorf("One or more fields of Sink were not initialized correctly.")
+	}
+
 }
