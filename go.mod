@@ -88,5 +88,5 @@ require (
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.7.2 // indirect
 	modernc.org/sqlite v1.28.0 // indirect
-	zombiezen.com/go/sqlite v1.0.0 // indirect
+	zombiezen.com/go/sqlite v1.1.0 // indirect
 )
