@@ -26,10 +26,13 @@ jobs:
     - name: Test
       run: CGO_ENABLED=1 go test -v -race ./... -covermode=atomic -coverprofile=coverage.out
 
-#    - name: Upload coverage report
-#      uses: codecov/codecov-action@v3
-#      with:
-#        files: ./coverage.out
-#        flags: unittests
-#        fail_ci_if_error: true
-#        verbose: true
+    - name: Upload coverage report
+      uses: codecov/codecov-action@v3
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        COMMIT_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || env.GITHUB_SHA }}
+      with:
+        files: ./coverage.out
+        flags: unittests
+        fail_ci_if_error: true
+        verbose: true
