@@ -16,7 +16,7 @@ require (
 )
 
 require (
-	github.com/RoaringBitmap/roaring v1.7.0 // indirect
+	github.com/RoaringBitmap/roaring v1.8.0 // indirect
 	github.com/ajwerner/btree v0.0.0-20211221152037-f427b3e689c0 // indirect
 	github.com/alecthomas/atomic v0.1.0-alpha2 // indirect
 	github.com/anacrolix/chansync v0.4.0 // indirect
