@@ -3,7 +3,7 @@ module github.com/tgragnato/magnetico
 go 1.21
 
 require (
-	github.com/anacrolix/torrent v1.53.3
+	github.com/anacrolix/torrent v1.54.0
 	github.com/bits-and-blooms/bloom/v3 v3.6.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/gorilla/mux v1.8.1
