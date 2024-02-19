@@ -22,7 +22,7 @@ require (
 	github.com/anacrolix/chansync v0.4.0 // indirect
 	github.com/anacrolix/dht/v2 v2.21.0 // indirect
 	github.com/anacrolix/envpprof v1.3.0 // indirect
-	github.com/anacrolix/generics v0.0.0-20230911070922-5dd7545c6b13 // indirect
+	github.com/anacrolix/generics v0.0.1 // indirect
 	github.com/anacrolix/go-libutp v1.3.1 // indirect
 	github.com/anacrolix/log v0.15.0 // indirect
 	github.com/anacrolix/missinggo v1.3.0 // indirect
