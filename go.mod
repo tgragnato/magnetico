@@ -3,7 +3,7 @@ module github.com/tgragnato/magnetico
 go 1.21
 
 require (
-	github.com/anacrolix/torrent v1.54.0
+	github.com/anacrolix/torrent v1.54.1
 	github.com/bits-and-blooms/bloom/v3 v3.6.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/gorilla/mux v1.8.1
@@ -38,6 +38,7 @@ require (
 	github.com/benbjohnson/immutable v0.4.3 // indirect
 	github.com/bits-and-blooms/bitset v1.13.0 // indirect
 	github.com/bradfitz/iter v0.0.0-20191230175014-e8f45d346db8 // indirect
+	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/edsrzf/mmap-go v1.1.0 // indirect
 	github.com/go-llsqlite/adapter v0.1.0 // indirect
