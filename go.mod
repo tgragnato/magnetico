@@ -10,7 +10,7 @@ require (
 	github.com/gorilla/schema v1.2.1
 	github.com/jackc/pgx/v5 v5.5.3
 	github.com/jessevdk/go-flags v1.5.0
-	golang.org/x/crypto v0.19.0
+	golang.org/x/crypto v0.20.0
 	golang.org/x/sys v0.17.0
 	golang.org/x/text v0.14.0
 )
