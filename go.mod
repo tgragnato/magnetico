@@ -1,9 +1,10 @@
 module github.com/tgragnato/magnetico
 
 go 1.21
+toolchain go1.22.0
 
 require (
-	github.com/anacrolix/torrent v1.54.1
+	github.com/anacrolix/torrent v1.55.0
 	github.com/bits-and-blooms/bloom/v3 v3.6.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/gorilla/mux v1.8.1
@@ -11,7 +12,6 @@ require (
 	github.com/jackc/pgx/v5 v5.5.3
 	github.com/jessevdk/go-flags v1.5.0
 	golang.org/x/crypto v0.20.0
-	golang.org/x/sys v0.17.0
 	golang.org/x/text v0.14.0
 )
 
@@ -84,6 +84,7 @@ require (
 	golang.org/x/exp v0.0.0-20240119083558-1b970713d09a // indirect
 	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
+	golang.org/x/sys v0.17.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/libc v1.41.0 // indirect
