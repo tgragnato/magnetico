@@ -108,6 +108,9 @@ func MakeDatabase(rawURL string) (Database, error) {
 
 	switch url_.Scheme {
 
+	case "sqlite3", "sqlite":
+		return makeSqlite3Database(url_)
+
 	case "postgres", "cockroach":
 		return makePostgresDatabase(url_)
 

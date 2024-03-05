@@ -7,12 +7,10 @@ import (
 	"fmt"
 	"log"
 	"net/url"
-	"os"
-	"path"
 	"text/template"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 // Close your rows lest you get "database table is locked" error(s)!
@@ -25,18 +23,13 @@ type sqlite3Database struct {
 func makeSqlite3Database(url_ *url.URL) (Database, error) {
 	db := new(sqlite3Database)
 
-	dbDir, _ := path.Split(url_.Path)
-	if err := os.MkdirAll(dbDir, 0755); err != nil {
-		return nil, errors.New("mkdirAll error for `" + dbDir + "` " + err.Error())
-	}
-
 	var err error
 	// To handle spaces in the file path, we ensure that URI path handling is triggered in the
 	// sqlite3 driver, and that escaping is applied to the URL on this side. See issue #240.
 	url_.Scheme = "file"
 	// To ensure that // isn't injected into the URI. The query is still handled.
 	url_.Opaque = url_.Path
-	db.conn, err = sql.Open("sqlite3", url_.String())
+	db.conn, err = sql.Open("sqlite", url_.String())
 	if err != nil {
 		return nil, errors.New("sql.Open " + err.Error())
 	}
