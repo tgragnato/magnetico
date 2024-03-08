@@ -91,6 +91,6 @@ require (
 	modernc.org/libc v1.42.1 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.7.2 // indirect
-	modernc.org/sqlite v1.29.2 // indirect
+	modernc.org/sqlite v1.29.3 // indirect
 	zombiezen.com/go/sqlite v1.1.2 // indirect
 )
