@@ -8,7 +8,7 @@ require (
 	github.com/alexflint/go-arg v1.4.3
 	github.com/anacrolix/bargle v0.0.0-20220630015206-d7a4d433886a
 	github.com/anacrolix/chansync v0.4.0
-	github.com/anacrolix/dht/v2 v2.19.2-0.20221121215055-066ad8494444
+	github.com/anacrolix/dht/v2 v2.21.1
 	github.com/anacrolix/envpprof v1.3.0
 	github.com/anacrolix/fuse v0.2.0
 	github.com/anacrolix/generics v0.0.2-0.20240227122613-f95486179cab
@@ -17,7 +17,7 @@ require (
 	github.com/anacrolix/missinggo v1.3.0
 	github.com/anacrolix/missinggo/perf v1.0.0
 	github.com/anacrolix/missinggo/v2 v2.7.3
-	github.com/anacrolix/multiless v0.3.0
+	github.com/anacrolix/multiless v0.3.1-0.20221221005021-2d12701f83f7
 	github.com/anacrolix/possum/go v0.1.0
 	github.com/anacrolix/sync v0.5.1
 	github.com/anacrolix/tagflag v1.4.0
