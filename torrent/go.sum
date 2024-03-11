@@ -108,8 +108,8 @@ github.com/anacrolix/multiless v0.3.0/go.mod h1:TrCLEZfIDbMVfLoQt5tOoiBS/uq4y8+o
 github.com/anacrolix/possum/go v0.1.0 h1:eQD6kvqm8aSsyWCsK53jGgtk7nUhs4WjWwR9N35Y2n8=
 github.com/anacrolix/possum/go v0.1.0/go.mod h1:pw5HEMBSiL+otYzHe4q5jGaVuy5unl+Mt4Bx6SDemW8=
 github.com/anacrolix/stm v0.2.0/go.mod h1:zoVQRvSiGjGoTmbM0vSLIiaKjWtNPeTvXUSdJQA4hsg=
-github.com/anacrolix/stm v0.4.0 h1:tOGvuFwaBjeu1u9X1eIh9TX8OEedEiEQ1se1FjhFnXY=
-github.com/anacrolix/stm v0.4.0/go.mod h1:GCkwqWoAsP7RfLW+jw+Z0ovrt2OO7wRzcTtFYMYY5t8=
+github.com/anacrolix/stm v0.5.0 h1:9df1KBpttF0TzLgDq51Z+TEabZKMythqgx89f1FQJt8=
+github.com/anacrolix/stm v0.5.0/go.mod h1:MOwrSy+jCm8Y7HYfMAwPj7qWVu7XoVvjOiYwJmpeB/M=
 github.com/anacrolix/sync v0.0.0-20180808010631-44578de4e778/go.mod h1:s735Etp3joe/voe2sdaXLcqDdJSay1O0OPnM0ystjqk=
 github.com/anacrolix/sync v0.3.0/go.mod h1:BbecHL6jDSExojhNtgTFSBcdGerzNc64tz3DCOj/I0g=
 github.com/anacrolix/sync v0.5.1 h1:FbGju6GqSjzVoTgcXTUKkF041lnZkG5P0C3T5RL3SGc=
@@ -125,8 +125,8 @@ github.com/apache/thrift v0.12.0/go.mod h1:cp2SuWMxlEZw2r+iP2GNCdIi4C1qmUzdZFSVb
 github.com/bahlo/generic-list-go v0.2.0 h1:5sz/EEAK+ls5wF+NeqDpk5+iNdMDXrh3z3nPnH1Wvgk=
 github.com/bahlo/generic-list-go v0.2.0/go.mod h1:2KvAjgMlE5NNynlg/5iLrrCCZ2+5xWbdbCW3pNTGyYg=
 github.com/benbjohnson/immutable v0.2.0/go.mod h1:uc6OHo6PN2++n98KHLxW8ef4W42ylHiQSENghE1ezxI=
-github.com/benbjohnson/immutable v0.3.0 h1:TVRhuZx2wG9SZ0LRdqlbs9S5BZ6Y24hJEHTCgWHZEIw=
-github.com/benbjohnson/immutable v0.3.0/go.mod h1:uc6OHo6PN2++n98KHLxW8ef4W42ylHiQSENghE1ezxI=
+github.com/benbjohnson/immutable v0.4.1-0.20221220213129-8932b999621d h1:2qVb9bsAMtmAfnxXltm+6eBzrrS7SZ52c3SedsulaMI=
+github.com/benbjohnson/immutable v0.4.1-0.20221220213129-8932b999621d/go.mod h1:iAr8OjJGLnLmVUr9MZ/rz4PWUy6Ouc2JLYuMArmvAJM=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
