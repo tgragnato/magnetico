@@ -30,7 +30,7 @@ require (
 	github.com/edsrzf/mmap-go v1.1.0
 	github.com/elliotchance/orderedmap v1.5.1
 	github.com/frankban/quicktest v1.14.6
-	github.com/fsnotify/fsnotify v1.5.4
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/google/btree v1.1.2
 	github.com/google/go-cmp v0.6.0
 	github.com/gorilla/websocket v1.5.0
