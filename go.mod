@@ -6,7 +6,7 @@ toolchain go1.22.0
 
 require (
 	github.com/anacrolix/torrent v1.55.0
-	github.com/bits-and-blooms/bloom/v3 v3.6.0
+	github.com/bits-and-blooms/bloom/v3 v3.7.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/schema v1.2.1
