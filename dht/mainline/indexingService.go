@@ -61,13 +61,7 @@ func NewIndexingService(laddr string, interval time.Duration, maxNeighbors uint,
 			OnPingORAnnouncePeerResponse: service.onPingORAnnouncePeerResponse,
 		},
 	)
-	service.nodeID = make([]byte, 20)
-	_, err := rand.Read(service.nodeID)
-	if err != nil {
-		for i := 0; i < 20; i++ {
-			service.nodeID[i] = byte(mrand.Intn(256))
-		}
-	}
+	service.nodeID = randomNodeID()
 	service.routingTable = make(map[string]*net.UDPAddr)
 	service.maxNeighbors = maxNeighbors
 	service.eventHandlers = eventHandlers
@@ -117,14 +111,8 @@ func (is *IndexingService) bootstrap() {
 
 	for _, ip := range bootstrappingIPs {
 		for _, port := range bootstrappingPorts {
-			target := make([]byte, 20)
-			if _, err := rand.Read(target); err != nil {
-				log.Println("Could NOT generate random bytes during bootstrapping!")
-				return
-			}
-
 			go is.protocol.SendMessage(
-				NewFindNodeQuery(is.nodeID, target),
+				NewFindNodeQuery(is.nodeID, randomNodeID()),
 				&net.UDPAddr{IP: ip, Port: port},
 			)
 		}
@@ -132,8 +120,6 @@ func (is *IndexingService) bootstrap() {
 }
 
 func (is *IndexingService) findNeighbors() {
-	target := make([]byte, 20)
-
 	is.routingTableMutex.RLock()
 	addressesToSend := make([]*net.UDPAddr, 0, len(is.routingTable))
 	for _, addr := range is.routingTable {
@@ -142,13 +128,8 @@ func (is *IndexingService) findNeighbors() {
 	is.routingTableMutex.RUnlock()
 
 	for _, addr := range addressesToSend {
-		_, err := rand.Read(target)
-		if err != nil {
-			log.Panicln("Could NOT generate random bytes during bootstrapping!")
-		}
-
 		is.protocol.SendMessage(
-			NewSampleInfohashesQuery(is.nodeID, []byte("aa"), target),
+			NewSampleInfohashesQuery(is.nodeID, []byte("aa"), randomNodeID()),
 			addr,
 		)
 	}
@@ -169,13 +150,8 @@ func (is *IndexingService) onFindNodeResponse(response *Message, addr *net.UDPAd
 		addr := node.Addr
 		is.routingTable[string(node.ID)] = &addr
 
-		target := make([]byte, 20)
-		_, err := rand.Read(target)
-		if err != nil {
-			log.Panicln("Could NOT generate random bytes!")
-		}
 		go is.protocol.SendMessage(
-			NewSampleInfohashesQuery(is.nodeID, []byte("aa"), target),
+			NewSampleInfohashesQuery(is.nodeID, []byte("aa"), randomNodeID()),
 			&addr,
 		)
 	}
@@ -251,13 +227,8 @@ func (is *IndexingService) onSampleInfohashesResponse(msg *Message, addr *net.UD
 		addr := node.Addr
 		is.routingTable[string(node.ID)] = &addr
 
-		target := make([]byte, 20)
-		_, err := rand.Read(target)
-		if err != nil {
-			log.Panicln("Could NOT generate random bytes!")
-		}
 		go is.protocol.SendMessage(
-			NewSampleInfohashesQuery(is.nodeID, []byte("aa"), target),
+			NewSampleInfohashesQuery(is.nodeID, []byte("aa"), randomNodeID()),
 			&addr,
 		)
 	}
@@ -275,4 +246,15 @@ func toBigEndianBytes(v uint16) [2]byte {
 	var b [2]byte
 	binary.BigEndian.PutUint16(b[:], v)
 	return b
+}
+
+func randomNodeID() []byte {
+	nodeID := make([]byte, 20)
+	_, err := rand.Read(nodeID)
+	if err != nil {
+		for i := 0; i < 20; i++ {
+			nodeID[i] = byte(mrand.Intn(256))
+		}
+	}
+	return nodeID
 }
