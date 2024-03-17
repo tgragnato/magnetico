@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"log"
+	mrand "math/rand"
 	"net"
 	"sync"
 	"time"
@@ -61,6 +62,12 @@ func NewIndexingService(laddr string, interval time.Duration, maxNeighbors uint,
 		},
 	)
 	service.nodeID = make([]byte, 20)
+	_, err := rand.Read(service.nodeID)
+	if err != nil {
+		for i := 0; i < 20; i++ {
+			service.nodeID[i] = byte(mrand.Intn(256))
+		}
+	}
 	service.routingTable = make(map[string]*net.UDPAddr)
 	service.maxNeighbors = maxNeighbors
 	service.eventHandlers = eventHandlers
