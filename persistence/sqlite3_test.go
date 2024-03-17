@@ -8,15 +8,21 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var db, _ = makeSqlite3Database(&url.URL{
-	Scheme:   "sqlite3",
-	Path:     ":memory:",
-	RawQuery: "cache=shared",
-})
+func newDb(t *testing.T) Database {
+	db, e := makeSqlite3Database(&url.URL{
+		Scheme:   "sqlite3",
+		Path:     t.Name(),
+		RawQuery: "cache=shared&mode=memory",
+	})
+	if e != nil {
+		t.Errorf("newDb(t): Could not create in-memory database %s. error = %v", t.Name(), e)
+	}
+	return db
+}
 
 func Test_sqlite3Database_DoesTorrentExist(t *testing.T) {
 	t.Parallel()
-
+	db := newDb(t)
 	tests := []struct {
 		name     string
 		infoHash []byte
@@ -52,12 +58,7 @@ func Test_sqlite3Database_DoesTorrentExist(t *testing.T) {
 
 func Test_sqlite3Database_GetNumberOfTorrents(t *testing.T) {
 	t.Parallel()
-
-	db, _ := makeSqlite3Database(&url.URL{
-		Scheme:   "sqlite3",
-		Path:     ":memory:",
-		RawQuery: "cache=shared",
-	})
+	db := newDb(t)
 
 	got, err := db.GetNumberOfTorrents()
 	if err != nil {
@@ -71,6 +72,7 @@ func Test_sqlite3Database_GetNumberOfTorrents(t *testing.T) {
 
 func Test_sqlite3Database_AddNewTorrent(t *testing.T) {
 	t.Parallel()
+	db := newDb(t)
 
 	tests := []struct {
 		name     string
@@ -114,6 +116,7 @@ func Test_sqlite3Database_AddNewTorrent(t *testing.T) {
 
 func Test_sqlite3Database_QueryTorrents(t *testing.T) {
 	t.Parallel()
+	db := newDb(t)
 
 	tests := []struct {
 		name             string
@@ -192,6 +195,7 @@ func Test_sqlite3Database_QueryTorrents(t *testing.T) {
 
 func Test_sqlite3Database_GetTorrent(t *testing.T) {
 	t.Parallel()
+	db := newDb(t)
 
 	tests := []struct {
 		name     string
@@ -223,6 +227,7 @@ func Test_sqlite3Database_GetTorrent(t *testing.T) {
 
 func Test_sqlite3Database_GetFiles(t *testing.T) {
 	t.Parallel()
+	db := newDb(t)
 
 	tests := []struct {
 		name     string
@@ -259,6 +264,7 @@ func Test_sqlite3Database_GetFiles(t *testing.T) {
 
 func Test_sqlite3Database_GetStatistics(t *testing.T) {
 	t.Parallel()
+	db := newDb(t)
 
 	tests := []struct {
 		name    string
