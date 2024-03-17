@@ -134,11 +134,6 @@ func (is *IndexingService) bootstrap() {
 func (is *IndexingService) findNeighbors() {
 	target := make([]byte, 20)
 
-	/*
-		We could just RLock and defer RUnlock here, but that would mean that each response that we get could not Lock
-		the table because we are sending. So we would basically make read and write NOT concurrent.
-		A better approach would be to get all addresses to send in a slice and then work on that, releasing the main map.
-	*/
 	is.routingTableMutex.RLock()
 	addressesToSend := make([]*net.UDPAddr, 0, len(is.routingTable))
 	for _, addr := range is.routingTable {
@@ -179,7 +174,7 @@ func (is *IndexingService) onFindNodeResponse(response *Message, addr *net.UDPAd
 		if err != nil {
 			log.Panicln("Could NOT generate random bytes!")
 		}
-		is.protocol.SendMessage(
+		go is.protocol.SendMessage(
 			NewSampleInfohashesQuery(is.nodeID, []byte("aa"), target),
 			&addr,
 		)
@@ -231,18 +226,17 @@ func (is *IndexingService) onSampleInfohashesResponse(msg *Message, addr *net.UD
 		t := toBigEndianBytes(is.counter)
 		msg.T = t[:]
 
-		is.protocol.SendMessage(msg, addr)
+		go is.protocol.SendMessage(msg, addr)
 
 		is.getPeersRequests[t] = infoHash
 		is.counter++
 	}
 
-	// TODO: good idea, but also need to track how long they have been here
-	//if msg.R.Num > len(msg.R.Samples) / 20 &&  time.Duration(msg.R.Interval) <= is.interval {
-	//	if addr.Port != 0 {  // ignore nodes who "use" port 0...
-	//		is.routingTable[string(msg.R.ID)] = addr
-	//	}
-	//}
+	if msg.R.Num > len(msg.R.Samples)/20 && time.Duration(msg.R.Interval) <= is.interval {
+		if addr.Port != 0 { // ignore nodes who "use" port 0...
+			is.routingTable[string(msg.R.ID)] = addr
+		}
+	}
 
 	// iterate
 	is.routingTableMutex.Lock()
@@ -257,19 +251,23 @@ func (is *IndexingService) onSampleInfohashesResponse(msg *Message, addr *net.UD
 		addr := node.Addr
 		is.routingTable[string(node.ID)] = &addr
 
-		// TODO
-		/*
-			target := make([]byte, 20)
-			_, err := rand.Read(target)
-			if err != nil {
-				log.Panicln("Could NOT generate random bytes!")
-			}
-			is.protocol.SendMessage(
-				NewSampleInfohashesQuery(is.nodeID, []byte("aa"), target),
-				&addr,
-			)
-		*/
+		target := make([]byte, 20)
+		_, err := rand.Read(target)
+		if err != nil {
+			log.Panicln("Could NOT generate random bytes!")
+		}
+		go is.protocol.SendMessage(
+			NewSampleInfohashesQuery(is.nodeID, []byte("aa"), target),
+			&addr,
+		)
 	}
+}
+
+func (is *IndexingService) onPingORAnnouncePeerResponse(msg *Message, addr *net.UDPAddr) {
+	go is.protocol.SendMessage(
+		NewAnnouncePeerResponse(msg.T, is.nodeID),
+		addr,
+	)
 }
 
 // toBigEndianBytes Convert UInt16 To BigEndianBytes
@@ -277,11 +275,4 @@ func toBigEndianBytes(v uint16) [2]byte {
 	var b [2]byte
 	binary.BigEndian.PutUint16(b[:], v)
 	return b
-}
-
-func (is *IndexingService) onPingORAnnouncePeerResponse(msg *Message, addr *net.UDPAddr) {
-	is.protocol.SendMessage(
-		NewAnnouncePeerResponse(msg.T, is.nodeID),
-		addr,
-	)
 }
