@@ -36,7 +36,7 @@ func TestChannelOutput(t *testing.T) {
 	t.Parallel()
 
 	address := ManagerAddress + ":" + strconv.Itoa(rand.Intn(64511)+1024)
-	manager := NewManager([]string{address}, time.Second, MaxNeighbours)
+	manager := NewManager([]string{address}, time.Second, MaxNeighbours, []string{"dht.tgragnato.it"})
 	peerPort := rand.Intn(64511) + 1024
 
 	result := &TestResult{
@@ -62,7 +62,7 @@ func TestOnIndexingResult(t *testing.T) {
 	t.Parallel()
 
 	address := ManagerAddress + ":" + strconv.Itoa(rand.Intn(64511)+1024)
-	manager := NewManager([]string{address}, DefaultTimeOut, MaxNeighbours)
+	manager := NewManager([]string{address}, DefaultTimeOut, MaxNeighbours, []string{"dht.tgragnato.it"})
 
 	result := mainline.IndexingResult{}
 	outputChan := make(chan Result, ChanSize)

@@ -21,7 +21,8 @@ type opFlags struct {
 	IndexerInterval     time.Duration
 	IndexerMaxNeighbors uint
 
-	LeechMaxN int
+	LeechMaxN          int
+	BootstrappingNodes []string
 }
 
 func main() {
@@ -41,7 +42,7 @@ func main() {
 		log.Fatalf("Could not open the database %s. %v", opFlags.DatabaseURL, err)
 	}
 
-	trawlingManager := dht.NewManager(opFlags.IndexerAddrs, opFlags.IndexerInterval, opFlags.IndexerMaxNeighbors)
+	trawlingManager := dht.NewManager(opFlags.IndexerAddrs, opFlags.IndexerInterval, opFlags.IndexerMaxNeighbors, opFlags.BootstrappingNodes)
 	metadataSink := metadata.NewSink(5*time.Second, opFlags.LeechMaxN)
 
 	// The Event Loop
@@ -83,6 +84,8 @@ func parseFlags() (*opFlags, error) {
 
 		LeechMaxN uint `long:"leech-max-n" description:"Maximum number of leeches." default:"1000"`
 		MaxRPS    uint `long:"max-rps" description:"Maximum requests per second." default:"0"`
+
+		BootstrappingNodes []string `long:"bootstrap-node" description:"Host(s) to be used for bootstrapping." default:"dht.tgragnato.it"`
 	}
 
 	opF := new(opFlags)
@@ -117,6 +120,7 @@ func parseFlags() (*opFlags, error) {
 	}
 
 	mainline.DefaultThrottleRate = int(cmdF.MaxRPS)
+	opF.BootstrappingNodes = cmdF.BootstrappingNodes
 
 	return opF, nil
 }

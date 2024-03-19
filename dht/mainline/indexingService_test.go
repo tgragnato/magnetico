@@ -62,7 +62,7 @@ func TestBasicIndexingService(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			is := NewIndexingService(tt.laddr, tt.interval, tt.maxNeighbors, tt.eventHandlers)
+			is := NewIndexingService(tt.laddr, tt.interval, tt.maxNeighbors, tt.eventHandlers, []string{"dht.tgragnato.it"})
 			if is == nil {
 				t.Error("NewIndexingService() = nil, wanted != nil")
 			}
