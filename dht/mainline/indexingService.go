@@ -208,6 +208,8 @@ func (is *IndexingService) onSampleInfohashesResponse(msg *Message, addr *net.UD
 		is.counter++
 	}
 
+	is.routingTableMutex.Lock()
+	defer is.routingTableMutex.Unlock()
 	if msg.R.Num > len(msg.R.Samples)/20 && time.Duration(msg.R.Interval) <= is.interval {
 		if addr.Port != 0 { // ignore nodes who "use" port 0...
 			is.routingTable[string(msg.R.ID)] = addr
@@ -215,8 +217,6 @@ func (is *IndexingService) onSampleInfohashesResponse(msg *Message, addr *net.UD
 	}
 
 	// iterate
-	is.routingTableMutex.Lock()
-	defer is.routingTableMutex.Unlock()
 	for _, node := range msg.R.Nodes {
 		if uint(len(is.routingTable)) >= is.maxNeighbors {
 			break
