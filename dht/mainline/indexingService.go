@@ -21,6 +21,8 @@ type IndexingService struct {
 
 	counter          uint16
 	getPeersRequests map[[2]byte][20]byte // GetPeersQuery.`t` -> infohash
+
+	bootstrapNodes []string
 }
 
 type IndexingServiceEventHandlers struct {
@@ -40,7 +42,7 @@ func (ir IndexingResult) PeerAddrs() []net.TCPAddr {
 	return ir.peerAddrs
 }
 
-func NewIndexingService(laddr string, interval time.Duration, maxNeighbors uint, eventHandlers IndexingServiceEventHandlers) *IndexingService {
+func NewIndexingService(laddr string, interval time.Duration, maxNeighbors uint, eventHandlers IndexingServiceEventHandlers, bootstrapNodes []string) *IndexingService {
 	service := new(IndexingService)
 	service.interval = interval
 	service.protocol = NewProtocol(
@@ -57,6 +59,7 @@ func NewIndexingService(laddr string, interval time.Duration, maxNeighbors uint,
 	service.eventHandlers = eventHandlers
 
 	service.getPeersRequests = make(map[[2]byte][20]byte)
+	service.bootstrapNodes = bootstrapNodes
 
 	return service
 }
@@ -87,9 +90,24 @@ func (is *IndexingService) index() {
 
 func (is *IndexingService) bootstrap() {
 	bootstrappingPorts := []int{80, 443, 1337, 6969, 6881, 25401}
-	bootstrappingIPs, err := net.LookupIP("dht.tgragnato.it")
-	if err != nil {
-		log.Println("Could NOT resolve the IP of the bootstrapping nodes!")
+
+	bootstrappingIPs := make([]net.IP, 0)
+
+	if len(is.bootstrapNodes) == 0 {
+		log.Fatal("No bootstrapping nodes configured!")
+	}
+
+	log.Println(is.bootstrapNodes)
+	for _, dnsName := range is.bootstrapNodes {
+		if ipAddrs, err := net.LookupIP(dnsName); err == nil {
+			bootstrappingIPs = append(bootstrappingIPs, ipAddrs...)
+		} else {
+			log.Printf("Warning: Failed to lookup IP for bootstrap node %s: %v\n", dnsName, err)
+		}
+	}
+
+	if len(bootstrappingIPs) == 0 {
+		log.Println("Could NOT resolve the IP for any of the bootstrapping nodes!")
 		return
 	}
 
