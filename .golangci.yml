@@ -22,6 +22,10 @@ issues:
         - staticcheck
       text: "ST1005:"
 
+    - text: "Implicit memory aliasing in for loop."
+      linters:
+        - gosec
+
     - text: "weak random number generator"
       linters:
         - gosec
