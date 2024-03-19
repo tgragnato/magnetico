@@ -6,11 +6,8 @@ import (
 	"log"
 	mrand "math/rand"
 	"net"
-	"sync"
 	"time"
 )
-
-const ZeroPort = 0
 
 type IndexingService struct {
 	// Private
@@ -20,13 +17,7 @@ type IndexingService struct {
 	eventHandlers IndexingServiceEventHandlers
 
 	nodeID []byte
-	// []byte type would be a much better fit for the keys but unfortunately (and quite
-	// understandably) slices cannot be used as keys (since they are not hashable), and using arrays
-	// (or even the conversion between each other) is a pain; hence map[string]net.UDPAddr
-	//                                                                  ^~~~~~
-	routingTable      map[string]*net.UDPAddr
-	routingTableMutex sync.RWMutex
-	maxNeighbors      uint
+	nodes  *routingTable
 
 	counter          uint16
 	getPeersRequests map[[2]byte][20]byte // GetPeersQuery.`t` -> infohash
@@ -62,8 +53,7 @@ func NewIndexingService(laddr string, interval time.Duration, maxNeighbors uint,
 		},
 	)
 	service.nodeID = randomNodeID()
-	service.routingTable = make(map[string]*net.UDPAddr)
-	service.maxNeighbors = maxNeighbors
+	service.nodes = newRoutingTable(maxNeighbors)
 	service.eventHandlers = eventHandlers
 
 	service.getPeersRequests = make(map[[2]byte][20]byte)
@@ -87,16 +77,10 @@ func (is *IndexingService) Terminate() {
 
 func (is *IndexingService) index() {
 	for range time.Tick(is.interval) {
-		is.routingTableMutex.RLock()
-		routingTableLen := len(is.routingTable)
-		is.routingTableMutex.RUnlock()
-		if routingTableLen == 0 {
+		if is.nodes.isEmpty() {
 			is.bootstrap()
 		} else {
 			is.findNeighbors()
-			is.routingTableMutex.Lock()
-			is.routingTable = make(map[string]*net.UDPAddr)
-			is.routingTableMutex.Unlock()
 		}
 	}
 }
@@ -120,40 +104,17 @@ func (is *IndexingService) bootstrap() {
 }
 
 func (is *IndexingService) findNeighbors() {
-	is.routingTableMutex.RLock()
-	addressesToSend := make([]*net.UDPAddr, 0, len(is.routingTable))
-	for _, addr := range is.routingTable {
-		addressesToSend = append(addressesToSend, addr)
-	}
-	is.routingTableMutex.RUnlock()
-
-	for _, addr := range addressesToSend {
+	for _, addr := range is.nodes.getNodes() {
 		is.protocol.SendMessage(
 			NewSampleInfohashesQuery(is.nodeID, []byte("aa"), randomNodeID()),
-			addr,
+			&addr,
 		)
 	}
 }
 
 func (is *IndexingService) onFindNodeResponse(response *Message, addr *net.UDPAddr) {
-	is.routingTableMutex.Lock()
-	defer is.routingTableMutex.Unlock()
-
 	for _, node := range response.R.Nodes {
-		if uint(len(is.routingTable)) >= is.maxNeighbors {
-			break
-		}
-		if node.Addr.Port == ZeroPort {
-			continue
-		}
-
-		addr := node.Addr
-		is.routingTable[string(node.ID)] = &addr
-
-		go is.protocol.SendMessage(
-			NewSampleInfohashesQuery(is.nodeID, []byte("aa"), randomNodeID()),
-			&addr,
-		)
+		go is.nodes.addNode(node.Addr)
 	}
 }
 
@@ -176,7 +137,7 @@ func (is *IndexingService) onGetPeersResponse(msg *Message, addr *net.UDPAddr) {
 
 	peerAddrs := make([]net.TCPAddr, 0)
 	for _, peer := range msg.R.Values {
-		if peer.Port == ZeroPort {
+		if peer.Port == 0 {
 			continue
 		}
 
@@ -202,40 +163,22 @@ func (is *IndexingService) onSampleInfohashesResponse(msg *Message, addr *net.UD
 		t := toBigEndianBytes(is.counter)
 		msg.T = t[:]
 
-		go is.protocol.SendMessage(msg, addr)
+		is.protocol.SendMessage(msg, addr)
 
 		is.getPeersRequests[t] = infoHash
 		is.counter++
 	}
 
-	is.routingTableMutex.Lock()
-	defer is.routingTableMutex.Unlock()
 	if msg.R.Num > len(msg.R.Samples)/20 && time.Duration(msg.R.Interval) <= is.interval {
-		if addr.Port != 0 { // ignore nodes who "use" port 0...
-			is.routingTable[string(msg.R.ID)] = addr
-		}
+		go is.nodes.addNode(*addr)
 	}
-
-	// iterate
 	for _, node := range msg.R.Nodes {
-		if uint(len(is.routingTable)) >= is.maxNeighbors {
-			break
-		}
-		if node.Addr.Port == 0 {
-			continue
-		}
-		addr := node.Addr
-		is.routingTable[string(node.ID)] = &addr
-
-		go is.protocol.SendMessage(
-			NewSampleInfohashesQuery(is.nodeID, []byte("aa"), randomNodeID()),
-			&addr,
-		)
+		go is.nodes.addNode(node.Addr)
 	}
 }
 
 func (is *IndexingService) onPingORAnnouncePeerResponse(msg *Message, addr *net.UDPAddr) {
-	go is.protocol.SendMessage(
+	is.protocol.SendMessage(
 		NewAnnouncePeerResponse(msg.T, is.nodeID),
 		addr,
 	)
