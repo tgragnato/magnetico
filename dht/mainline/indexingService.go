@@ -79,7 +79,8 @@ func (is *IndexingService) Terminate() {
 }
 
 func (is *IndexingService) index() {
-	for range time.Tick(is.interval) {
+	ticker := time.NewTicker(is.interval)
+	for ; true; <-ticker.C {
 		if is.nodes.isEmpty() {
 			is.bootstrap()
 		} else {
