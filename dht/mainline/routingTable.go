@@ -19,7 +19,11 @@ func newRoutingTable(maxNeighbors uint) *routingTable {
 }
 
 func (rt *routingTable) addNode(node net.UDPAddr) {
-	if node.Port == 0 {
+	if !node.IP.IsGlobalUnicast() || node.IP.IsPrivate() {
+		return
+	}
+	if node.Port != 80 && node.Port != 443 &&
+		node.Port < 1024 || node.Port > 65535 {
 		return
 	}
 
