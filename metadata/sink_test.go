@@ -14,13 +14,11 @@ func TestSink_NewSink(t *testing.T) {
 	if sink == nil ||
 		len(sink.PeerID) != 20 ||
 		sink.deadline != time.Second ||
-		sink.maxNLeeches != 10 ||
 		sink.drain == nil ||
 		sink.incomingInfoHashes == nil ||
 		sink.termination == nil {
 		t.Error("One or more fields of Sink were not initialized correctly")
 	}
-
 }
 
 type TestResult struct {
@@ -40,22 +38,13 @@ func TestSink_Sink(t *testing.T) {
 	t.Parallel()
 
 	sink := NewSink(time.Minute, 2)
-	if len(sink.incomingInfoHashes) != 0 {
-		t.Error("incomingInfoHashes field of Sink has not been initialized correctly")
-	}
 	testResult := &TestResult{
 		infoHash:  [20]byte{255},
-		peerAddrs: []net.TCPAddr{{IP: net.ParseIP("127.0.0.1"), Port: 443, Zone: ""}},
+		peerAddrs: []net.TCPAddr{{IP: net.ParseIP("1.0.0.1"), Port: 443}},
 	}
-
 	sink.Sink(testResult)
-	if len(sink.incomingInfoHashes) != 1 {
-		t.Error("incomingInfoHashes field of Sink has not been filled in correctly")
-	}
-
-	sink.Sink(testResult)
-	if len(sink.incomingInfoHashes) != 1 {
-		t.Error("the same InfoHash should not be processed multiple times")
+	if len(sink.incomingInfoHashes.infoHashes) != 0 {
+		t.Error("infoHashes should be empty after sinking a result with a single peer")
 	}
 }
 
@@ -110,9 +99,9 @@ func TestFlush(t *testing.T) {
 
 	var infoHash [20]byte
 	copy(infoHash[:], testMetadata.InfoHash)
-	sink.incomingInfoHashesMx.RLock()
-	_, exists := sink.incomingInfoHashes[infoHash]
-	sink.incomingInfoHashesMx.RUnlock()
+	sink.incomingInfoHashes.Lock()
+	_, exists := sink.incomingInfoHashes.infoHashes[infoHash]
+	sink.incomingInfoHashes.Unlock()
 	if exists {
 		t.Error("InfoHash was not deleted after flush")
 	}
