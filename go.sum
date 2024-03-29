@@ -278,11 +278,10 @@ github.com/pion/rtp v1.8.3/go.mod h1:pBGHaFt/yW7bf1jjWAoUjpSNoDnw98KTMg+jWWvziqU
 github.com/pion/rtp v1.8.4 h1:VqNGMNjMDMy9y0d+h+0dfjiWVKUEDQvA963jhJwu200=
 github.com/pion/rtp v1.8.4/go.mod h1:pBGHaFt/yW7bf1jjWAoUjpSNoDnw98KTMg+jWWvziqU=
 github.com/pion/sctp v1.8.5/go.mod h1:SUFFfDpViyKejTAdwD1d/HQsCu+V/40cCs2nZIvC3s0=
-github.com/pion/sctp v1.8.12/go.mod h1:cMLT45jqw3+jiJCrtHVwfQLnfR0MGZ4rgOJwUOIqLkI=
 github.com/pion/sctp v1.8.13 h1:YUJR44pWM2FPUhkl8l+vDyF2EDE3aTWtr3c+LDhCRcQ=
 github.com/pion/sctp v1.8.13/go.mod h1:YKSgO/bO/6aOMP9LCie1DuD7m+GamiK2yIiPM6vH+GA=
-github.com/pion/sdp/v3 v3.0.8 h1:yd/wkrS0nzXEAb+uwv1TL3SG/gzsTiXHVOtXtD7EKl0=
-github.com/pion/sdp/v3 v3.0.8/go.mod h1:B5xmvENq5IXJimIO4zfp6LAe1fD9N+kFv+V/1lOdz8M=
+github.com/pion/sdp/v3 v3.0.9 h1:pX++dCHoHUwq43kuwf3PyJfHlwIj4hXA7Vrifiq0IJY=
+github.com/pion/sdp/v3 v3.0.9/go.mod h1:B5xmvENq5IXJimIO4zfp6LAe1fD9N+kFv+V/1lOdz8M=
 github.com/pion/srtp/v2 v2.0.18 h1:vKpAXfawO9RtTRKZJbG4y0v1b11NZxQnxRl85kGuUlo=
 github.com/pion/srtp/v2 v2.0.18/go.mod h1:0KJQjA99A6/a0DOVTu1PhDSw0CXF2jTkqOoMg3ODqdA=
 github.com/pion/stun v0.6.1 h1:8lp6YejULeHBF8NmV8e2787BogQhduZugh5PdhDyyN4=
@@ -299,8 +298,8 @@ github.com/pion/transport/v3 v3.0.1/go.mod h1:UY7kiITrlMv7/IKgd5eTUcaahZx5oUN3l9
 github.com/pion/turn/v2 v2.1.3/go.mod h1:huEpByKKHix2/b9kmTAM3YoX6MKP+/D//0ClgUYR2fY=
 github.com/pion/turn/v2 v2.1.5 h1:tTyy7TM3DCoX9IxTt/yHc/bThiRLyXK3T1YbNcgx9k4=
 github.com/pion/turn/v2 v2.1.5/go.mod h1:huEpByKKHix2/b9kmTAM3YoX6MKP+/D//0ClgUYR2fY=
-github.com/pion/webrtc/v3 v3.2.29 h1:flXjxjlqpp3FjkpSSBKwv7UOfbUvan9+gFY6A5ZaAn4=
-github.com/pion/webrtc/v3 v3.2.29/go.mod h1:M+5YSvBDPAkHHRwGXlplIFBQI5mXm6Y4byns1OpiX68=
+github.com/pion/webrtc/v3 v3.2.30 h1:MzFD5UNtQsmSmqeiWaWB3v0nY/D+02wglBoXPJJnhc8=
+github.com/pion/webrtc/v3 v3.2.30/go.mod h1:pa9KWkGlWnzLth6BXju8OTCXXhAXzJiQxQtcDoiQw44=
 github.com/pkg/diff v0.0.0-20210226163009-20ebb0f2a09e/go.mod h1:pJLUxLENpZxwdsKMEsNbx1VGcRFpLqf3715MtcvvzbA=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=

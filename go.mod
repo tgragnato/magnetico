@@ -67,12 +67,12 @@ require (
 	github.com/pion/rtcp v1.2.14 // indirect
 	github.com/pion/rtp v1.8.4 // indirect
 	github.com/pion/sctp v1.8.13 // indirect
-	github.com/pion/sdp/v3 v3.0.8 // indirect
+	github.com/pion/sdp/v3 v3.0.9 // indirect
 	github.com/pion/srtp/v2 v2.0.18 // indirect
 	github.com/pion/stun v0.6.1 // indirect
 	github.com/pion/transport/v2 v2.2.4 // indirect
 	github.com/pion/turn/v2 v2.1.5 // indirect
-	github.com/pion/webrtc/v3 v3.2.29 // indirect
+	github.com/pion/webrtc/v3 v3.2.30 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rs/dnscache v0.0.0-20230804202142-fc85eb664529 // indirect
