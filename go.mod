@@ -57,7 +57,7 @@ require (
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/multiformats/go-multihash v0.2.3 // indirect
 	github.com/multiformats/go-varint v0.0.7 // indirect
-	github.com/pion/datachannel v1.5.5 // indirect
+	github.com/pion/datachannel v1.5.6 // indirect
 	github.com/pion/dtls/v2 v2.2.10 // indirect
 	github.com/pion/ice/v2 v2.3.14 // indirect
 	github.com/pion/interceptor v0.1.27 // indirect
