@@ -36,7 +36,7 @@ require (
 	github.com/gorilla/websocket v1.5.1
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/multiformats/go-multihash v0.2.3
-	github.com/pion/datachannel v1.5.5
+	github.com/pion/datachannel v1.5.6
 	github.com/pion/logging v0.2.2
 	github.com/pion/webrtc/v3 v3.2.29
 	github.com/pkg/errors v0.9.1
