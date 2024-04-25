@@ -107,7 +107,7 @@ require (
 	github.com/shirou/gopsutil/v3 v3.22.9 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.10 // indirect
-	github.com/tklauser/numcpus v0.5.0 // indirect
+	github.com/tklauser/numcpus v0.7.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.opentelemetry.io/contrib/instrumentation/host v0.36.4 // indirect
 	go.opentelemetry.io/contrib/instrumentation/runtime v0.36.4 // indirect
