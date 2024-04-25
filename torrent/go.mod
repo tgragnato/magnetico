@@ -106,7 +106,7 @@ require (
 	github.com/sethvargo/go-envconfig v1.0.1 // indirect
 	github.com/shirou/gopsutil/v3 v3.22.9 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
-	github.com/tklauser/go-sysconf v0.3.10 // indirect
+	github.com/tklauser/go-sysconf v0.3.13 // indirect
 	github.com/tklauser/numcpus v0.7.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.opentelemetry.io/contrib/instrumentation/host v0.36.4 // indirect
