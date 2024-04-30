@@ -39,7 +39,7 @@ require (
 	github.com/multiformats/go-multihash v0.2.3
 	github.com/pion/datachannel v1.5.6
 	github.com/pion/logging v0.2.2
-	github.com/pion/webrtc/v3 v3.2.38
+	github.com/pion/webrtc/v3 v3.2.39
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.19.0
 	github.com/stretchr/testify v1.9.0
