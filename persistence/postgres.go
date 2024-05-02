@@ -18,8 +18,7 @@ import (
 )
 
 type postgresDatabase struct {
-	conn   *sql.DB
-	schema string
+	conn *sql.DB
 }
 
 func makePostgresDatabase(url_ *url.URL) (Database, error) {
@@ -28,17 +27,6 @@ func makePostgresDatabase(url_ *url.URL) (Database, error) {
 	if url_.Scheme == "cockroach" {
 		url_.Scheme = "postgres"
 	}
-
-	query := url_.Query()
-	if schema := query.Get("schema"); schema == "" {
-		db.schema = "magneticod"
-		query.Set("search_path", "magneticod")
-	} else {
-		db.schema = schema
-		query.Set("search_path", schema)
-	}
-	query.Del("schema")
-	url_.RawQuery = query.Encode()
 
 	var err error
 	db.conn, err = sql.Open("pgx", url_.String())
@@ -440,8 +428,6 @@ func (db *postgresDatabase) setupDatabase() error {
 	// Initial Setup for schema version 0:
 	// FROZEN.
 	_, err = tx.Exec(`
-		CREATE SCHEMA IF NOT EXISTS ` + db.schema + `;		
-
 		-- Torrents ID sequence generator
 		CREATE SEQUENCE IF NOT EXISTS seq_torrents_id;
 		-- Files ID sequence generator
