@@ -10,7 +10,7 @@ jobs:
 
   analyze:
     name: Analyze
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 1440
     permissions:
       actions: read
