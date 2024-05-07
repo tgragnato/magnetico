@@ -13,7 +13,7 @@ require (
 	github.com/jackc/pgx/v5 v5.5.5
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
-	golang.org/x/crypto v0.22.0
+	golang.org/x/crypto v0.23.0
 	golang.org/x/text v0.15.0
 )
 
