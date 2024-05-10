@@ -41,7 +41,7 @@ require (
 	github.com/pion/logging v0.2.2
 	github.com/pion/webrtc/v3 v3.2.40
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.19.0
+	github.com/prometheus/client_golang v1.19.1
 	github.com/stretchr/testify v1.9.0
 	github.com/tidwall/btree v1.7.0
 	go.etcd.io/bbolt v1.3.10
