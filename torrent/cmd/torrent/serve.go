@@ -74,8 +74,8 @@ func serve() (cmd bargle.Command) {
 					`wss://tracker.btorrent.xyz`,
 					`wss://tracker.openwebtorrent.com`,
 					"http://p4p.arenabg.com:1337/announce",
-					"udp://tracker.opentrackr.org:1337/announce",
-					"udp://tracker.openbittorrent.com:6969/announce",
+					"udp://dht.tgragnato.it:1337/announce",
+					"udp://dht.tgragnato.it:6969/announce",
 				}},
 			})
 			if err != nil {

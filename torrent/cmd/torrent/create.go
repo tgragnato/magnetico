@@ -12,8 +12,8 @@ import (
 
 var builtinAnnounceList = [][]string{
 	{"http://p4p.arenabg.com:1337/announce"},
-	{"udp://tracker.opentrackr.org:1337/announce"},
-	{"udp://tracker.openbittorrent.com:6969/announce"},
+	{"udp://dht.tgragnato.it:1337/announce"},
+	{"udp://dht.tgragnato.it:6969/announce"},
 }
 
 func create() (cmd bargle.Command) {
