@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/RoaringBitmap/roaring v1.9.3
 	github.com/ajwerner/btree v0.0.0-20211221152037-f427b3e689c0
-	github.com/alexflint/go-arg v1.4.3
+	github.com/alexflint/go-arg v1.5.0
 	github.com/anacrolix/bargle v0.0.0-20220630015206-d7a4d433886a
 	github.com/anacrolix/chansync v0.4.0
 	github.com/anacrolix/dht/v2 v2.21.1
