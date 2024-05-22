@@ -47,7 +47,7 @@ require (
 	go.etcd.io/bbolt v1.3.10
 	go.opentelemetry.io/otel v1.27.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.26.0
-	go.opentelemetry.io/otel/sdk v1.26.0
+	go.opentelemetry.io/otel/sdk v1.27.0
 	go.opentelemetry.io/otel/trace v1.27.0
 	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df
 	golang.org/x/sync v0.7.0
@@ -121,7 +121,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.26.0 // indirect
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.26.0 // indirect
 	go.opentelemetry.io/otel/metric v1.27.0 // indirect
-	go.opentelemetry.io/otel/sdk/metric v1.26.0 // indirect
+	go.opentelemetry.io/otel/sdk/metric v1.27.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.2.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.23.0 // indirect
