@@ -137,7 +137,3 @@ func (pp Provider) writeConsecutiveValues(
 	}
 	return nil
 }
-
-func (pp Provider) MovePrefix(from, to string) (err error) {
-	return pp.Handle.MovePrefix([]byte(from), []byte(to))
-}
