@@ -34,7 +34,7 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/google/btree v1.1.2
 	github.com/google/go-cmp v0.6.0
-	github.com/gorilla/websocket v1.5.1
+	github.com/gorilla/websocket v1.5.2
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/multiformats/go-multihash v0.2.3
 	github.com/pion/datachannel v1.5.6
