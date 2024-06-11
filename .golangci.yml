@@ -22,10 +22,6 @@ issues:
         - staticcheck
       text: "ST1005:"
 
-    - text: "Implicit memory aliasing in for loop."
-      linters:
-        - gosec
-
     - text: "weak random number generator"
       linters:
         - gosec
@@ -40,7 +36,7 @@ issues:
       linters:
         - gosec
 
-    - path: cmd/magneticow/main.go
+    - path: web/helpers.go
       text: "no support for setting timeouts"
       linters:
         - gosec

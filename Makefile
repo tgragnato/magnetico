@@ -1,12 +1,9 @@
 .PHONY: test format vet staticcheck magneticod magneticow
 
-all: test magneticod magneticow
+all: test magnetico
 
-magneticod:
-	go install --tags fts5 ./cmd/magneticod
-
-magneticow:
-	go install --tags fts5 ./cmd/magneticow
+magnetico:
+	go install --tags fts5 .
 
 vet:
 	go vet ./...

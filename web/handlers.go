@@ -1,6 +1,7 @@
-package main
+package web
 
 import (
+	"embed"
 	"errors"
 	"net/http"
 	"strings"
@@ -17,6 +18,9 @@ const (
 	CacheKey        = "Cache-Control"
 	CacheValue      = "max-age=86400"
 )
+
+//go:embed static/** templates/*
+var fs embed.FS
 
 // DONE
 func rootHandler(w http.ResponseWriter, r *http.Request) {
