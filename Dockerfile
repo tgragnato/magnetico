@@ -16,5 +16,5 @@ RUN echo '#!/bin/sh' >> /usr/bin/magneticod \
 RUN echo '#!/bin/sh' >> /usr/bin/magneticow \
     && echo '/usr/bin/magnetico "$@" --web' >> /usr/bin/magneticow \
     && chmod +x /usr/bin/magneticow
-ENTRYPOINT ["/usr/bin/magnetico", "--help"]
+ENTRYPOINT ["/usr/bin/magnetico"]
 LABEL org.opencontainers.image.source=https://github.com/tgragnato/magnetico
