@@ -17,6 +17,24 @@ Both programs, combined together, allows anyone with a decent Internet connectio
 **magnetico** liberates BitTorrent from the yoke of centralised trackers & web-sites and makes it
 *truly decentralised*. Finally!
 
+## Easy Run and Compilation
+
+The easiest way to run magnetico on amd64 platforms is to use the OCI image built within the CI pipeline:
+- `docker pull ghcr.io/tgragnato/magnetico:next`
+- `docker run --rm -it ghcr.io/tgragnato/magnetico:next --help`
+- `docker run --rm -it -v <your_data_dir>:/data -p 8080:8080/tcp ghcr.io/tgragnato/magnetico:next --database=sqlite3:///data/magnetico.sqlite3 --max-rps=1000 --addr=0.0.0.0:8080`
+
+The easiest way to run magnetico on Apple Silicon is to use the OCI image built within the CI pipeline and use the platform flag:
+- `docker pull --platform=linux/amd64 ghcr.io/tgragnato/magnetico:next`
+- `docker run --platform=linux/amd64 --rm -it ghcr.io/tgragnato/magnetico:next --help`
+- `docker run --platform=linux/amd64 --rm -it -v <your_data_dir>:/data -p 8080:8080/tcp ghcr.io/tgragnato/magnetico:next --database=sqlite3:///data/magnetico.sqlite3 --max-rps=1000 --addr=0.0.0.0:8080`
+
+Compilation using the standard golang toolchain:
+- Download the latest golang release from [the official website](https://go.dev/dl/)
+- Follow the [installation instructions for your platform](https://go.dev/doc/install)
+- Run `go install --tags fts5 .`
+- The `magnetico` binary is now available in your `$GOBIN` directory
+
 ## Features
 
 Easy installation & minimal requirements:
