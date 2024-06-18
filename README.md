@@ -7,12 +7,12 @@
 
 ![Flow of Operations](/doc/operations.svg)
 
-magnetico is the first autonomous (self-hosted) BitTorrent DHT search engine suite that is *designed for end-users*. The suite consists of two packages:
+magnetico is the first autonomous (self-hosted) BitTorrent DHT search engine suite that is *designed for end-users*. The suite consists of a single binary with two components:
 
-- **magneticod:** is the daemon that crawls the BitTorrent DHT network in the background to discover info hashes and fetches metadata from the peers.
-- **magneticow:** is a lightweight web interface to search and to browse the torrents that its counterpart discovered.
+- a crawler for the BitTorrent DHT network, which discovers info hashes and fetches metadata from the peers.
+- a lightweight web interface for searching and browsing the torrents discovered by its counterpart.
 
-Both programs, combined together, allows anyone with a decent Internet connection to access the vast amount of torrents waiting to be discovered within the BitTorrent DHT space, *without relying on any central entity*.
+This allows anyone with a decent Internet connection to access the vast amount of torrents waiting to be discovered within the BitTorrent DHT space, *without relying on any central entity*.
 
 **magnetico** liberates BitTorrent from the yoke of centralised trackers & web-sites and makes it
 *truly decentralised*. Finally!
@@ -29,7 +29,7 @@ The easiest way to run magnetico on Apple Silicon is to use the OCI image built 
 - `docker run --platform=linux/amd64 --rm -it ghcr.io/tgragnato/magnetico:next --help`
 - `docker run --platform=linux/amd64 --rm -it -v <your_data_dir>:/data -p 8080:8080/tcp ghcr.io/tgragnato/magnetico:next --database=sqlite3:///data/magnetico.sqlite3 --max-rps=1000 --addr=0.0.0.0:8080`
 
-Compilation using the standard golang toolchain:
+To compile using the standard Golang toolchain:
 - Download the latest golang release from [the official website](https://go.dev/dl/)
 - Follow the [installation instructions for your platform](https://go.dev/doc/install)
 - Run `go install --tags fts5 .`
@@ -41,19 +41,15 @@ Easy installation & minimal requirements:
   - Easy to build golang static binaries.
   - Root access is *not* required to install or to use.
 
-### Magneticod
+**magnetico** trawls the BitTorrent DHT by "going" from one node to another, and fetches the metadata using the nodes without using trackers. No reliance on any centralised entity!
 
-**magneticod** trawls the BitTorrent DHT by "going" from one node to another, and fetches the metadata using the nodes without using trackers. No reliance on any centralised entity!
+Unlike client-server model that web applications use, P2P networks are *chaotic* and **magnetico** is designed to handle all the operational errors accordingly.
 
-Unlike client-server model that web applications use, P2P networks are *chaotic* and **magneticod** is designed to handle all the operational errors accordingly.
+High performance implementation in Go: **magnetico** utilizes every bit of your resources to discover as many infohashes & metadata as possible.
 
-High performance implementation in Go: **magneticod** utilizes every bit of your resources to discover as many infohashes & metadata as possible.
+**magnetico** features a lightweight web interface to help you access the database without getting on your way.
 
-### Magneticow
-
-**magneticow** features a lightweight web interface to help you access the database without getting on your way.
-
-If you'd like to password-protect the access to **magneticow**, you need to store the credentials
+If you'd like to password-protect the access to **magnetico**, you need to store the credentials
 in file. The `credentials` file must consist of lines of the following format: `<USERNAME>:<BCRYPT HASH>`.
 
 - `<USERNAME>` must start with a small-case (`[a-z]`) ASCII character, might contain non-consecutive underscores except at the end, and consists of small-case a-z characters and digits 0-9.
