@@ -20,7 +20,8 @@ type PieceCompletion interface {
 func pieceCompletionForDir(dir string) (ret PieceCompletion) {
 	ret, err := NewBoltPieceCompletion(dir)
 	if err != nil {
-		log.Printf("couldn't open piece completion db in %q: %s", dir, err)
+		// This kinda sux using the global logger. This code is ancient.
+		log.Levelf(log.Warning, "couldn't open piece completion db in %q: %s", dir, err)
 		ret = NewMapPieceCompletion()
 	}
 	return
