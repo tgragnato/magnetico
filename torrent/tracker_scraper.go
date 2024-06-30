@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/anacrolix/dht/v2/krpc"
-	"github.com/anacrolix/log"
 
 	"github.com/anacrolix/torrent/tracker"
 )
@@ -164,7 +163,6 @@ func (me *trackerScraper) announce(
 	// closed.
 	ctx, cancel := context.WithTimeout(ctx, tracker.DefaultTrackerAnnounceTimeout)
 	defer cancel()
-	me.t.logger.WithDefaultLevel(log.Debug).Printf("announcing to %q: %#v", me.u.String(), req)
 	res, err := tracker.Announce{
 		Context:             ctx,
 		HttpProxy:           me.t.cl.config.HTTPProxy,
@@ -179,9 +177,7 @@ func (me *trackerScraper) announce(
 		UdpNetwork:          me.u.Scheme,
 		ClientIp4:           krpc.NodeAddr{IP: me.t.cl.config.PublicIp4},
 		ClientIp6:           krpc.NodeAddr{IP: me.t.cl.config.PublicIp6},
-		Logger:              me.t.logger,
 	}.Do()
-	me.t.logger.WithDefaultLevel(log.Debug).Printf("announce to %q returned %#v: %v", me.u.String(), res, err)
 	if err != nil {
 		ret.Err = fmt.Errorf("announcing: %w", err)
 		return

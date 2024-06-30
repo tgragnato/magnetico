@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/anacrolix/chansync"
-	"github.com/anacrolix/log"
 )
 
 type Reservation struct {
@@ -76,10 +75,7 @@ func (me *Reservation) wake() bool {
 
 func (me *Reservation) Wait(ctx context.Context) error {
 	if me.n > me.l.Max {
-		return log.WithLevel(
-			log.Warning,
-			fmt.Errorf("reservation for %v exceeds limiter max %v", me.n, me.l.Max),
-		)
+		return fmt.Errorf("reservation for %v exceeds limiter max %v", me.n, me.l.Max)
 	}
 	select {
 	case <-ctx.Done():

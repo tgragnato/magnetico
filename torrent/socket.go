@@ -10,7 +10,6 @@ import (
 	"syscall"
 
 	g "github.com/anacrolix/generics"
-	"github.com/anacrolix/log"
 	"github.com/anacrolix/missinggo/perf"
 	"github.com/anacrolix/missinggo/v2"
 )
@@ -29,12 +28,12 @@ type socket interface {
 	Close() error
 }
 
-func listen(n network, addr string, f firewallCallback, logger log.Logger) (socket, error) {
+func listen(n network, addr string, f firewallCallback) (socket, error) {
 	switch {
 	case n.Tcp:
 		return listenTcp(n.String(), addr)
 	case n.Udp:
-		return listenUtp(n.String(), addr, f, logger)
+		return listenUtp(n.String(), addr, f)
 	default:
 		panic(n)
 	}
@@ -79,7 +78,6 @@ func listenTcp(network, address string) (s socket, err error) {
 				err = setSockNoLinger(fd)
 				if err != nil {
 					// Failing to disable linger is undesirable, but not fatal.
-					log.Levelf(log.Debug, "error setting linger socket option on tcp socket: %v", err)
 					err = nil
 				}
 				// This is no longer required I think, see
@@ -119,7 +117,6 @@ func listenAll(
 	getHost func(string) string,
 	port int,
 	f firewallCallback,
-	logger log.Logger,
 ) ([]socket, error) {
 	if len(networks) == 0 {
 		return nil, nil
@@ -129,7 +126,7 @@ func listenAll(
 		nahs = append(nahs, networkAndHost{n, getHost(n.String())})
 	}
 	for {
-		ss, retry, err := listenAllRetry(nahs, port, f, logger)
+		ss, retry, err := listenAllRetry(nahs, port, f)
 		if !retry {
 			return ss, err
 		}
@@ -159,7 +156,6 @@ func listenAllRetry(
 	nahs []networkAndHost,
 	port int,
 	f firewallCallback,
-	logger log.Logger,
 ) (ss []socket, retry bool, err error) {
 	// Close all sockets on error or retry.
 	defer func() {
@@ -174,7 +170,7 @@ func listenAllRetry(
 	portStr := strconv.FormatInt(int64(port), 10)
 	for _, nah := range nahs {
 		var s socket
-		s, err = listen(nah.Network, net.JoinHostPort(nah.Host, portStr), f, logger)
+		s, err = listen(nah.Network, net.JoinHostPort(nah.Host, portStr), f)
 		if err != nil {
 			if isUnsupportedNetworkError(err) {
 				err = nil
@@ -198,8 +194,8 @@ func listenAllRetry(
 // This isn't aliased from go-libutp since that assumes CGO.
 type firewallCallback func(net.Addr) bool
 
-func listenUtp(network, addr string, fc firewallCallback, logger log.Logger) (socket, error) {
-	us, err := NewUtpSocket(network, addr, fc, logger)
+func listenUtp(network, addr string, fc firewallCallback) (socket, error) {
+	us, err := NewUtpSocket(network, addr, fc)
 	return utpSocketSocket{us, network}, err
 }
 

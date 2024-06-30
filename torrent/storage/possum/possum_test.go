@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	g "github.com/anacrolix/generics"
-	"github.com/anacrolix/log"
 	possum "github.com/anacrolix/possum/go"
 	possumResource "github.com/anacrolix/possum/go/resource"
 
@@ -24,7 +23,7 @@ func BenchmarkProvider(b *testing.B) {
 	})
 	defer possumDir.Close()
 	possumProvider := possumResource.Provider{Handle: possumDir}
-	possumTorrentProvider := Provider{Provider: possumProvider, Logger: log.Default}
+	possumTorrentProvider := Provider{Provider: possumProvider}
 	clientStorageImpl := storage.NewResourcePiecesOpts(
 		possumTorrentProvider,
 		storage.ResourcePiecesOpts{LeaveIncompleteChunks: true})

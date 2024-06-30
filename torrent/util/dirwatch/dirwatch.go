@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/anacrolix/log"
 	"github.com/anacrolix/missinggo/v2"
 	"github.com/fsnotify/fsnotify"
 
@@ -40,7 +39,6 @@ type Instance struct {
 	dirName  string
 	Events   chan Event
 	dirState map[metainfo.Hash]entity
-	Logger   log.Logger
 }
 
 func (i *Instance) Close() {
@@ -50,20 +48,13 @@ func (i *Instance) Close() {
 func (i *Instance) handleEvents() {
 	defer close(i.Events)
 	for e := range i.w.Events {
-		i.Logger.WithDefaultLevel(log.Debug).Printf("event: %v", e)
-		if e.Op == fsnotify.Write {
-			// TODO: Special treatment as an existing torrent may have changed.
-		} else {
+		if e.Op != fsnotify.Write {
 			i.refresh()
 		}
 	}
 }
 
-func (i *Instance) handleErrors() {
-	for err := range i.w.Errors {
-		log.Printf("error in torrent directory watcher: %s", err)
-	}
-}
+func (i *Instance) handleErrors() {}
 
 func torrentFileInfoHash(fileName string) (ih metainfo.Hash, ok bool) {
 	mi, _ := metainfo.LoadFromFile(fileName)
@@ -78,13 +69,11 @@ func torrentFileInfoHash(fileName string) (ih metainfo.Hash, ok bool) {
 func scanDir(dirName string) (ee map[metainfo.Hash]entity) {
 	d, err := os.Open(dirName)
 	if err != nil {
-		log.Print(err)
 		return
 	}
 	defer d.Close()
 	names, err := d.Readdirnames(-1)
 	if err != nil {
-		log.Print(err)
 		return
 	}
 	ee = make(map[metainfo.Hash]entity, len(names))
@@ -113,13 +102,11 @@ func scanDir(dirName string) (ee map[metainfo.Hash]entity) {
 		case ".magnet":
 			uris, err := magnetFileURIs(fullName)
 			if err != nil {
-				log.Print(err)
 				break
 			}
 			for _, uri := range uris {
 				m, err := metainfo.ParseMagnetUri(uri)
 				if err != nil {
-					log.Printf("error parsing %q in file %q: %s", uri, fullName, err)
 					continue
 				}
 				addEntity(entity{
@@ -204,7 +191,6 @@ func New(dirName string) (i *Instance, err error) {
 		dirName:  dirName,
 		Events:   make(chan Event),
 		dirState: make(map[metainfo.Hash]entity),
-		Logger:   log.Default,
 	}
 	go func() {
 		i.refresh()

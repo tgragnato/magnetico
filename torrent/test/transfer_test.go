@@ -8,7 +8,6 @@ import (
 	"testing/iotest"
 	"time"
 
-	"github.com/anacrolix/log"
 	"github.com/anacrolix/missinggo/v2/filecache"
 	qt "github.com/frankban/quicktest"
 	"github.com/stretchr/testify/assert"
@@ -159,8 +158,6 @@ func testSeedAfterDownloading(t *testing.T, disableUtp bool) {
 	// error decoding. However it shouldn't because a client should only be receiving pieces sized
 	// to the chunk size it expects.
 	cfg.DisablePEX = true
-	//cfg.Debug = true
-	cfg.Logger = log.Default.WithContextText("leecher")
 	leecher, err := torrent.NewClient(cfg)
 	require.NoError(t, err)
 	defer leecher.Close()
@@ -171,7 +168,6 @@ func testSeedAfterDownloading(t *testing.T, disableUtp bool) {
 	cfg.Seed = false
 	cfg.DataDir = t.TempDir()
 	cfg.MaxAllocPeerRequestDataPerConn = 4
-	cfg.Logger = log.Default.WithContextText("leecher-leecher")
 	cfg.Debug = true
 	leecherLeecher, _ := torrent.NewClient(cfg)
 	require.NoError(t, err)

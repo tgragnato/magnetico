@@ -6,7 +6,6 @@ import (
 	"time"
 
 	g "github.com/anacrolix/generics"
-	"github.com/anacrolix/log"
 
 	pp "github.com/anacrolix/torrent/peer_protocol"
 )
@@ -26,7 +25,6 @@ type pexConnState struct {
 	readyfn func()
 	torrent *Torrent
 	Listed  bool
-	logger  log.Logger
 	// Running record of live connections the remote end of the connection purports to have.
 	remoteLiveConns map[netip.AddrPort]g.Option[pp.PexPeerFlags]
 	lastRecv        time.Time
@@ -45,7 +43,6 @@ func (s *pexConnState) Init(c *PeerConn) {
 	s.xid = xid
 	s.last = nil
 	s.torrent = c.t
-	s.logger = c.logger.WithDefaultLevel(log.Debug).WithNames("pex")
 	s.readyfn = c.tickleWriter
 	s.gate = make(chan struct{}, 1)
 	s.timer = time.AfterFunc(0, func() {
@@ -83,7 +80,6 @@ func (s *pexConnState) Share(postfn messageWriter) bool {
 	select {
 	case <-s.gate:
 		if tx := s.genmsg(); tx != nil {
-			s.logger.Print("sending PEX message: ", tx)
 			flow := postfn(tx.Message(s.xid))
 			s.sched(pexInterval)
 			return flow
@@ -126,7 +122,6 @@ func (s *pexConnState) Recv(payload []byte) error {
 	if err != nil {
 		return fmt.Errorf("unmarshalling pex message: %w", err)
 	}
-	s.logger.Printf("received pex message: %v", rx)
 	torrent.Add("pex added peers received", int64(len(rx.Added)))
 	torrent.Add("pex added6 peers received", int64(len(rx.Added6)))
 
@@ -142,11 +137,9 @@ func (s *pexConnState) Recv(payload []byte) error {
 	peers.AppendFromPex(rx.Added6, rx.Added6Flags)
 	peers.AppendFromPex(rx.Added, rx.AddedFlags)
 	if time.Now().Before(s.torrent.pex.rest) {
-		s.logger.Printf("in cooldown period, incoming PEX discarded")
 		return nil
 	}
-	added := s.torrent.addPeers(peers)
-	s.logger.Printf("got %v peers over pex, added %v", len(peers), added)
+	s.torrent.addPeers(peers)
 
 	if len(peers) > 0 {
 		s.torrent.pex.rest = time.Now().Add(pexInterval)

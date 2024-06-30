@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/anacrolix/bargle"
-	"github.com/anacrolix/log"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/bencode"
@@ -43,9 +42,6 @@ func serve() (cmd bargle.Command) {
 			err = info.BuildFromFilePath(filePath)
 			if err != nil {
 				return fmt.Errorf("building info from path %q: %w", filePath, err)
-			}
-			for _, fi := range info.UpvertedFiles() {
-				log.Printf("added %q", fi.BestPath())
 			}
 			mi := metainfo.MetaInfo{
 				InfoBytes: bencode.MustMarshal(info),

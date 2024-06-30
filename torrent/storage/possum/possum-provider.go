@@ -9,7 +9,6 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/anacrolix/log"
 	possum "github.com/anacrolix/possum/go"
 	possumResource "github.com/anacrolix/possum/go/resource"
 
@@ -22,7 +21,6 @@ import (
 // them.
 type Provider struct {
 	possumResource.Provider
-	Logger log.Logger
 }
 
 var _ storage.ConsecutiveChunkReader = Provider{}
@@ -49,7 +47,6 @@ func (o keySorter[T, K]) Swap(i, j int) {
 // TODO: Should the parent ReadConsecutiveChunks method take the expected number of bytes to avoid
 // trying to read discontinuous or incomplete sequences of chunks?
 func (p Provider) ReadConsecutiveChunks(prefix string) (rc io.ReadCloser, err error) {
-	p.Logger.Levelf(log.Debug, "ReadConsecutiveChunks(%q)", prefix)
 	//debug.PrintStack()
 	pr, err := p.Handle.NewReader()
 	if err != nil {

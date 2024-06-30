@@ -14,7 +14,6 @@ require (
 	github.com/anacrolix/generics v0.0.2-0.20240227122613-f95486179cab
 	github.com/anacrolix/go-libutp v1.3.1
 	github.com/anacrolix/gostdapp v0.1.0
-	github.com/anacrolix/log v0.15.2
 	github.com/anacrolix/missinggo v1.3.0
 	github.com/anacrolix/missinggo/perf v1.0.0
 	github.com/anacrolix/missinggo/v2 v2.7.3
@@ -38,7 +37,6 @@ require (
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/multiformats/go-multihash v0.2.3
 	github.com/pion/datachannel v1.5.6
-	github.com/pion/logging v0.2.2
 	github.com/pion/webrtc/v3 v3.2.43
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.19.1
@@ -59,6 +57,7 @@ require (
 	github.com/alecthomas/atomic v0.1.0-alpha2 // indirect
 	github.com/alexflint/go-scalar v1.2.0 // indirect
 	github.com/anacrolix/backtrace v0.0.0-20221205112523-22a61db8f82e // indirect
+	github.com/anacrolix/log v0.15.2 // indirect
 	github.com/anacrolix/mmsg v1.0.0 // indirect
 	github.com/anacrolix/stm v0.5.0 // indirect
 	github.com/benbjohnson/immutable v0.4.3 // indirect
@@ -86,6 +85,7 @@ require (
 	github.com/pion/dtls/v2 v2.2.11 // indirect
 	github.com/pion/ice/v2 v2.3.25 // indirect
 	github.com/pion/interceptor v0.1.29 // indirect
+	github.com/pion/logging v0.2.2 // indirect
 	github.com/pion/mdns v0.0.12 // indirect
 	github.com/pion/randutil v0.1.0 // indirect
 	github.com/pion/rtcp v1.2.14 // indirect

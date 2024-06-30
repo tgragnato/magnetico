@@ -13,7 +13,6 @@ import (
 	"testing/iotest"
 	"time"
 
-	"github.com/anacrolix/log"
 	"github.com/anacrolix/missinggo/v2/iter"
 	qt "github.com/frankban/quicktest"
 	"github.com/stretchr/testify/assert"
@@ -43,7 +42,6 @@ func TestHolepunchConnect(t *testing.T) {
 	// Ensure that responding to holepunch connects don't wait around for the dial limit. We also
 	// have to allow the initial connection to the leecher though, so it can rendezvous for us.
 	cfg.DialRateLimiter = rate.NewLimiter(0, 1)
-	cfg.Logger = cfg.Logger.WithContextText("seeder")
 	seeder, err := NewClient(cfg)
 	require.NoError(t, err)
 	defer seeder.Close()
@@ -57,7 +55,6 @@ func TestHolepunchConnect(t *testing.T) {
 	cfg.Seed = true
 	cfg.DataDir = t.TempDir()
 	cfg.AlwaysWantConns = true
-	cfg.Logger = cfg.Logger.WithContextText("leecher")
 	// This way the leecher leecher will still try to use this peer as a relay, but won't be told
 	// about the seeder via PEX.
 	//cfg.DisablePEX = true
@@ -73,7 +70,6 @@ func TestHolepunchConnect(t *testing.T) {
 	cfg.MaxAllocPeerRequestDataPerConn = 4
 	cfg.Debug = true
 	cfg.NominalDialTimeout = time.Second
-	cfg.Logger = cfg.Logger.WithContextText("leecher-leecher")
 	//cfg.DisableUTP = true
 	leecherLeecher, _ := NewClient(cfg)
 	require.NoError(t, err)
@@ -110,7 +106,6 @@ func TestHolepunchConnect(t *testing.T) {
 	time.Sleep(time.Second)
 	llg.cl.lock()
 	targetAddr := seeder.ListenAddrs()[0]
-	log.Printf("trying to initiate to %v", targetAddr)
 	initiateConn(outgoingConnOpts{
 		peerInfo: PeerInfo{
 			Addr: targetAddr,
@@ -321,7 +316,6 @@ func TestUtpSimultaneousOpen(t *testing.T) {
 			func(net.Addr) bool {
 				return false
 			},
-			log.Default,
 		)
 		c.Assert(err, qt.IsNil)
 		return socket
@@ -376,7 +370,7 @@ func TestUtpDirectDialMsg(t *testing.T) {
 	newUtpSocket := func(addr string) utpSocket {
 		socket, err := NewUtpSocket(network, addr, func(net.Addr) bool {
 			return false
-		}, log.Default)
+		})
 		c.Assert(err, qt.IsNil)
 		return socket
 	}

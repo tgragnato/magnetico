@@ -12,7 +12,6 @@ import (
 	"github.com/RoaringBitmap/roaring"
 	"github.com/anacrolix/chansync"
 	. "github.com/anacrolix/generics"
-	"github.com/anacrolix/log"
 	"github.com/anacrolix/missinggo/iter"
 	"github.com/anacrolix/missinggo/v2/bitmap"
 	"github.com/anacrolix/multiless"
@@ -95,8 +94,6 @@ type (
 		peerAllowedFast   typedRoaring.Bitmap[pieceIndex]
 
 		PeerMaxRequests maxRequests // Maximum pending requests the peer allows.
-
-		logger log.Logger
 	}
 
 	PeerSource string
@@ -400,7 +397,6 @@ func (cn *Peer) setInterested(interested bool) bool {
 		cn.priorInterest += time.Since(cn.lastBecameInterested)
 	}
 	cn.updateExpectingChunks()
-	// log.Printf("%p: setting interest: %v", cn, interested)
 	return cn.writeInterested(interested)
 }
 
@@ -614,7 +610,6 @@ func (c *Peer) receiveChunk(msg *pp.Message) error {
 	t := c.t
 	err := t.checkValidReceiveChunk(ppReq)
 	if err != nil {
-		err = log.WithLevel(log.Warning, err)
 		return err
 	}
 	req := c.t.requestIndexFromRequest(ppReq)
@@ -721,7 +716,6 @@ func (c *Peer) receiveChunk(msg *pp.Message) error {
 	piece.decrementPendingWrites()
 
 	if err != nil {
-		c.logger.WithDefaultLevel(log.Error).Printf("writing received chunk %v: %v", req, err)
 		t.pendRequest(req)
 		// Necessary to pass TestReceiveChunkStorageFailureSeederFastExtensionDisabled. I think a
 		// request update runs while we're writing the chunk that just failed. Then we never do a

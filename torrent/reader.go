@@ -7,7 +7,6 @@ import (
 	"io"
 	"sync"
 
-	"github.com/anacrolix/log"
 	"github.com/anacrolix/missinggo/v2"
 )
 
@@ -238,7 +237,6 @@ func (r *reader) readOnceAt(ctx context.Context, b []byte, pos int64) (n int, er
 			return
 		}
 		firstPieceIndex := pieceIndex(r.torrentOffset(pos) / r.t.info.PieceLength)
-		firstPieceOffset := r.torrentOffset(pos) % r.t.info.PieceLength
 		b1 := missinggo.LimitLen(b, avail)
 		n, err = r.t.readAt(b1, r.torrentOffset(pos))
 		if n != 0 {
@@ -261,11 +259,7 @@ func (r *reader) readOnceAt(ctx context.Context, b []byte, pos int64) (n int, er
 			}
 			// TODO: Just reset pieces in the readahead window. This might help
 			// prevent thrashing with small caches and file and piece priorities.
-			r.log(log.Fstr("error reading piece %d offset %d, %d bytes: %v",
-				firstPieceIndex, firstPieceOffset, len(b1), err))
-			if !r.t.updatePieceCompletion(firstPieceIndex) {
-				r.log(log.Fstr("piece %d completion unchanged", firstPieceIndex))
-			}
+			r.t.updatePieceCompletion(firstPieceIndex)
 			// Update the rest of the piece completions in the readahead window, without alerting to
 			// changes (since only the first piece, the one above, could have generated the read error
 			// we're currently handling).
@@ -294,7 +288,6 @@ func (r *reader) posChanged() {
 		return
 	}
 	r.pieces = to
-	// log.Printf("reader pos changed %v->%v", from, to)
 	r.t.readerPosChanged(from, to)
 }
 
@@ -320,10 +313,6 @@ func (r *reader) Seek(off int64, whence int) (newPos int64, err error) {
 	}
 	r.mu.Unlock()
 	return
-}
-
-func (r *reader) log(m log.Msg) {
-	r.t.logger.LogLevel(log.Debug, m.Skip(1))
 }
 
 // Implementation inspired by https://news.ycombinator.com/item?id=27019613.

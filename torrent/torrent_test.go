@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	g "github.com/anacrolix/generics"
-	"github.com/anacrolix/log"
 	"github.com/anacrolix/missinggo/v2"
 	"github.com/anacrolix/missinggo/v2/bitmap"
 	qt "github.com/frankban/quicktest"
@@ -88,7 +87,6 @@ func BenchmarkUpdatePiecePriorities(b *testing.B) {
 		pieceLength = 256 << 10
 	)
 	cl := &Client{config: TestingConfig(b)}
-	cl.initLogger()
 	t := cl.newTorrentForTesting()
 	require.NoError(b, t.setInfo(&metainfo.Info{
 		Pieces:      make([]byte, metainfo.HashSize*numPieces),
@@ -230,7 +228,6 @@ func TestRelativeAvailabilityHaveNone(t *testing.T) {
 	}
 	tt := Torrent{
 		cl:           &cl,
-		logger:       log.Default,
 		gotMetainfoC: make(chan struct{}),
 	}
 	tt.setChunkSize(2)

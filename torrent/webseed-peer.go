@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
-	"github.com/anacrolix/log"
 
 	"github.com/anacrolix/torrent/metainfo"
 	pp "github.com/anacrolix/torrent/peer_protocol"
@@ -102,9 +101,6 @@ start:
 			}
 			err := ws.doRequest(r)
 			ws.requesterCond.L.Unlock()
-			if err != nil && !errors.Is(err, context.Canceled) {
-				ws.peer.logger.Printf("requester %v: error doing webseed request %v: %v", i, r, err)
-			}
 			restart = true
 			if errors.Is(err, webseed.ErrTooFast) {
 				time.Sleep(time.Duration(rand.Int63n(int64(10 * time.Second))))
@@ -146,7 +142,6 @@ func (ws *webseedPeer) handleUpdateRequests() {
 }
 
 func (ws *webseedPeer) onClose() {
-	ws.peer.logger.Levelf(log.Debug, "closing")
 	// Just deleting them means we would have to manually cancel active requests.
 	ws.peer.cancelAllRequests()
 	ws.peer.t.iterPeers(func(p *Peer) {
@@ -180,14 +175,7 @@ func (ws *webseedPeer) requestResultHandler(r Request, webseedRequest webseed.Re
 		case errors.Is(err, webseed.ErrTooFast):
 		case ws.peer.closed.IsSet():
 		default:
-			ws.peer.logger.Printf("Request %v rejected: %v", r, result.Err)
-			// // Here lies my attempt to extract something concrete from Go's error system. RIP.
-			// cfg := spew.NewDefaultConfig()
-			// cfg.DisableMethods = true
-			// cfg.Dump(result.Err)
-
 			if webseedPeerCloseOnUnhandledError {
-				log.Printf("closing %v", ws)
 				ws.peer.close()
 			} else {
 				ws.lastUnhandledErr = time.Now()

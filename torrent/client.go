@@ -24,7 +24,6 @@ import (
 	"github.com/anacrolix/dht/v2/krpc"
 	. "github.com/anacrolix/generics"
 	g "github.com/anacrolix/generics"
-	"github.com/anacrolix/log"
 	"github.com/anacrolix/missinggo/perf"
 	"github.com/anacrolix/missinggo/v2"
 	"github.com/anacrolix/missinggo/v2/bitmap"
@@ -64,7 +63,6 @@ type Client struct {
 	closed chansync.SetOnce
 
 	config *ClientConfig
-	logger log.Logger
 
 	peerID         PeerID
 	defaultStorage *storage.Client
@@ -187,17 +185,6 @@ func (cl *Client) WriteStatus(_w io.Writer) {
 	}
 }
 
-func (cl *Client) initLogger() {
-	logger := cl.config.Logger
-	if logger.IsZero() {
-		logger = log.Default
-	}
-	if cl.config.Debug {
-		logger = logger.WithFilterLevel(log.Debug)
-	}
-	cl.logger = logger.WithValues(cl)
-}
-
 func (cl *Client) announceKey() int32 {
 	return int32(binary.BigEndian.Uint32(cl.peerID[16:20]))
 }
@@ -235,8 +222,6 @@ func NewClient(cfg *ClientConfig) (cl *Client, err error) {
 	cl = &Client{}
 	cl.init(cfg)
 	go cl.acceptLimitClearer()
-	cl.initLogger()
-	//cl.logger.Levelf(log.Critical, "test after init")
 	defer func() {
 		if err != nil {
 			cl.Close()
@@ -249,9 +234,7 @@ func NewClient(cfg *ClientConfig) (cl *Client, err error) {
 		// We'd use mmap by default but HFS+ doesn't support sparse files.
 		storageImplCloser := storage.NewFile(cfg.DataDir)
 		cl.onClose = append(cl.onClose, func() {
-			if err := storageImplCloser.Close(); err != nil {
-				cl.logger.Printf("error closing default storage: %s", err)
-			}
+			storageImplCloser.Close()
 		})
 		storageImpl = storageImplCloser
 	}
@@ -273,7 +256,6 @@ func NewClient(cfg *ClientConfig) (cl *Client, err error) {
 		cl.config.ListenHost,
 		cl.config.ListenPort,
 		cl.firewallCallback,
-		cl.logger,
 	)
 	if err != nil {
 		return
@@ -313,7 +295,6 @@ func NewClient(cfg *ClientConfig) (cl *Client, err error) {
 
 	cl.websocketTrackers = websocketTrackers{
 		PeerId: cl.peerID,
-		Logger: cl.logger,
 		GetAnnounceRequest: func(
 			event tracker.AnnounceEvent, infoHash [20]byte,
 		) (
@@ -336,10 +317,6 @@ func NewClient(cfg *ClientConfig) (cl *Client, err error) {
 			defer cl.unlock()
 			t, ok := cl.torrentsByShortHash[dcc.InfoHash]
 			if !ok {
-				cl.logger.WithDefaultLevel(log.Warning).Printf(
-					"got webrtc conn for unloaded torrent with infohash %x",
-					dcc.InfoHash,
-				)
 				dc.Close()
 				return
 			}
@@ -417,7 +394,6 @@ func (cl *Client) listenNetworks() (ns []network) {
 
 // Creates an anacrolix/dht Server, as would be done internally in NewClient, for the given conn.
 func (cl *Client) NewAnacrolixDhtServer(conn net.PacketConn) (s *dht.Server, err error) {
-	logger := cl.logger.WithNames("dht", conn.LocalAddr().String())
 	cfg := dht.ServerConfig{
 		IPBlocklist:    cl.ipBlockList,
 		Conn:           conn,
@@ -430,7 +406,6 @@ func (cl *Client) NewAnacrolixDhtServer(conn net.PacketConn) (s *dht.Server, err
 		}(),
 		StartingNodes: cl.config.DhtStartingNodes(conn.LocalAddr().Network()),
 		OnQuery:       cl.config.DHTOnQuery,
-		Logger:        logger,
 	}
 	if f := cl.config.ConfigureAnacrolixDhtServer; f != nil {
 		f(&cfg)
@@ -557,26 +532,15 @@ func (cl *Client) acceptConnections(l Listener) {
 			return
 		}
 		if err != nil {
-			log.Fmsg("error accepting connection: %s", err).LogLevel(log.Debug, cl.logger)
 			continue
 		}
 		go func() {
 			if reject != nil {
 				torrent.Add("rejected accepted connections", 1)
-				cl.logger.LazyLog(log.Debug, func() log.Msg {
-					return log.Fmsg("rejecting accepted conn: %v", reject)
-				})
 				conn.Close()
 			} else {
 				go cl.incomingConnection(conn)
 			}
-			cl.logger.LazyLog(log.Debug, func() log.Msg {
-				return log.Fmsg("accepted %q connection at %q from %q",
-					l.Addr().Network(),
-					conn.LocalAddr(),
-					conn.RemoteAddr(),
-				)
-			})
 			torrent.Add(fmt.Sprintf("accepted conn remote IP len=%d", len(addrIpOrNil(conn.RemoteAddr()))), 1)
 			torrent.Add(fmt.Sprintf("accepted conn network=%s", conn.RemoteAddr().Network()), 1)
 			torrent.Add(fmt.Sprintf("accepted on %s listener", l.Addr().Network()), 1)
@@ -666,9 +630,6 @@ func DialFirst(ctx context.Context, addr string, dialers []Dialer) (res DialResu
 
 func dialFromSocket(ctx context.Context, s Dialer, addr string) net.Conn {
 	c, err := s.Dial(ctx, addr)
-	if err != nil {
-		log.ContextLogger(ctx).Levelf(log.Debug, "error dialing %q: %v", addr, err)
-	}
 	// This is a bit optimistic, but it looks non-trivial to thread this through the proxy code. Set
 	// it now in case we close the connection forthwith. Note this is also done in the TCP dialer
 	// code to increase the chance it's done.
@@ -823,11 +784,6 @@ func (cl *Client) dialAndCompleteHandshake(opts outgoingConnOpts) (c *PeerConn, 
 		torrent.Add("initiated conn with preferred header obfuscation", 1)
 		return
 	}
-	c.logger.Levelf(
-		log.Debug,
-		"error doing protocol handshake with header obfuscation %v",
-		obfuscatedHeaderFirst,
-	)
 	firstDialResult.Conn.Close()
 	// We should have just tried with the preferred header obfuscation. If it was required, there's nothing else to try.
 	if headerObfuscationPolicy.RequirePreferred {
@@ -853,11 +809,6 @@ func (cl *Client) dialAndCompleteHandshake(opts outgoingConnOpts) (c *PeerConn, 
 		torrent.Add("initiated conn with fallback header obfuscation", 1)
 		return
 	}
-	c.logger.Levelf(
-		log.Debug,
-		"error doing protocol handshake with header obfuscation %v",
-		!obfuscatedHeaderFirst,
-	)
 	secondDialResult.Conn.Close()
 	return
 }
@@ -889,14 +840,6 @@ func (cl *Client) outgoingConnection(
 	// Don't release lock between here and addPeerConn, unless it's for failure.
 	cl.noLongerHalfOpen(opts.t, opts.peerInfo.Addr.String(), attemptKey)
 	if err != nil {
-		if cl.config.Debug {
-			cl.logger.Levelf(
-				log.Debug,
-				"error establishing outgoing connection to %v: %v",
-				opts.peerInfo.Addr,
-				err,
-			)
-		}
 		return
 	}
 	defer c.close()
@@ -1058,13 +1001,6 @@ func (cl *Client) runReceivedConn(c *PeerConn) {
 	}
 	t, err := cl.receiveHandshakes(c)
 	if err != nil {
-		cl.logger.LazyLog(log.Debug, func() log.Msg {
-			return log.Fmsg(
-				"error receiving handshakes on %v: %s", c, err,
-			).Add(
-				"network", c.Network,
-			)
-		})
 		torrent.Add("error receiving handshake", 1)
 		cl.lock()
 		cl.onBadAccept(c.RemoteAddr)
@@ -1073,9 +1009,6 @@ func (cl *Client) runReceivedConn(c *PeerConn) {
 	}
 	if t == nil {
 		torrent.Add("received handshake for unloaded torrent", 1)
-		cl.logger.LazyLog(log.Debug, func() log.Msg {
-			return log.Fmsg("received handshake for unloaded torrent")
-		})
 		cl.lock()
 		cl.onBadAccept(c.RemoteAddr)
 		cl.unlock()
@@ -1102,12 +1035,7 @@ func (t *Torrent) runHandshookConn(pc *PeerConn) error {
 			connsToSelf.Add(1)
 			addr := pc.RemoteAddr.String()
 			cl.dopplegangerAddrs[addr] = struct{}{}
-		} /* else {
-			// Because the remote address is not necessarily the same as its client's torrent listen
-			// address, we won't record the remote address as a doppleganger. Instead, the initiator
-			// can record *us* as the doppleganger.
-		} */
-		t.logger.Levelf(log.Debug, "local and remote peer ids are the same")
+		}
 		return nil
 	}
 	pc.r = deadlineReader{pc.conn, pc.r}
@@ -1250,22 +1178,13 @@ func (cl *Client) gotMetadataExtensionMsg(payload []byte, t *Torrent, c *PeerCon
 		}
 		t.saveMetadataPiece(piece, payload[begin:])
 		c.lastUsefulChunkReceived = time.Now()
-		err = t.maybeCompleteMetadata()
-		if err != nil {
-			// Log this at the Torrent-level, as we don't partition metadata by Peer yet, so we
-			// don't know who to blame. TODO: Also errors can be returned here that aren't related
-			// to verifying metadata, which should be fixed. This should be tagged with metadata, so
-			// log consumers can filter for this message.
-			t.logger.WithDefaultLevel(log.Warning).Printf("error completing metadata: %v", err)
-		}
-		return err
+		return t.maybeCompleteMetadata()
 	case pp.RequestMetadataExtensionMsgType:
 		if !t.haveMetadataPiece(piece) {
 			c.write(t.newMetadataExtensionMessage(c, pp.RejectMetadataExtensionMsgType, d.Piece, nil))
 			return nil
 		}
 		start := (1 << 14) * piece
-		c.protocolLogger.WithDefaultLevel(log.Debug).Printf("sending metadata piece %d", piece)
 		c.write(t.newMetadataExtensionMessage(c, pp.DataMetadataExtensionMsgType, piece, t.metadataBytes[start:start+t.metadataPieceSize(piece)]))
 		return nil
 	case pp.RejectMetadataExtensionMsgType:
@@ -1358,8 +1277,6 @@ func (cl *Client) newTorrentOpt(opts AddTorrentOpts) (t *Torrent) {
 	}
 	t.smartBanCache.Init()
 	t.networkingEnabled.Set()
-	t.logger = cl.logger.WithDefaultLevel(log.Debug)
-	t.sourcesLogger = t.logger.WithNames("sources")
 	if opts.ChunkSize == 0 {
 		opts.ChunkSize = defaultChunkSize
 	}
@@ -1596,7 +1513,6 @@ func (cl *Client) AddDhtNodes(nodes []string) {
 		hmp := missinggo.SplitHostMaybePort(n)
 		ip := net.ParseIP(hmp.Host)
 		if ip == nil {
-			cl.logger.Printf("won't add DHT node with bad IP: %q", hmp.Host)
 			continue
 		}
 		ni := krpc.NodeInfo{
@@ -1622,7 +1538,6 @@ func (cl *Client) banPeerIP(ip net.IP) {
 	for t := range cl.torrents {
 		t.iterPeers(func(p *Peer) {
 			if p.remoteIp().Equal(ip) {
-				t.logger.Levelf(log.Warning, "dropping peer %v with banned ip %v", p, ip)
 				// Should this be a close?
 				p.drop()
 			}
@@ -1667,18 +1582,11 @@ func (cl *Client) newConnection(nc net.Conn, opts newConnectionOpts) (c *PeerCon
 		}
 	}
 	c.peerImpl = c
-	c.logger = cl.logger.WithDefaultLevel(log.Warning).WithContextText(fmt.Sprintf("%T %p", c, c))
-	c.protocolLogger = c.logger.WithNames(protocolLoggingName)
 	c.setRW(connStatsReadWriter{nc, c})
 	c.r = &rateLimitedReader{
 		l: cl.config.DownloadRateLimiter,
 		r: c.r,
 	}
-	c.logger.Levelf(
-		log.Debug,
-		"inited with remoteAddr %v network %v outgoing %t",
-		opts.remoteAddr, opts.network, opts.outgoing,
-	)
 	for _, f := range cl.config.Callbacks.NewPeer {
 		f(&c.Peer)
 	}

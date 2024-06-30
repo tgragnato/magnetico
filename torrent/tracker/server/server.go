@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/anacrolix/generics"
-	"github.com/anacrolix/log"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -217,14 +216,10 @@ func (me *AnnounceHandler) augmentPeersFromUpstream(infoHash [20]byte) augmentat
 		pendingUpstreams.Add(1)
 		go func() {
 			started, err := me.UpstreamAnnounceGate.Start(announceCtx, url, infoHash, announceTimeout)
-			if err != nil {
-				log.Printf("error reserving announce for %x to %v: %v", infoHash, url, err)
-			}
 			if err != nil || !started {
 				peersChan <- nil
 				return
 			}
-			log.Printf("announcing %x upstream to %v", infoHash, url)
 			resp, err := client.Announce(announceCtx, subReq, tracker.AnnounceOpt{
 				UserAgent: "aragorn",
 			})
@@ -235,15 +230,9 @@ func (me *AnnounceHandler) augmentPeersFromUpstream(infoHash [20]byte) augmentat
 					// as it is to reduce load on our peer store.
 					interval = 5 * 60
 				}
-				err := me.UpstreamAnnounceGate.Completed(context.Background(), url, infoHash, interval)
-				if err != nil {
-					log.Printf("error recording completed announce for %x to %v: %v", infoHash, url, err)
-				}
+				me.UpstreamAnnounceGate.Completed(context.Background(), url, infoHash, interval)
 			}()
 			peersChan <- resp.Peers
-			if err != nil {
-				log.Levelf(log.Warning, "error announcing to upstream %q: %v", url, err)
-			}
 		}()
 	}
 	peersToTrack := make(map[string]Peer)
@@ -251,7 +240,6 @@ func (me *AnnounceHandler) augmentPeersFromUpstream(infoHash [20]byte) augmentat
 		pendingUpstreams.Wait()
 		cancel()
 		close(peersChan)
-		log.Levelf(log.Debug, "adding %v distinct peers from upstream trackers", len(peersToTrack))
 		for _, peer := range peersToTrack {
 			addrPort, ok := peer.ToNetipAddrPort()
 			if !ok {
@@ -266,10 +254,7 @@ func (me *AnnounceHandler) augmentPeersFromUpstream(infoHash [20]byte) augmentat
 			}
 			copy(trackReq.PeerId[:], peer.ID)
 			// TODO: How do we know if these peers are leechers or seeders?
-			err := me.AnnounceTracker.TrackAnnounce(context.TODO(), trackReq, addrPort)
-			if err != nil {
-				log.Levelf(log.Error, "error tracking upstream peer: %v", err)
-			}
+			me.AnnounceTracker.TrackAnnounce(context.TODO(), trackReq, addrPort)
 		}
 		me.mu.Lock()
 		delete(me.ongoingUpstreamAugmentations, infoHash)

@@ -10,7 +10,6 @@ import (
 
 	"github.com/anacrolix/dht/v2/krpc"
 	"github.com/anacrolix/generics"
-	"github.com/anacrolix/log"
 
 	"github.com/anacrolix/torrent/bencode"
 	"github.com/anacrolix/torrent/tracker"
@@ -48,8 +47,6 @@ func (me Handler) requestHostAddr(r *http.Request) (_ netip.Addr, err error) {
 	return netip.ParseAddr(host)
 }
 
-var requestHeadersLogger = log.Default.WithNames("request", "headers")
-
 func (me Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vs := r.URL.Query()
 	var event tracker.AnnounceEvent
@@ -66,10 +63,8 @@ func (me Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	requestHeadersLogger.Levelf(log.Debug, "request RemoteAddr=%q, header=%q", r.RemoteAddr, r.Header)
 	addr, err := me.requestHostAddr(r)
 	if err != nil {
-		log.Printf("error getting requester IP: %v", err)
 		http.Error(w, "error determining your IP", http.StatusBadGateway)
 		return
 	}
@@ -96,7 +91,6 @@ func (me Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	)
 	err = res.Err
 	if err != nil {
-		log.Printf("error serving announce: %v", err)
 		http.Error(w, "error handling announce", http.StatusInternalServerError)
 		return
 	}
@@ -118,8 +112,5 @@ func (me Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 	}
-	err = bencode.NewEncoder(w).Encode(resp)
-	if err != nil {
-		log.Printf("error encoding and writing response body: %v", err)
-	}
+	bencode.NewEncoder(w).Encode(resp)
 }

@@ -9,7 +9,6 @@ import (
 
 	"github.com/anacrolix/dht/v2"
 	"github.com/anacrolix/dht/v2/krpc"
-	"github.com/anacrolix/log"
 	"github.com/anacrolix/missinggo/v2"
 	"github.com/pion/webrtc/v3"
 	"golang.org/x/time/rate"
@@ -104,8 +103,7 @@ type ClientConfig struct {
 	DisableIPv4      bool
 	DisableIPv4Peers bool
 	// Perform logging and any other behaviour that will help debug.
-	Debug  bool `help:"enable debugging"`
-	Logger log.Logger
+	Debug bool `help:"enable debugging"`
 
 	// Used for torrent sources and webseeding if set.
 	WebTransport http.RoundTripper

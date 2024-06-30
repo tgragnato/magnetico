@@ -14,7 +14,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/anacrolix/log"
 	"github.com/anacrolix/tagflag"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/dustin/go-humanize"
@@ -157,12 +156,7 @@ func addTorrents(
 			}
 			if flags.SaveMetainfos {
 				path := fmt.Sprintf("%v.torrent", t.InfoHash().HexString())
-				err := writeMetainfoToFile(t.Metainfo(), path)
-				if err == nil {
-					log.Printf("wrote %q", path)
-				} else {
-					log.Printf("error writing %q: %v", path, err)
-				}
+				writeMetainfoToFile(t.Metainfo(), path)
 			}
 			if len(flags.File) == 0 {
 				t.DownloadAll()
@@ -334,11 +328,6 @@ func downloadErr(flags downloadFlags) error {
 		clientConfig.DownloadRateLimiter = rate.NewLimiter(rate.Limit(*flags.DownloadRate), 1<<16)
 	}
 	{
-		logger := log.Default.WithNames("main", "client")
-		if flags.Quiet {
-			logger = logger.FilterLevel(log.Critical)
-		}
-		clientConfig.Logger = logger
 	}
 	if flags.RequireFastExtension {
 		clientConfig.MinPeerExtensions.SetBit(pp.ExtensionBitFast, true)
@@ -374,7 +363,6 @@ func downloadErr(flags downloadFlags) error {
 	if err != nil {
 		return fmt.Errorf("adding torrents: %w", err)
 	}
-	started := time.Now()
 	defer outputStats(client, flags)
 	wgWaited := make(chan struct{})
 	go func() {
@@ -383,37 +371,16 @@ func downloadErr(flags downloadFlags) error {
 	}()
 	select {
 	case <-wgWaited:
-		if ctx.Err() == nil {
-			log.Print("downloaded ALL the torrents")
-		} else {
-			err = ctx.Err()
-		}
 	case err = <-fatalErr:
 	}
-	clientConnStats := client.ConnStats()
-	log.Printf(
-		"average download rate: %v/s",
-		humanize.Bytes(uint64(float64(
-			clientConnStats.BytesReadUsefulData.Int64(),
-		)/time.Since(started).Seconds())),
-	)
 	if flags.Seed {
-		if len(client.Torrents()) == 0 {
-			log.Print("no torrents to seed")
-		} else {
+		if len(client.Torrents()) != 0 {
 			outputStats(client, flags)
 			<-ctx.Done()
 		}
 	}
 	spew.Dump(expvar.Get("torrent").(*expvar.Map).Get("chunks received"))
 	spew.Dump(client.ConnStats())
-	clStats := client.ConnStats()
-	sentOverhead := clStats.BytesWritten.Int64() - clStats.BytesWrittenData.Int64()
-	log.Printf(
-		"client read %v, %.1f%% was useful data. sent %v non-data bytes",
-		humanize.Bytes(uint64(clStats.BytesRead.Int64())),
-		100*float64(clStats.BytesReadUsefulData.Int64())/float64(clStats.BytesRead.Int64()),
-		humanize.Bytes(uint64(sentOverhead)))
 	return err
 }
 

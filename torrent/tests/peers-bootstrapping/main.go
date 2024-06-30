@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/anacrolix/envpprof"
-	"github.com/anacrolix/log"
 	"github.com/anacrolix/sync"
 	"github.com/dustin/go-humanize"
 	"golang.org/x/exp/slog"
@@ -94,8 +93,6 @@ func main() {
 		storageDir := filepath.Join(tmpDir, fmt.Sprintf("client%v", clientIndex))
 		clientConfig := newClientConfig()
 		clientConfig.DefaultStorage = storage.NewMMap(storageDir)
-		clientConfig.Logger = log.Default.WithValues(slog.Int("clientIndex", clientIndex))
-		//clientConfig.Logger.Levelf(log.Critical, "test")
 		client, err := torrent.NewClient(clientConfig)
 		assertNil(err)
 		t, _ := client.AddTorrentInfoHash(mi.HashInfoBytes())

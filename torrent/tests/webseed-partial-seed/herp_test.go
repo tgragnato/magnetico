@@ -20,7 +20,6 @@ func makeSeederClient(t *testing.T) *torrent.Client {
 	config.DisableIPv6 = true
 	config.ListenPort = 3030
 	config.Seed = true
-	config.Logger = config.Logger.WithNames("seeder")
 	config.MaxAllocPeerRequestDataPerConn = 1 << 20
 	c, err := torrent.NewClient(config)
 	assertOk(err)
@@ -31,7 +30,6 @@ func makeLeecherClient(t *testing.T) *torrent.Client {
 	config := torrent.TestingConfig(t)
 	config.Debug = true
 	config.DisableIPv6 = true
-	config.Logger = config.Logger.WithNames("leecher")
 	config.DisableWebseeds = true
 	c, err := torrent.NewClient(config)
 	assertOk(err)

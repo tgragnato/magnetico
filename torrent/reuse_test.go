@@ -7,7 +7,6 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/anacrolix/log"
 	qt "github.com/frankban/quicktest"
 )
 
@@ -44,7 +43,7 @@ func TestTcpPortReuseIsABadIdea(t *testing.T) {
 func TestUtpLocalPortIsReusable(t *testing.T) {
 	const network = "udp"
 	c := qt.New(t)
-	remote, err := NewUtpSocket(network, "localhost:0", nil, log.Default)
+	remote, err := NewUtpSocket(network, "localhost:0", nil)
 	c.Assert(err, qt.IsNil)
 	defer remote.Close()
 	var remoteAccepts int32
@@ -64,7 +63,7 @@ func TestUtpLocalPortIsReusable(t *testing.T) {
 			atomic.AddInt32(&remoteAccepts, 1)
 		}
 	}()
-	local, err := NewUtpSocket(network, "localhost:0", nil, log.Default)
+	local, err := NewUtpSocket(network, "localhost:0", nil)
 	c.Assert(err, qt.IsNil)
 	defer local.Close()
 	first, err := local.DialContext(context.Background(), network, remote.Addr().String())

@@ -3,7 +3,6 @@ package torrent
 import (
 	"testing"
 
-	"github.com/anacrolix/log"
 	"github.com/stretchr/testify/require"
 
 	"github.com/anacrolix/torrent/internal/testutil"
@@ -16,7 +15,6 @@ func TestHashPieceAfterStorageClosed(t *testing.T) {
 	defer cs.Close()
 	tt := &Torrent{
 		storageOpener: storage.NewClient(cs),
-		logger:        log.Default,
 		chunkSize:     defaultChunkSize,
 	}
 	tt.infoHash.Ok = true

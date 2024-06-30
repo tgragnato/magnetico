@@ -14,7 +14,6 @@ func newTestingClient(t testing.TB) *Client {
 	t.Cleanup(func() {
 		cl.Close()
 	})
-	cl.initLogger()
 	return cl
 }
 

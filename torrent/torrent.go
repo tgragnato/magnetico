@@ -24,7 +24,6 @@ import (
 	"github.com/anacrolix/dht/v2"
 	. "github.com/anacrolix/generics"
 	g "github.com/anacrolix/generics"
-	"github.com/anacrolix/log"
 	"github.com/anacrolix/missinggo/slices"
 	"github.com/anacrolix/missinggo/v2"
 	"github.com/anacrolix/missinggo/v2/bitmap"
@@ -57,9 +56,8 @@ import (
 type Torrent struct {
 	// Torrent-level aggregate statistics. First in struct to ensure 64-bit
 	// alignment. See #262.
-	stats  ConnStats
-	cl     *Client
-	logger log.Logger
+	stats ConnStats
+	cl    *Client
 
 	networkingEnabled      chansync.Flag
 	dataDownloadDisallowed chansync.Flag
@@ -167,7 +165,6 @@ type Torrent struct {
 
 	// Torrent sources in use keyed by the source string.
 	activeSources sync.Map
-	sourcesLogger log.Logger
 
 	smartBanCache smartBanCache
 
@@ -342,7 +339,6 @@ func (t *Torrent) addPeer(p PeerInfo) (added bool) {
 	if replaced, ok := t.peers.AddReturningReplacedPeer(p); ok {
 		torrent.Add("peers replaced", 1)
 		if !replaced.equal(p) {
-			t.logger.WithDefaultLevel(log.Debug).Printf("added %v replacing %v", p, replaced)
 			added = true
 		}
 	} else {
@@ -372,7 +368,6 @@ func (t *Torrent) saveMetadataPiece(index int, data []byte) {
 		return
 	}
 	if index >= len(t.metadataCompletedChunks) {
-		t.logger.Printf("%s: ignoring metadata piece %d", t, index)
 		return
 	}
 	copy(t.metadataBytes[(1<<14)*index:], data)
@@ -438,12 +433,6 @@ files:
 				continue files
 			}
 		} else {
-			if f.length > t.info.PieceLength {
-				// BEP 52 is pretty strongly worded about this, even though we should be able to
-				// recover: If a v2 torrent is added by magnet link or infohash, we need to fetch
-				// piece layers ourselves anyway, and that's how we can recover from this.
-				t.logger.Levelf(log.Warning, "no piece layers for file %q", f)
-			}
 			continue files
 		}
 		if len(hashes) != f.numPieces() {
@@ -511,7 +500,7 @@ func (t *Torrent) setInfo(info *metainfo.Info) error {
 	}
 	if t.storageOpener != nil {
 		var err error
-		ctx := log.ContextWithLogger(context.Background(), t.logger)
+		ctx := context.Background()
 		t.storage, err = t.storageOpener.OpenTorrent(ctx, info, *t.canonicalShortInfohash())
 		if err != nil {
 			return fmt.Errorf("error opening torrent storage: %s", err)
@@ -652,9 +641,6 @@ func (t *Torrent) setMetadataSize(size int) (err error) {
 	if t.haveInfo() {
 		// We already know the correct metadata size.
 		return
-	}
-	if uint32(size) > maxMetadataSize {
-		return log.WithLevel(log.Warning, errors.New("bad size"))
 	}
 	if len(t.metadataBytes) == size {
 		return
@@ -1027,10 +1013,7 @@ func (t *Torrent) close(wg *sync.WaitGroup) (err error) {
 			t.storageLock.Lock()
 			defer t.storageLock.Unlock()
 			if f := t.storage.Close; f != nil {
-				err1 := f()
-				if err1 != nil {
-					t.logger.WithDefaultLevel(log.Warning).Printf("error closing storage: %v", err1)
-				}
+				f()
 			}
 		}()
 	}
@@ -1150,7 +1133,6 @@ func (t *Torrent) hashPiece(piece pieceIndex) (
 		// Does the backend want to do its own hashing?
 		if i, ok := storagePiece.PieceImpl.(storage.SelfHashing); ok {
 			var sum metainfo.Hash
-			// log.Printf("A piece decided to self-hash: %d", piece)
 			sum, err = i.SelfHash()
 			correct = sum == *p.hash
 			// Can't do smart banning without reading the piece. The smartBanCache is still cleared
@@ -1265,14 +1247,10 @@ func (t *Torrent) maybeDropMutuallyCompletePeer(
 	if p.useful() {
 		return
 	}
-	p.logger.Levelf(log.Debug, "is mutually complete; dropping")
 	p.drop()
 }
 
 func (t *Torrent) haveChunk(r Request) (ret bool) {
-	// defer func() {
-	// 	log.Println("have chunk", r, ret)
-	// }()
 	if !t.haveInfo() {
 		return false
 	}
@@ -1603,15 +1581,7 @@ func (t *Torrent) updatePieceCompletion(piece pieceIndex) bool {
 	}
 	p.t.updatePieceRequestOrderPiece(piece)
 	t.updateComplete()
-	if complete && len(p.dirtiers) != 0 {
-		t.logger.Printf("marked piece %v complete but still has dirtiers", piece)
-	}
 	if changed {
-		//slog.Debug(
-		//	"piece completion changed",
-		//	slog.Int("piece", piece),
-		//	slog.Any("from", cached),
-		//	slog.Any("to", uncached))
 		t.pieceCompletionChanged(piece, "Torrent.updatePieceCompletion")
 	}
 	return changed
@@ -1650,9 +1620,6 @@ func (t *Torrent) maybeCompleteMetadata() error {
 	if err != nil {
 		t.invalidateMetadata()
 		return fmt.Errorf("error setting info bytes: %s", err)
-	}
-	if t.cl.config.Debug {
-		t.logger.Printf("%s: got metadata from peers", t)
 	}
 	return nil
 }
@@ -1854,7 +1821,6 @@ func (t *Torrent) onWebRtcConn(
 		DataChannelContext: dcc,
 	}
 	peerRemoteAddr := netConn.RemoteAddr()
-	//t.logger.Levelf(log.Critical, "onWebRtcConn remote addr: %v", peerRemoteAddr)
 	if t.cl.badPeerAddr(peerRemoteAddr) {
 		return
 	}
@@ -1873,7 +1839,6 @@ func (t *Torrent) onWebRtcConn(
 		},
 	)
 	if err != nil {
-		t.logger.WithDefaultLevel(log.Error).Printf("error in handshaking webrtc connection: %v", err)
 		return
 	}
 	if dcc.LocalOffered {
@@ -1884,21 +1849,15 @@ func (t *Torrent) onWebRtcConn(
 	pc.conn.SetWriteDeadline(time.Time{})
 	t.cl.lock()
 	defer t.cl.unlock()
-	err = t.runHandshookConn(pc)
-	if err != nil {
-		t.logger.WithDefaultLevel(log.Debug).Printf("error running handshook webrtc conn: %v", err)
-	}
+	t.runHandshookConn(pc)
 }
 
-func (t *Torrent) logRunHandshookConn(pc *PeerConn, logAll bool, level log.Level) {
-	err := t.runHandshookConn(pc)
-	if err != nil || logAll {
-		t.logger.WithDefaultLevel(level).Levelf(log.ErrorLevel(err), "error running handshook conn: %v", err)
-	}
+func (t *Torrent) logRunHandshookConn(pc *PeerConn, logAll bool) {
+	t.runHandshookConn(pc)
 }
 
 func (t *Torrent) runHandshookConnLoggingErr(pc *PeerConn) {
-	t.logRunHandshookConn(pc, false, log.Debug)
+	t.logRunHandshookConn(pc, false)
 }
 
 func (t *Torrent) startWebsocketAnnouncer(u url.URL, shortInfohash [20]byte) torrentTrackerAnnouncer {
@@ -1907,15 +1866,7 @@ func (t *Torrent) startWebsocketAnnouncer(u url.URL, shortInfohash [20]byte) tor
 	// webtorrent.TrackerClient for the same info hash before the old one is cleaned up.
 	t.onClose = append(t.onClose, release)
 	wst := websocketTrackerStatus{u, wtc}
-	go func() {
-		err := wtc.Announce(tracker.Started, shortInfohash)
-		if err != nil {
-			t.logger.WithDefaultLevel(log.Warning).Printf(
-				"error in initial announce to %q: %v",
-				u.String(), err,
-			)
-		}
-	}()
+	go wtc.Announce(tracker.Started, shortInfohash)
 	return wst
 }
 
@@ -1925,10 +1876,6 @@ func (t *Torrent) startScrapingTracker(_url string) {
 	}
 	u, err := url.Parse(_url)
 	if err != nil {
-		// URLs with a leading '*' appear to be a uTorrent convention to disable trackers.
-		if _url[0] != '*' {
-			t.logger.Levelf(log.Warning, "error parsing tracker url: %v", err)
-		}
 		return
 	}
 	if u.Scheme == "udp" {
@@ -2056,9 +2003,6 @@ func (t *Torrent) consumeDhtAnnouncePeers(pvs <-chan dht.PeersValues) {
 			}
 		}
 		cl.unlock()
-		// if added != 0 {
-		// 	log.Printf("added %v peers from dht for %v", added, t.InfoHash().HexString())
-		// }
 	}
 }
 
@@ -2158,10 +2102,7 @@ func (t *Torrent) dhtAnnouncer(s DhtServer) {
 			t.numDHTAnnounces++
 			cl.unlock()
 			defer cl.lock()
-			err := t.timeboxedAnnounceToDht(s)
-			if err != nil {
-				t.logger.WithDefaultLevel(log.Warning).Printf("error announcing %q to DHT: %s", t, err)
-			}
+			t.timeboxedAnnounceToDht(s)
 		}()
 	}
 }
@@ -2361,9 +2302,6 @@ func (t *Torrent) SetMaxEstablishedConns(max int) (oldMax int) {
 }
 
 func (t *Torrent) pieceHashed(piece pieceIndex, passed bool, hashIoErr error) {
-	t.logger.LazyLog(log.Debug, func() log.Msg {
-		return log.Fstr("hashed piece %d (passed=%t)", piece, passed)
-	})
 	p := t.piece(piece)
 	p.numVerifies++
 	t.cl.event.Broadcast()
@@ -2376,9 +2314,6 @@ func (t *Torrent) pieceHashed(piece pieceIndex, passed bool, hashIoErr error) {
 		if passed {
 			pieceHashedCorrect.Add(1)
 		} else {
-			log.Fmsg(
-				"piece %d failed hash: %d connections contributed", piece, len(p.dirtiers),
-			).AddValues(t, p).LogLevel(log.Info, t.logger)
 			pieceHashedNotCorrect.Add(1)
 		}
 	}
@@ -2404,10 +2339,7 @@ func (t *Torrent) pieceHashed(piece pieceIndex, passed bool, hashIoErr error) {
 		if hasDirty {
 			p.Flush() // You can be synchronous here!
 		}
-		err := p.Storage().MarkComplete()
-		if err != nil {
-			t.logger.Levelf(log.Warning, "%T: error marking piece complete %d: %s", t.storage, piece, err)
-		}
+		p.Storage().MarkComplete()
 		t.cl.lock()
 
 		if t.closed.IsSet() {
@@ -2435,34 +2367,13 @@ func (t *Torrent) pieceHashed(piece pieceIndex, passed bool, hashIoErr error) {
 			t.clearPieceTouchers(piece)
 			slices.Sort(bannableTouchers, connLessTrusted)
 
-			if t.cl.config.Debug {
-				t.logger.Printf(
-					"bannable conns by trust for piece %d: %v",
-					piece,
-					func() (ret []connectionTrust) {
-						for _, c := range bannableTouchers {
-							ret = append(ret, c.trust())
-						}
-						return
-					}(),
-				)
-			}
-
 			if len(bannableTouchers) >= 1 {
 				c := bannableTouchers[0]
-				if len(bannableTouchers) != 1 {
-					t.logger.Levelf(log.Debug, "would have banned %v for touching piece %v after failed piece check", c.remoteIp(), piece)
-				} else {
+				if len(bannableTouchers) == 1 {
 					// Turns out it's still useful to ban peers like this because if there's only a
 					// single peer for a piece, and we never progress that piece to completion, we
 					// will never smart-ban them. Discovered in
 					// https://github.com/anacrolix/torrent/issues/715.
-					t.logger.Levelf(
-						log.Warning,
-						"banning %v for being sole dirtier of piece %v after failed piece check",
-						c,
-						piece,
-					)
 					c.ban()
 				}
 			}
@@ -2558,21 +2469,12 @@ func (t *Torrent) dropBannedPeers() {
 	t.iterPeers(func(p *Peer) {
 		remoteIp := p.remoteIp()
 		if remoteIp == nil {
-			if p.bannableAddr.Ok {
-				t.logger.WithDefaultLevel(log.Debug).Printf("can't get remote ip for peer %v", p)
-			}
 			return
 		}
 		netipAddr := netip.MustParseAddr(remoteIp.String())
-		if Some(netipAddr) != p.bannableAddr {
-			t.logger.WithDefaultLevel(log.Debug).Printf(
-				"peer remote ip does not match its bannable addr [peer=%v, remote ip=%v, bannable addr=%v]",
-				p, remoteIp, p.bannableAddr)
-		}
 		if _, ok := t.cl.badPeerIPs[netipAddr]; ok {
 			// Should this be a close?
 			p.drop()
-			t.logger.WithDefaultLevel(log.Debug).Printf("dropped %v for banned remote IP %v", p, netipAddr)
 		}
 	})
 }
@@ -2584,10 +2486,6 @@ func (t *Torrent) pieceHasher(index pieceIndex) {
 	correct, failedPeers, copyErr := t.hashPiece(index)
 	switch copyErr {
 	case nil, io.EOF:
-	default:
-		t.logger.WithNames("hashing").Levelf(
-			log.Warning,
-			"error hashing piece %v: %v", index, copyErr)
 	}
 	t.storageLock.RUnlock()
 	t.cl.lock()
@@ -2595,7 +2493,6 @@ func (t *Torrent) pieceHasher(index pieceIndex) {
 	if correct {
 		for peer := range failedPeers {
 			t.cl.banPeerIP(peer.AsSlice())
-			t.logger.WithDefaultLevel(log.Debug).Printf("smart banned %v for piece %v", peer, index)
 		}
 		t.dropBannedPeers()
 		for ri := t.pieceRequestIndexOffset(index); ri < t.pieceRequestIndexOffset(index+1); ri++ {
@@ -2758,7 +2655,6 @@ func (t *Torrent) onWriteChunkErr(err error) {
 		go t.userOnWriteChunkErr(err)
 		return
 	}
-	t.logger.WithDefaultLevel(log.Critical).Printf("default chunk write error handler: disabling data download")
 	t.disallowDataDownloadLocked()
 }
 
@@ -2897,7 +2793,6 @@ func (t *Torrent) addWebSeed(url string, opts ...AddWebSeedsOpt) {
 	for _, f := range t.callbacks().NewPeer {
 		f(&ws.peer)
 	}
-	ws.peer.logger = t.logger.WithContextValue(&ws)
 	ws.peer.peerImpl = &ws
 	if t.haveInfo() {
 		ws.onGotInfo(t.info)
@@ -3088,15 +2983,9 @@ func (t *Torrent) handleReceivedUtHolepunchMsg(msg utHolepunch.Msg, sender *Peer
 	incHolepunchMessagesReceived(msg)
 	switch msg.MsgType {
 	case utHolepunch.Rendezvous:
-		t.logger.Printf("got holepunch rendezvous request for %v from %p", msg.AddrPort, sender)
 		sendMsg := sendUtHolepunchMsg
 		senderAddrPort, err := sender.remoteDialAddrPort()
 		if err != nil {
-			sender.logger.Levelf(
-				log.Warning,
-				"error getting ut_holepunch rendezvous sender's dial address: %v",
-				err,
-			)
 			// There's no better error code. The sender's address itself is invalid. I don't see
 			// this error message being appropriate anywhere else anyway.
 			sendMsg(sender, utHolepunch.Error, msg.AddrPort, utHolepunch.NoSuchPeer)
@@ -3117,7 +3006,6 @@ func (t *Torrent) handleReceivedUtHolepunchMsg(msg utHolepunch.Msg, sender *Peer
 		return nil
 	case utHolepunch.Connect:
 		holepunchAddr := msg.AddrPort
-		t.logger.Printf("got holepunch connect request for %v from %p", holepunchAddr, sender)
 		if g.MapContains(t.cl.undialableWithoutHolepunch, holepunchAddr) {
 			setAdd(&t.cl.undialableWithoutHolepunchDialedAfterHolepunchConnect, holepunchAddr)
 			if g.MapContains(t.cl.accepted, holepunchAddr) {
@@ -3142,7 +3030,6 @@ func (t *Torrent) handleReceivedUtHolepunchMsg(msg utHolepunch.Msg, sender *Peer
 		return nil
 	case utHolepunch.Error:
 		torrent.Add("holepunch error messages received", 1)
-		t.logger.Levelf(log.Debug, "received ut_holepunch error message from %v: %v", sender, msg.ErrCode)
 		return nil
 	default:
 		return fmt.Errorf("unhandled msg type %v", msg.MsgType)
@@ -3172,7 +3059,6 @@ func (t *Torrent) trySendHolepunchRendezvous(addrPort netip.AddrPort) error {
 				continue
 			}
 		}
-		t.logger.Levelf(log.Debug, "sent ut_holepunch rendezvous message to %v for %v", pc, addrPort)
 		sendUtHolepunchMsg(pc, utHolepunch.Rendezvous, addrPort, 0)
 		rzsSent++
 	}

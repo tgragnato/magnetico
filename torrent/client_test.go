@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/anacrolix/dht/v2"
-	"github.com/anacrolix/log"
 	"github.com/anacrolix/missinggo/v2"
 	"github.com/anacrolix/missinggo/v2/filecache"
 	"github.com/frankban/quicktest"
@@ -85,7 +84,6 @@ func TestTorrentInitialState(t *testing.T) {
 	defer os.RemoveAll(dir)
 	var cl Client
 	cl.init(TestingConfig(t))
-	cl.initLogger()
 	tor := cl.newTorrent(
 		mi.HashInfoBytes(),
 		storage.NewFileWithCompletion(t.TempDir(), storage.NewMapPieceCompletion()),
@@ -796,7 +794,7 @@ func TestObfuscatedHeaderFallbackSeederRequiresLeecherPrefersNot(t *testing.T) {
 }
 
 func TestClientAddressInUse(t *testing.T) {
-	s, _ := NewUtpSocket("udp", "localhost:50007", nil, log.Default)
+	s, _ := NewUtpSocket("udp", "localhost:50007", nil)
 	if s != nil {
 		defer s.Close()
 	}
@@ -901,17 +899,4 @@ func TestBadPeerIpPort(t *testing.T) {
 			require.Equal(t, tc.expectedOk, cl.badPeerIPPort(tc.ip, tc.port))
 		})
 	}
-}
-
-// https://github.com/anacrolix/torrent/issues/837
-func TestClientConfigSetHandlerNotIgnored(t *testing.T) {
-	cfg := TestingConfig(t)
-	cfg.Logger.SetHandlers(log.DiscardHandler)
-	c := qt.New(t)
-	cl, err := NewClient(cfg)
-	c.Assert(err, qt.IsNil)
-	defer cl.Close()
-	c.Assert(cl.logger.Handlers, qt.HasLen, 1)
-	h := cl.logger.Handlers[0].(log.StreamHandler)
-	c.Check(h.W, qt.Equals, io.Discard)
 }

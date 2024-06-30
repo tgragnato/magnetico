@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anacrolix/log"
 	"github.com/anacrolix/missinggo/v2/pproffd"
 	"github.com/pion/datachannel"
 	"github.com/pion/webrtc/v3"
@@ -25,9 +24,7 @@ const (
 var (
 	metrics = expvar.NewMap("webtorrent")
 	api     = func() *webrtc.API {
-		// Enable the detach API (since it's non-standard but more idiomatic).
-		s.DetachDataChannels()
-		return webrtc.NewAPI(webrtc.WithSettingEngine(s))
+		return webrtc.NewAPI()
 	}()
 	newPeerConnectionMu sync.Mutex
 )
@@ -48,7 +45,7 @@ func (me *wrappedPeerConnection) Close() error {
 	return err
 }
 
-func newPeerConnection(logger log.Logger, iceServers []webrtc.ICEServer) (*wrappedPeerConnection, error) {
+func newPeerConnection(iceServers []webrtc.ICEServer) (*wrappedPeerConnection, error) {
 	newPeerConnectionMu.Lock()
 	defer newPeerConnectionMu.Unlock()
 	ctx, span := otel.Tracer(tracerName).Start(context.Background(), "PeerConnection")
@@ -70,7 +67,6 @@ func newPeerConnection(logger log.Logger, iceServers []webrtc.ICEServer) (*wrapp
 	}
 	// If the state change handler intends to call Close, it should call it on the wrapper.
 	wpc.OnConnectionStateChange(func(state webrtc.PeerConnectionState) {
-		logger.Levelf(log.Warning, "webrtc PeerConnection state changed to %v", state)
 		span.AddEvent("connection state changed", trace.WithAttributes(attribute.String("state", state.String())))
 	})
 	return wpc, nil
@@ -92,7 +88,6 @@ func setAndGatherLocalDescription(peerConnection *wrappedPeerConnection, sdp web
 // newOffer creates a transport and returns a WebRTC offer to be announced. See
 // https://github.com/pion/webrtc/blob/master/examples/data-channels/jsfiddle/main.go for what this is modelled on.
 func (tc *TrackerClient) newOffer(
-	logger log.Logger,
 	offerId string,
 	infoHash [20]byte,
 ) (
@@ -101,7 +96,7 @@ func (tc *TrackerClient) newOffer(
 	offer webrtc.SessionDescription,
 	err error,
 ) {
-	peerConnection, err = newPeerConnection(logger, tc.ICEServers)
+	peerConnection, err = newPeerConnection(tc.ICEServers)
 	if err != nil {
 		return
 	}
@@ -193,7 +188,7 @@ func (tc *TrackerClient) newAnsweringPeerConnection(
 ) (
 	peerConn *wrappedPeerConnection, answer webrtc.SessionDescription, err error,
 ) {
-	peerConn, err = newPeerConnection(tc.Logger, tc.ICEServers)
+	peerConn, err = newPeerConnection(tc.ICEServers)
 	if err != nil {
 		err = fmt.Errorf("failed to create new connection: %w", err)
 		return

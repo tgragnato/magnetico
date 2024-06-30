@@ -9,7 +9,6 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/anacrolix/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -153,7 +152,6 @@ func (me pieceImpl) WriteAt(p []byte, off int64) (int, error) {
 	if !me.defaultHandledWriteChunkError {
 		go func() {
 			me.t.SetOnWriteChunkError(func(err error) {
-				log.Printf("got write chunk error to custom handler: %v", err)
 				me.mu.Lock()
 				me.diskNotFull = true
 				me.mu.Unlock()

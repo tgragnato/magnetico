@@ -2,11 +2,8 @@ package torrent
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
-
-	"github.com/anacrolix/log"
 
 	"github.com/anacrolix/torrent/bencode"
 	"github.com/anacrolix/torrent/metainfo"
@@ -29,16 +26,11 @@ func (t *Torrent) UseSources(sources []string) {
 		}
 		s := s
 		go func() {
-			err := t.useActiveTorrentSource(s)
+			t.useActiveTorrentSource(s)
 			_, loaded := t.activeSources.LoadAndDelete(s)
 			if !loaded {
 				panic(s)
 			}
-			level := log.Debug
-			if err != nil && !errors.Is(err, context.Canceled) {
-				level = log.Info
-			}
-			t.logger.Levelf(level, "used torrent source %q [err=%v]", s, err)
 		}()
 	}
 }

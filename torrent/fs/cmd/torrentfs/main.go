@@ -17,15 +17,12 @@ import (
 	_ "github.com/anacrolix/envpprof"
 	"github.com/anacrolix/fuse"
 	fusefs "github.com/anacrolix/fuse/fs"
-	"github.com/anacrolix/log"
 	"github.com/anacrolix/tagflag"
 
 	"github.com/anacrolix/torrent"
 	torrentfs "github.com/anacrolix/torrent/fs"
 	"github.com/anacrolix/torrent/util/dirwatch"
 )
-
-var logger = log.Default.WithNames("main")
 
 var args = struct {
 	MetainfoDir string `help:"torrent files in this location describe the contents of the mounted filesystem"`
@@ -54,10 +51,7 @@ func exitSignalHandlers(fs *torrentfs.TorrentFS) {
 	for {
 		<-c
 		fs.Destroy()
-		err := fuse.Unmount(args.MountDir)
-		if err != nil {
-			log.Print(err)
-		}
+		fuse.Unmount(args.MountDir)
 	}
 }
 
@@ -73,7 +67,6 @@ func main() {
 	defer envpprof.Stop()
 	err := mainErr()
 	if err != nil {
-		logger.Levelf(log.Error, "error in main: %v", err)
 		os.Exit(1)
 	}
 }
@@ -108,21 +101,14 @@ func mainErr() error {
 	if err != nil {
 		return fmt.Errorf("watching torrent dir: %w", err)
 	}
-	dw.Logger = dw.Logger.FilterLevel(log.Info)
 	go func() {
 		for ev := range dw.Events {
 			switch ev.Change {
 			case dirwatch.Added:
 				if ev.TorrentFilePath != "" {
-					_, err := client.AddTorrentFromFile(ev.TorrentFilePath)
-					if err != nil {
-						log.Printf("error adding torrent from file %q to client: %v", ev.TorrentFilePath, err)
-					}
+					client.AddTorrentFromFile(ev.TorrentFilePath)
 				} else if ev.MagnetURI != "" {
-					_, err := client.AddMagnet(ev.MagnetURI)
-					if err != nil {
-						log.Printf("error adding magnet: %s", err)
-					}
+					client.AddMagnet(ev.MagnetURI)
 				}
 			case dirwatch.Removed:
 				T, ok := client.Torrent(ev.InfoHash)
@@ -145,11 +131,9 @@ func mainErr() error {
 		}()
 	}
 
-	logger.Levelf(log.Debug, "serving fuse fs")
 	if err := fusefs.Serve(conn, fs); err != nil {
 		return fmt.Errorf("serving fuse fs: %w", err)
 	}
-	logger.Levelf(log.Debug, "fuse fs completed successfully. waiting for conn ready")
 	<-conn.Ready
 	if err := conn.MountError; err != nil {
 		return fmt.Errorf("mount error: %w", err)

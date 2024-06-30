@@ -18,7 +18,6 @@ import (
 	"github.com/RoaringBitmap/roaring"
 	"github.com/anacrolix/generics"
 	. "github.com/anacrolix/generics"
-	"github.com/anacrolix/log"
 	"github.com/anacrolix/missinggo/v2/bitmap"
 	"github.com/anacrolix/multiless"
 	"golang.org/x/exp/maps"
@@ -36,9 +35,6 @@ import (
 // Maintains the state of a BitTorrent-protocol based connection with a peer.
 type PeerConn struct {
 	Peer
-
-	// Move to PeerConn?
-	protocolLogger log.Logger
 
 	// BEP 52
 	v2 bool
@@ -251,7 +247,6 @@ func (cn *PeerConn) requestMetadataPiece(index int) {
 	if index < len(cn.metadataRequests) && cn.metadataRequests[index] {
 		return
 	}
-	cn.protocolLogger.WithDefaultLevel(log.Debug).Printf("requesting metadata piece %d", index)
 	cn.write(pp.MetadataExtensionRequestMsg(eID, index))
 	for index >= len(cn.metadataRequests) {
 		cn.metadataRequests = append(cn.metadataRequests, false)
@@ -611,7 +606,6 @@ func (c *PeerConn) onReadRequest(r Request, startFetch bool) error {
 	}
 	if opt := c.maximumPeerRequestChunkLength(); opt.Ok && int(r.Length) > opt.Value {
 		err := fmt.Errorf("peer requested chunk too long (%v)", r.Length)
-		c.protocolLogger.Levelf(log.Warning, err.Error())
 		if c.fastEnabled() {
 			c.reject(r)
 			return nil
@@ -651,7 +645,6 @@ func (c *PeerConn) peerRequestDataReader(r Request, prs *peerRequestState) {
 	ctx := context.Background()
 	err := prs.allocReservation.Wait(ctx)
 	if err != nil {
-		c.logger.WithDefaultLevel(log.Debug).Levelf(log.ErrorLevel(err), "waiting for alloc limit reservation: %v", err)
 		return
 	}
 	b, err := c.readPeerRequestData(r)
@@ -674,13 +667,6 @@ func (c *PeerConn) peerRequestDataReader(r Request, prs *peerRequestState) {
 // chunk sending, the way it used to work.
 func (c *PeerConn) peerRequestDataReadFailed(err error, r Request) {
 	torrent.Add("peer request data read failures", 1)
-	logLevel := log.Warning
-	if c.t.hasStorageCap() {
-		// It's expected that pieces might drop. See
-		// https://github.com/anacrolix/torrent/issues/702#issuecomment-1000953313.
-		logLevel = log.Debug
-	}
-	c.logger.Levelf(logLevel, "error reading chunk for peer Request %v: %v", r, err)
 	if c.t.closed.IsSet() {
 		return
 	}
@@ -700,12 +686,6 @@ func (c *PeerConn) peerRequestDataReadFailed(err error, r Request) {
 	if c.fastEnabled() {
 		c.reject(r)
 	} else {
-		if c.choking {
-			// If fast isn't enabled, I think we would have wiped all peer requests when we last
-			// choked, and requests while we're choking would be ignored. It could be possible that
-			// a peer request data read completed concurrently to it being deleted elsewhere.
-			c.protocolLogger.WithDefaultLevel(log.Warning).Printf("already choking peer, requests might not be rejected correctly")
-		}
 		// Choking a non-fast peer should cause them to flush all their requests.
 		c.choke(c.write)
 	}
@@ -725,12 +705,6 @@ func (c *PeerConn) readPeerRequestData(r Request) ([]byte, error) {
 		}
 	}
 	return b, err
-}
-
-func (c *PeerConn) logProtocolBehaviour(level log.Level, format string, arg ...interface{}) {
-	c.protocolLogger.WithContextText(fmt.Sprintf(
-		"peer id %q, ext v %q", c.PeerID, c.PeerClientName.Load(),
-	)).SkipCallers(1).Levelf(level, format, arg...)
 }
 
 // Processes incoming BitTorrent wire-protocol messages. The client lock is held upon entry and
@@ -769,7 +743,6 @@ func (c *PeerConn) mainReadLoop() (err error) {
 			return nil
 		}
 		if err != nil {
-			err = log.WithLevel(log.Info, err)
 			return err
 		}
 		c.lastMessageReceived = time.Now()
@@ -803,7 +776,6 @@ func (c *PeerConn) mainReadLoop() (err error) {
 			if !c.peerChoking {
 				// Some clients do this for some reason. Transmission doesn't error on this, so we
 				// won't for consistency.
-				c.logProtocolBehaviour(log.Debug, "received unchoke when already unchoked")
 				break
 			}
 			c.peerChoking = false
@@ -815,13 +787,6 @@ func (c *PeerConn) mainReadLoop() (err error) {
 				return true
 			})
 			if preservedCount != 0 {
-				// TODO: Yes this is a debug log but I'm not happy with the state of the logging lib
-				// right now.
-				c.protocolLogger.Levelf(log.Debug,
-					"%v requests were preserved while being choked (fast=%v)",
-					preservedCount,
-					c.fastEnabled())
-
 				torrent.Add("requestsPreservedThroughChoking", int64(preservedCount))
 			}
 			if !c.t._pendingPieces.IsEmpty() {
@@ -875,7 +840,6 @@ func (c *PeerConn) mainReadLoop() (err error) {
 			})
 		case pp.Suggest:
 			torrent.Add("suggests received", 1)
-			log.Fmsg("peer suggested piece %d", msg.Index).AddValues(c, msg.Index).LogLevel(log.Debug, c.t.logger)
 			c.updateRequests("suggested")
 		case pp.HaveAll:
 			err = c.onPeerSentHaveAll()
@@ -885,18 +849,15 @@ func (c *PeerConn) mainReadLoop() (err error) {
 			req := newRequestFromMessage(&msg)
 			if !c.remoteRejectedRequest(c.t.requestIndexFromRequest(req)) {
 				err = fmt.Errorf("received invalid reject for request %v", req)
-				c.protocolLogger.Levelf(log.Debug, "%v", err)
 			}
 		case pp.AllowedFast:
 			torrent.Add("allowed fasts received", 1)
-			log.Fmsg("peer allowed fast: %d", msg.Index).AddValues(c).LogLevel(log.Debug, c.t.logger)
 			c.updateRequests("PeerConn.mainReadLoop allowed fast")
 		case pp.Extended:
 			err = c.onReadExtendedMsg(msg.ExtendedID, msg.ExtendedPayload)
 		case pp.Hashes:
 			err = c.onReadHashes(&msg)
 		case pp.HashRequest, pp.HashReject:
-			c.protocolLogger.Levelf(log.Info, "received unimplemented BitTorrent v2 message: %v", msg.Type)
 		default:
 			err = fmt.Errorf("received unknown message type: %#v", msg.Type)
 		}
@@ -932,7 +893,6 @@ func (c *PeerConn) onReadExtendedMsg(id pp.ExtensionNumber, payload []byte) (err
 	if id == pp.HandshakeExtendedID {
 		var d pp.ExtendedHandshakeMessage
 		if err := bencode.Unmarshal(payload, &d); err != nil {
-			c.protocolLogger.Printf("error parsing extended handshake message %q: %s", payload, err)
 			return fmt.Errorf("unmarshalling extended handshake payload: %w", err)
 		}
 		// Trigger this callback after it's been processed. If you want to handle it yourself, you
@@ -1119,7 +1079,6 @@ func (c *Peer) setTorrent(t *Torrent) {
 		panic("connection already associated with a torrent")
 	}
 	c.t = t
-	c.logger.WithDefaultLevel(log.Debug).Printf("set torrent=%v", t)
 	t.reconcileHandshakeStats(c)
 }
 
@@ -1145,12 +1104,6 @@ func (c *PeerConn) dialAddr() PeerRemoteAddr {
 	}
 	addrPort, err := addrPortFromPeerRemoteAddr(c.RemoteAddr)
 	if err != nil {
-		c.logger.Levelf(
-			log.Warning,
-			"error parsing %q for alternate dial port: %v",
-			c.RemoteAddr,
-			err,
-		)
 		return c.RemoteAddr
 	}
 	return netip.AddrPortFrom(addrPort.Addr(), uint16(c.PeerListenPort))
@@ -1299,9 +1252,6 @@ file:
 				// checks.
 				panic(length)
 			}
-			if length%2 != 0 {
-				pc.protocolLogger.Levelf(log.Warning, "requesting odd hashes length %d", length)
-			}
 			msg := pp.Message{
 				Type:        pp.HashRequest,
 				PiecesRoot:  piecesRoot,
@@ -1339,19 +1289,10 @@ func (pc *PeerConn) onReadHashes(msg *pp.Message) (err error) {
 		metainfo.HashForPiecePad(int64(pc.t.usualPieceSize())))
 	expectedPiecesRoot := file.piecesRoot.Unwrap()
 	if root == expectedPiecesRoot {
-		pc.protocolLogger.WithNames(v2HashesLogName).Levelf(
-			log.Info,
-			"got piece hashes for file %v (num pieces %v)",
-			file, file.numPieces())
 		for filePieceIndex, peerHash := range filePieceHashes {
 			torrentPieceIndex := file.BeginPieceIndex() + filePieceIndex
 			pc.t.piece(torrentPieceIndex).setV2Hash(peerHash)
 		}
-	} else {
-		pc.protocolLogger.WithNames(v2HashesLogName).Levelf(
-			log.Debug,
-			"peer file piece hashes root mismatch: %x != %x",
-			root, expectedPiecesRoot)
 	}
 	return nil
 }

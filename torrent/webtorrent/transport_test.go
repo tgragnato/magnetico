@@ -3,7 +3,6 @@ package webtorrent
 import (
 	"testing"
 
-	"github.com/anacrolix/log"
 	qt "github.com/frankban/quicktest"
 	"github.com/pion/webrtc/v3"
 )
@@ -11,7 +10,7 @@ import (
 func TestClosingPeerConnectionDoesNotCloseUnopenedDataChannel(t *testing.T) {
 	c := qt.New(t)
 	var tc TrackerClient
-	pc, dc, _, err := tc.newOffer(log.Default, "", [20]byte{})
+	pc, dc, _, err := tc.newOffer("", [20]byte{})
 	c.Assert(err, qt.IsNil)
 	defer pc.Close()
 	defer dc.Close()

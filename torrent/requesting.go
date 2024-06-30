@@ -12,7 +12,6 @@ import (
 	"github.com/RoaringBitmap/roaring"
 	g "github.com/anacrolix/generics"
 	"github.com/anacrolix/generics/heap"
-	"github.com/anacrolix/log"
 	"github.com/anacrolix/multiless"
 
 	requestStrategy "github.com/anacrolix/torrent/request-strategy"
@@ -61,7 +60,6 @@ func (p *peerId) GobDecode(b []byte) error {
 	}
 	ptr := unsafe.Pointer(&b[0])
 	p.ptr = *(*uintptr)(ptr)
-	log.Printf("%p", ptr)
 	dst := reflect.SliceHeader{
 		Data: uintptr(unsafe.Pointer(&p.Peer)),
 		Len:  int(unsafe.Sizeof(p.Peer)),

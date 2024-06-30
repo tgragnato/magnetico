@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"sync"
 
-	"github.com/anacrolix/log"
 	"github.com/gorilla/websocket"
 	"github.com/pion/datachannel"
 	"github.com/pion/webrtc/v3"
@@ -41,7 +40,6 @@ type refCountedWebtorrentTrackerClient struct {
 
 type websocketTrackers struct {
 	PeerId                     [20]byte
-	Logger                     log.Logger
 	GetAnnounceRequest         func(event tracker.AnnounceEvent, infoHash [20]byte) (tracker.AnnounceRequest, error)
 	OnConn                     func(datachannel.ReadWriteCloser, webtorrent.DataChannelContext)
 	mu                         sync.Mutex
@@ -60,23 +58,16 @@ func (me *websocketTrackers) Get(url string, infoHash [20]byte) (*webtorrent.Tra
 		dialer := &websocket.Dialer{Proxy: me.Proxy, NetDialContext: me.DialContext, HandshakeTimeout: websocket.DefaultDialer.HandshakeTimeout}
 		value = &refCountedWebtorrentTrackerClient{
 			TrackerClient: webtorrent.TrackerClient{
-				Dialer:             dialer,
-				Url:                url,
-				GetAnnounceRequest: me.GetAnnounceRequest,
-				PeerId:             me.PeerId,
-				OnConn:             me.OnConn,
-				Logger: me.Logger.WithText(func(m log.Msg) string {
-					return fmt.Sprintf("tracker client for %q: %v", url, m)
-				}),
+				Dialer:                     dialer,
+				Url:                        url,
+				GetAnnounceRequest:         me.GetAnnounceRequest,
+				PeerId:                     me.PeerId,
+				OnConn:                     me.OnConn,
 				WebsocketTrackerHttpHeader: me.WebsocketTrackerHttpHeader,
 				ICEServers:                 me.ICEServers,
 			},
 		}
-		value.TrackerClient.Start(func(err error) {
-			if err != nil {
-				me.Logger.Printf("error running tracker client for %q: %v", url, err)
-			}
-		})
+		value.TrackerClient.Start(func(err error) {})
 		if me.clients == nil {
 			me.clients = make(map[string]*refCountedWebtorrentTrackerClient)
 		}

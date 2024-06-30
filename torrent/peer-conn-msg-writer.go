@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/anacrolix/chansync"
-	"github.com/anacrolix/log"
 	"github.com/anacrolix/sync"
 
 	pp "github.com/anacrolix/torrent/peer_protocol"
@@ -24,7 +23,6 @@ func (pc *PeerConn) initMessageWriter() {
 			pc.fillWriteBuffer()
 		},
 		closed: &pc.closed,
-		logger: pc.logger,
 		w:      pc.w,
 		keepAlive: func() bool {
 			pc.locker().RLock()
@@ -51,7 +49,6 @@ type peerConnMsgWriter struct {
 	// Must not be called with the local mutex held, as it will call back into the write method.
 	fillWriteBuffer func()
 	closed          *chansync.SetOnce
-	logger          log.Logger
 	w               io.Writer
 	keepAlive       func() bool
 
@@ -109,7 +106,6 @@ func (cn *peerConnMsgWriter) run(keepAliveTimeout time.Duration) {
 			}
 		}
 		if err != nil {
-			cn.logger.WithDefaultLevel(log.Debug).Printf("error writing: %v", err)
 			return
 		}
 		lastWrite = time.Now()

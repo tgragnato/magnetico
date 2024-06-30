@@ -26,7 +26,6 @@ import (
 func TestSendBitfieldThenHave(t *testing.T) {
 	var cl Client
 	cl.init(TestingConfig(t))
-	cl.initLogger()
 	qtc := qt.New(t)
 	c := cl.newConnection(nil, newConnectionOpts{network: "io.Pipe"})
 	c.setTorrent(cl.newTorrentForTesting())
@@ -96,7 +95,6 @@ func BenchmarkConnectionMainReadLoop(b *testing.B) {
 	cl.init(&ClientConfig{
 		DownloadRateLimiter: unlimited,
 	})
-	cl.initLogger()
 	ts := &torrentStorage{}
 	t := cl.newTorrentForTesting()
 	t.initialPieceCheckDisabled = true
