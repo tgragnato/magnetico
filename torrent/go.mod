@@ -113,7 +113,8 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.opentelemetry.io/contrib/instrumentation/host v0.52.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/runtime v0.52.0 // indirect
-	go.opentelemetry.io/contrib/processors/baggage/baggagetrace v0.0.1 // indirect
+	go.opentelemetry.io/contrib/processors/baggage/baggagetrace v0.1.0 // indirect
+	go.opentelemetry.io/contrib/processors/baggagecopy v0.1.0 // indirect
 	go.opentelemetry.io/contrib/propagators/b3 v1.27.0 // indirect
 	go.opentelemetry.io/contrib/propagators/ot v1.27.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.28.0 // indirect
