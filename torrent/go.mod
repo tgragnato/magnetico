@@ -35,7 +35,7 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/multiformats/go-multihash v0.2.3
-	github.com/pion/datachannel v1.5.6
+	github.com/pion/datachannel v1.5.8
 	github.com/pion/webrtc/v3 v3.2.44
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.19.1
@@ -90,7 +90,7 @@ require (
 	github.com/pion/randutil v0.1.0 // indirect
 	github.com/pion/rtcp v1.2.14 // indirect
 	github.com/pion/rtp v1.8.6 // indirect
-	github.com/pion/sctp v1.8.17 // indirect
+	github.com/pion/sctp v1.8.18 // indirect
 	github.com/pion/sdp/v3 v3.0.9 // indirect
 	github.com/pion/srtp/v2 v2.0.18 // indirect
 	github.com/pion/stun v0.6.1 // indirect
