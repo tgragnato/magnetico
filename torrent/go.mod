@@ -112,7 +112,7 @@ require (
 	github.com/tklauser/numcpus v0.8.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.opentelemetry.io/contrib/instrumentation/host v0.53.0 // indirect
-	go.opentelemetry.io/contrib/instrumentation/runtime v0.52.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/runtime v0.53.0 // indirect
 	go.opentelemetry.io/contrib/processors/baggage/baggagetrace v0.1.0 // indirect
 	go.opentelemetry.io/contrib/processors/baggagecopy v0.1.0 // indirect
 	go.opentelemetry.io/contrib/propagators/b3 v1.27.0 // indirect
