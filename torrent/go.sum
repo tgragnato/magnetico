@@ -416,8 +416,8 @@ go.opentelemetry.io/contrib/detectors/aws/lambda v0.52.0 h1:aZAZUtzXd7dklbWDqf0s
 go.opentelemetry.io/contrib/detectors/aws/lambda v0.52.0/go.mod h1:0oIsMo4DjOJNB/mn/bssl3ba7TEZhSgqe26vRMoxHv4=
 go.opentelemetry.io/contrib/instrumentation/host v0.53.0 h1:X4r+5n6bSqaQUbPlSO5baoM7tBvipkT0mJFyuPFnPAU=
 go.opentelemetry.io/contrib/instrumentation/host v0.53.0/go.mod h1:NTaDj8VCnJxWleEcRQRQaN36+aCZjO9foNIdJunEjUQ=
-go.opentelemetry.io/contrib/instrumentation/runtime v0.52.0 h1:UaQVCH34fQsyDjlgS0L070Kjs9uCrLKoQfzn2Nl7XTY=
-go.opentelemetry.io/contrib/instrumentation/runtime v0.52.0/go.mod h1:Ks4aHdMgu1vAfEY0cIBHcGx2l1S0+PwFm2BE/HRzqSk=
+go.opentelemetry.io/contrib/instrumentation/runtime v0.53.0 h1:nOlJEAJyrcy8hexK65M+dsCHIx7CVVbybcFDNkcTcAc=
+go.opentelemetry.io/contrib/instrumentation/runtime v0.53.0/go.mod h1:u79lGGIlkg3Ryw425RbMjEkGYNxSnXRyR286O840+u4=
 go.opentelemetry.io/contrib/processors/baggage/baggagetrace v0.1.0 h1:Q9kJxbstjL5DwlvCyQnTYbMvOftoVANnQcSzqYeA0AQ=
 go.opentelemetry.io/contrib/processors/baggage/baggagetrace v0.1.0/go.mod h1:2rK1JRWN+pfF/E9OhEjUczWwbX7oELQdsKyUgOTEliw=
 go.opentelemetry.io/contrib/processors/baggagecopy v0.1.0 h1:COxSh6wABHg0nkhYTdrCVmnnEqCyl0ZpjAY0+qOzxNk=
