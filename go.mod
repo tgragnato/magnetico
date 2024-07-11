@@ -21,7 +21,7 @@ require (
 	github.com/RoaringBitmap/roaring v1.9.4 // indirect
 	github.com/ajwerner/btree v0.0.0-20211221152037-f427b3e689c0 // indirect
 	github.com/alecthomas/atomic v0.1.0-alpha2 // indirect
-	github.com/anacrolix/chansync v0.4.0 // indirect
+	github.com/anacrolix/chansync v0.5.1 // indirect
 	github.com/anacrolix/dht/v2 v2.21.1 // indirect
 	github.com/anacrolix/envpprof v1.3.0 // indirect
 	github.com/anacrolix/generics v0.0.2 // indirect
