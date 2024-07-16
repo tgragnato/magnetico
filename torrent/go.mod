@@ -36,7 +36,7 @@ require (
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/multiformats/go-multihash v0.2.3
 	github.com/pion/datachannel v1.5.8
-	github.com/pion/webrtc/v3 v3.2.44
+	github.com/pion/webrtc/v3 v3.2.46
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.19.1
 	github.com/stretchr/testify v1.9.0
@@ -83,7 +83,7 @@ require (
 	github.com/multiformats/go-varint v0.0.7 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pion/dtls/v2 v2.2.11 // indirect
-	github.com/pion/ice/v2 v2.3.28 // indirect
+	github.com/pion/ice/v2 v2.3.29 // indirect
 	github.com/pion/interceptor v0.1.29 // indirect
 	github.com/pion/logging v0.2.2 // indirect
 	github.com/pion/mdns v0.0.12 // indirect
