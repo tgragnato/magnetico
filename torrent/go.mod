@@ -36,7 +36,7 @@ require (
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/multiformats/go-multihash v0.2.3
 	github.com/pion/datachannel v1.5.8
-	github.com/pion/webrtc/v3 v3.2.46
+	github.com/pion/webrtc/v3 v3.2.47
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.19.1
 	github.com/stretchr/testify v1.9.0
