@@ -94,7 +94,7 @@ require (
 	github.com/pion/sdp/v3 v3.0.9 // indirect
 	github.com/pion/srtp/v2 v2.0.20 // indirect
 	github.com/pion/stun v0.6.1 // indirect
-	github.com/pion/transport/v2 v2.2.5 // indirect
+	github.com/pion/transport/v2 v2.2.8 // indirect
 	github.com/pion/turn/v2 v2.1.6 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
@@ -110,6 +110,7 @@ require (
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.14 // indirect
 	github.com/tklauser/numcpus v0.8.0 // indirect
+	github.com/wlynxg/anet v0.0.3 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.opentelemetry.io/contrib/instrumentation/host v0.53.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/runtime v0.53.0 // indirect
