@@ -154,9 +154,10 @@ func (db *sqlite3Database) AddNewTorrent(infoHash []byte, name string, files []F
 			info_hash,
 			name,
 			total_size,
-			discovered_on
-		) VALUES (?, ?, ?, ?);
-	`, infoHash, name, totalSize, time.Now().Unix())
+			discovered_on,
+			modified_on
+		) VALUES (?, ?, ?, ?, ?);
+	`, infoHash, name, totalSize, time.Now().Unix(), time.Now().Unix())
 	if err != nil {
 		return errors.New("tx.Exec (INSERT OR REPLACE INTO torrents) " + err.Error())
 	}
@@ -642,16 +643,6 @@ func (db *sqlite3Database) setupDatabase() error {
 				CHECK (modified_on >= discovered_on AND (updated_on IS NOT NULL OR modified_on >= updated_on))
 				DEFAULT 32503680000
 			;
-
-			-- If 'modified_on' is not explicitly supplied, then it shall be set, by default, to
-			-- 'discovered_on' right after the row is inserted to 'torrents'.
-            --
-			-- {WHEN expr} does NOT work for some reason (trigger doesn't get triggered), so we use
-            --   AND NEW."modified_on" = 32503680000
-            -- instead in the WHERE clause.
-			CREATE TRIGGER "torrents_modified_on_default_t" AFTER INSERT ON "torrents" BEGIN
-	          UPDATE "torrents" SET "modified_on" = NEW."discovered_on" WHERE "id" = NEW."id" AND NEW."modified_on" = 32503680000;
-            END;
 
 			-- Set 'modified_on' value of all rows to 'discovered_on' or 'updated_on', whichever is
             -- greater; beware that 'updated_on' can be NULL too.			
