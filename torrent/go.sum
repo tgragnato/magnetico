@@ -357,8 +357,8 @@ github.com/ryszard/goskiplist v0.0.0-20150312221310-2dfbae5fcf46 h1:GHRpF1pTW19a
 github.com/ryszard/goskiplist v0.0.0-20150312221310-2dfbae5fcf46/go.mod h1:uAQ5PCi+MFsC7HjREoAz1BU+Mq60+05gifQSsHSDG/8=
 github.com/sethvargo/go-envconfig v1.1.0 h1:cWZiJxeTm7AlCvzGXrEXaSTCNgip5oJepekh/BOQuog=
 github.com/sethvargo/go-envconfig v1.1.0/go.mod h1:JLd0KFWQYzyENqnEPWWZ49i4vzZo/6nRidxI8YvGiHw=
-github.com/shirou/gopsutil/v4 v4.24.6 h1:9qqCSYF2pgOU+t+NgJtp7Co5+5mHF/HyKBUckySQL64=
-github.com/shirou/gopsutil/v4 v4.24.6/go.mod h1:aoebb2vxetJ/yIDZISmduFvVNPHqXQ9SEJwRXxkf0RA=
+github.com/shirou/gopsutil/v4 v4.24.7 h1:V9UGTK4gQ8HvcnPKf6Zt3XHyQq/peaekfxpJ2HSocJk=
+github.com/shirou/gopsutil/v4 v4.24.7/go.mod h1:0uW/073rP7FYLOkvxolUQM5rMOLTNmRXnFKafpb71rw=
 github.com/shoenig/go-m1cpu v0.1.6 h1:nxdKQNcEB6vzgA2E2bvzKIYRuNj7XNJ4S/aRSwKzFtM=
 github.com/shoenig/go-m1cpu v0.1.6/go.mod h1:1JJMcUBvfNwpq05QDQVAnx3gUHr9IYF7GNg9SUEw2VQ=
 github.com/shoenig/test v0.6.4 h1:kVTaSd7WLz5WZ2IaoM0RSzRsUD+m8wRR+5qvntpn4LU=
