@@ -35,6 +35,7 @@ var opFlags struct {
 
 	LeechMaxN          int
 	BootstrappingNodes []string
+	FilterNodesCIDRs   []string
 
 	Addr string
 
@@ -89,8 +90,8 @@ func main() {
 		return
 	}
 
-	trawlingManager := dht.NewManager(opFlags.IndexerAddrs, opFlags.IndexerInterval, opFlags.IndexerMaxNeighbors, opFlags.BootstrappingNodes)
-	metadataSink := metadata.NewSink(5*time.Second, opFlags.LeechMaxN)
+	trawlingManager := dht.NewManager(opFlags.IndexerAddrs, opFlags.IndexerInterval, opFlags.IndexerMaxNeighbors, opFlags.BootstrappingNodes, opFlags.FilterNodesCIDRs)
+	metadataSink := metadata.NewSink(5*time.Second, opFlags.LeechMaxN, opFlags.FilterNodesCIDRs)
 
 	// The Event Loop
 	for stopped := false; !stopped; {
@@ -129,6 +130,7 @@ func parseFlags() error {
 		MaxRPS    uint `long:"max-rps" description:"Maximum requests per second." default:"0"`
 
 		BootstrappingNodes []string `long:"bootstrap-node" description:"Host(s) to be used for bootstrapping." default:"dht.tgragnato.it"`
+		FilterNodesCIDRs   []string `long:"filter-nodes-cidrs" description:"List of CIDRs on which Magnetico can operate. Empty is open mode." default:""`
 
 		Addr string `short:"a" long:"addr"        description:"Address (host:port) to serve on" default:"[::1]:8080"`
 		Cred string `short:"c" long:"credentials" description:"Path to the credentials file" default:""`
@@ -184,6 +186,7 @@ func parseFlags() error {
 
 		mainline.DefaultThrottleRate = int(cmdF.MaxRPS)
 		opFlags.BootstrappingNodes = cmdF.BootstrappingNodes
+		opFlags.FilterNodesCIDRs = cmdF.FilterNodesCIDRs
 	}
 
 	return nil

@@ -42,7 +42,7 @@ func (ir IndexingResult) PeerAddrs() []net.TCPAddr {
 	return ir.peerAddrs
 }
 
-func NewIndexingService(laddr string, interval time.Duration, maxNeighbors uint, eventHandlers IndexingServiceEventHandlers, bootstrapNodes []string) *IndexingService {
+func NewIndexingService(laddr string, interval time.Duration, maxNeighbors uint, eventHandlers IndexingServiceEventHandlers, bootstrapNodes []string, filterNodes []string) *IndexingService {
 	service := new(IndexingService)
 	service.interval = interval
 	service.protocol = NewProtocol(
@@ -55,7 +55,7 @@ func NewIndexingService(laddr string, interval time.Duration, maxNeighbors uint,
 		},
 	)
 	service.nodeID = randomNodeID()
-	service.nodes = newRoutingTable(maxNeighbors)
+	service.nodes = newRoutingTable(maxNeighbors, filterNodes)
 	service.eventHandlers = eventHandlers
 
 	service.getPeersRequests = make(map[[2]byte][20]byte)

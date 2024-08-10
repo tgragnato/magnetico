@@ -39,13 +39,13 @@ type Sink struct {
 	termination chan interface{}
 }
 
-func NewSink(deadline time.Duration, maxNLeeches int) *Sink {
+func NewSink(deadline time.Duration, maxNLeeches int, filterNodes []string) *Sink {
 	ms := new(Sink)
 
 	ms.PeerID = randomID()
 	ms.deadline = deadline
 	ms.drain = make(chan Metadata, 10)
-	ms.incomingInfoHashes = newInfoHashes(maxNLeeches)
+	ms.incomingInfoHashes = newInfoHashes(maxNLeeches, filterNodes)
 	ms.termination = make(chan interface{})
 
 	return ms

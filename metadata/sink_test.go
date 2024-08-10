@@ -10,7 +10,7 @@ import (
 func TestSink_NewSink(t *testing.T) {
 	t.Parallel()
 
-	sink := NewSink(time.Second, 10)
+	sink := NewSink(time.Second, 10, []string{})
 	if sink == nil ||
 		len(sink.PeerID) != 20 ||
 		sink.deadline != time.Second ||
@@ -37,7 +37,7 @@ func (tr *TestResult) PeerAddrs() []net.TCPAddr {
 func TestSink_Sink(t *testing.T) {
 	t.Parallel()
 
-	sink := NewSink(time.Minute, 2)
+	sink := NewSink(time.Minute, 2, []string{})
 	testResult := &TestResult{
 		infoHash:  [20]byte{255},
 		peerAddrs: []net.TCPAddr{{IP: net.ParseIP("1.0.0.1"), Port: 443}},
@@ -51,7 +51,7 @@ func TestSink_Sink(t *testing.T) {
 func TestSink_Terminate(t *testing.T) {
 	t.Parallel()
 
-	sink := NewSink(time.Minute, 1)
+	sink := NewSink(time.Minute, 1, []string{})
 	sink.Terminate()
 
 	if !sink.terminated {
@@ -68,7 +68,7 @@ func TestSink_Drain(t *testing.T) {
 		}
 	}()
 
-	sink := NewSink(time.Minute, 1)
+	sink := NewSink(time.Minute, 1, []string{})
 	sink.Terminate()
 	sink.Drain()
 }
@@ -76,7 +76,7 @@ func TestSink_Drain(t *testing.T) {
 func TestFlush(t *testing.T) {
 	t.Parallel()
 
-	sink := NewSink(time.Minute, 1)
+	sink := NewSink(time.Minute, 1, []string{})
 	testMetadata := Metadata{
 		InfoHash: []byte{1, 2, 3, 4, 5, 6},
 	}

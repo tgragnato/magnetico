@@ -9,14 +9,47 @@ type infoHashes struct {
 	sync.RWMutex
 	infoHashes  map[[20]byte][]net.TCPAddr
 	maxNLeeches int
+	filterPeers []net.IPNet
 }
 
-func newInfoHashes(maxNLeeches int) *infoHashes {
+func newInfoHashes(maxNLeeches int, filterPeers []string) *infoHashes {
+	filter := []net.IPNet{}
+	for _, filterPeer := range filterPeers {
+		_, ipNet, err := net.ParseCIDR(filterPeer)
+		if err != nil {
+			continue
+		}
+		filter = append(filter, *ipNet)
+	}
+
 	ih := &infoHashes{
 		infoHashes:  make(map[[20]byte][]net.TCPAddr),
 		maxNLeeches: maxNLeeches,
+		filterPeers: filter,
 	}
 	return ih
+}
+
+func (ih *infoHashes) isAllowed(peer net.TCPAddr) bool {
+	if len(ih.filterPeers) > 0 {
+		for _, filterPeer := range ih.filterPeers {
+			if filterPeer.Contains(peer.IP) {
+				return true
+			}
+		}
+
+		return false
+	}
+
+	if !peer.IP.IsGlobalUnicast() || peer.IP.IsPrivate() {
+		return false
+	}
+
+	if peer.Port < 1024 || peer.Port > 65535 {
+		return false
+	}
+
+	return true
 }
 
 func (ih *infoHashes) push(infoHash [20]byte, peerAddresses []net.TCPAddr) {
@@ -28,10 +61,7 @@ func (ih *infoHashes) push(infoHash [20]byte, peerAddresses []net.TCPAddr) {
 	defer ih.Unlock()
 
 	for _, addr := range peerAddresses {
-		if !addr.IP.IsGlobalUnicast() || addr.IP.IsPrivate() {
-			continue
-		}
-		if addr.Port < 1024 || addr.Port > 65535 {
+		if !ih.isAllowed(addr) {
 			continue
 		}
 
