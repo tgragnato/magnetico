@@ -12,22 +12,12 @@ type infoHashes struct {
 	filterPeers []net.IPNet
 }
 
-func newInfoHashes(maxNLeeches int, filterPeers []string) *infoHashes {
-	filter := []net.IPNet{}
-	for _, filterPeer := range filterPeers {
-		_, ipNet, err := net.ParseCIDR(filterPeer)
-		if err != nil {
-			continue
-		}
-		filter = append(filter, *ipNet)
-	}
-
-	ih := &infoHashes{
+func newInfoHashes(maxNLeeches int, filterPeers []net.IPNet) *infoHashes {
+	return &infoHashes{
 		infoHashes:  make(map[[20]byte][]net.TCPAddr),
 		maxNLeeches: maxNLeeches,
-		filterPeers: filter,
+		filterPeers: filterPeers,
 	}
-	return ih
 }
 
 func (ih *infoHashes) isAllowed(peer net.TCPAddr) bool {

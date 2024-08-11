@@ -23,7 +23,7 @@ type Manager struct {
 	indexingServices []Service
 }
 
-func NewManager(addrs []string, interval time.Duration, maxNeighbors uint, bootstrappingNodes []string, filterNodes []string) *Manager {
+func NewManager(addrs []string, interval time.Duration, maxNeighbors uint, bootstrappingNodes []string, filterNodes []net.IPNet) *Manager {
 	manager := new(Manager)
 	manager.output = make(chan Result, 20)
 

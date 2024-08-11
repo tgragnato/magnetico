@@ -12,20 +12,11 @@ type routingTable struct {
 	filterNodes  []net.IPNet
 }
 
-func newRoutingTable(maxNeighbors uint, filterNodes []string) *routingTable {
-	filter := []net.IPNet{}
-	for _, filterNode := range filterNodes {
-		_, ipNet, err := net.ParseCIDR(filterNode)
-		if err != nil {
-			continue
-		}
-		filter = append(filter, *ipNet)
-	}
-
+func newRoutingTable(maxNeighbors uint, filterNodes []net.IPNet) *routingTable {
 	return &routingTable{
 		nodes:        make([]net.UDPAddr, 0, maxNeighbors),
 		maxNeighbors: maxNeighbors,
-		filterNodes:  filter,
+		filterNodes:  filterNodes,
 	}
 }
 

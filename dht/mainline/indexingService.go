@@ -42,7 +42,7 @@ func (ir IndexingResult) PeerAddrs() []net.TCPAddr {
 	return ir.peerAddrs
 }
 
-func NewIndexingService(laddr string, interval time.Duration, maxNeighbors uint, eventHandlers IndexingServiceEventHandlers, bootstrapNodes []string, filterNodes []string) *IndexingService {
+func NewIndexingService(laddr string, interval time.Duration, maxNeighbors uint, eventHandlers IndexingServiceEventHandlers, bootstrapNodes []string, filterNodes []net.IPNet) *IndexingService {
 	service := new(IndexingService)
 	service.interval = interval
 	service.protocol = NewProtocol(

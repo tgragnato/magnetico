@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"reflect"
 	"regexp"
 	"strconv"
 	"syscall"
@@ -35,7 +36,7 @@ var opFlags struct {
 
 	LeechMaxN          int
 	BootstrappingNodes []string
-	FilterNodesCIDRs   []string
+	FilterNodesCIDRs   []net.IPNet
 
 	Addr string
 
@@ -186,7 +187,22 @@ func parseFlags() error {
 
 		mainline.DefaultThrottleRate = int(cmdF.MaxRPS)
 		opFlags.BootstrappingNodes = cmdF.BootstrappingNodes
-		opFlags.FilterNodesCIDRs = cmdF.FilterNodesCIDRs
+
+		opFlags.FilterNodesCIDRs = []net.IPNet{}
+		for _, cidr := range cmdF.FilterNodesCIDRs {
+			if cidr == "" {
+				continue
+			}
+			if _, ipnet, err := net.ParseCIDR(cidr); err == nil {
+				opFlags.FilterNodesCIDRs = append(opFlags.FilterNodesCIDRs, *ipnet)
+			} else {
+				log.Fatalf("Error while parsing CIDR %s: %s", cidr, err.Error())
+			}
+		}
+		if len(opFlags.FilterNodesCIDRs) != 0 && reflect.DeepEqual(cmdF.BootstrappingNodes, []string{"dht.tgragnato.it"}) {
+			log.Printf("%v\n", cmdF.FilterNodesCIDRs[0])
+			log.Fatalln("You should specify your own internal bootstrapping nodes in filter mode.")
+		}
 	}
 
 	return nil

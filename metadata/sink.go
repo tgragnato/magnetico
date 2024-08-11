@@ -39,7 +39,7 @@ type Sink struct {
 	termination chan interface{}
 }
 
-func NewSink(deadline time.Duration, maxNLeeches int, filterNodes []string) *Sink {
+func NewSink(deadline time.Duration, maxNLeeches int, filterNodes []net.IPNet) *Sink {
 	ms := new(Sink)
 
 	ms.PeerID = randomID()
