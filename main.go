@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"reflect"
 	"regexp"
 	"strconv"
 	"syscall"
@@ -35,6 +36,7 @@ var opFlags struct {
 
 	LeechMaxN          int
 	BootstrappingNodes []string
+	FilterNodesCIDRs   []net.IPNet
 
 	Addr string
 
@@ -89,8 +91,8 @@ func main() {
 		return
 	}
 
-	trawlingManager := dht.NewManager(opFlags.IndexerAddrs, opFlags.IndexerInterval, opFlags.IndexerMaxNeighbors, opFlags.BootstrappingNodes)
-	metadataSink := metadata.NewSink(5*time.Second, opFlags.LeechMaxN)
+	trawlingManager := dht.NewManager(opFlags.IndexerAddrs, opFlags.IndexerInterval, opFlags.IndexerMaxNeighbors, opFlags.BootstrappingNodes, opFlags.FilterNodesCIDRs)
+	metadataSink := metadata.NewSink(5*time.Second, opFlags.LeechMaxN, opFlags.FilterNodesCIDRs)
 
 	// The Event Loop
 	for stopped := false; !stopped; {
@@ -129,6 +131,7 @@ func parseFlags() error {
 		MaxRPS    uint `long:"max-rps" description:"Maximum requests per second." default:"0"`
 
 		BootstrappingNodes []string `long:"bootstrap-node" description:"Host(s) to be used for bootstrapping." default:"dht.tgragnato.it"`
+		FilterNodesCIDRs   []string `long:"filter-nodes-cidrs" description:"List of CIDRs on which Magnetico can operate. Empty is open mode." default:""`
 
 		Addr string `short:"a" long:"addr"        description:"Address (host:port) to serve on" default:"[::1]:8080"`
 		Cred string `short:"c" long:"credentials" description:"Path to the credentials file" default:""`
@@ -184,6 +187,22 @@ func parseFlags() error {
 
 		mainline.DefaultThrottleRate = int(cmdF.MaxRPS)
 		opFlags.BootstrappingNodes = cmdF.BootstrappingNodes
+
+		opFlags.FilterNodesCIDRs = []net.IPNet{}
+		for _, cidr := range cmdF.FilterNodesCIDRs {
+			if cidr == "" {
+				continue
+			}
+			if _, ipnet, err := net.ParseCIDR(cidr); err == nil {
+				opFlags.FilterNodesCIDRs = append(opFlags.FilterNodesCIDRs, *ipnet)
+			} else {
+				log.Fatalf("Error while parsing CIDR %s: %s", cidr, err.Error())
+			}
+		}
+		if len(opFlags.FilterNodesCIDRs) != 0 && reflect.DeepEqual(cmdF.BootstrappingNodes, []string{"dht.tgragnato.it"}) {
+			log.Printf("%v\n", cmdF.FilterNodesCIDRs[0])
+			log.Fatalln("You should specify your own internal bootstrapping nodes in filter mode.")
+		}
 	}
 
 	return nil

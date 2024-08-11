@@ -23,14 +23,14 @@ type Manager struct {
 	indexingServices []Service
 }
 
-func NewManager(addrs []string, interval time.Duration, maxNeighbors uint, bootstrappingNodes []string) *Manager {
+func NewManager(addrs []string, interval time.Duration, maxNeighbors uint, bootstrappingNodes []string, filterNodes []net.IPNet) *Manager {
 	manager := new(Manager)
 	manager.output = make(chan Result, 20)
 
 	for _, addr := range addrs {
 		service := mainline.NewIndexingService(addr, interval, maxNeighbors, mainline.IndexingServiceEventHandlers{
 			OnResult: manager.onIndexingResult,
-		}, bootstrappingNodes)
+		}, bootstrappingNodes, filterNodes)
 		manager.indexingServices = append(manager.indexingServices, service)
 		service.Start()
 	}
