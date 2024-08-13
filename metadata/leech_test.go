@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/anacrolix/torrent/bencode"
+	"github.com/tgragnato/magnetico/bencode"
 )
 
 func TestDecoder(t *testing.T) {

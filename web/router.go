@@ -26,11 +26,6 @@ var (
 )
 
 func makeRouter() *mux.Router {
-	apiReadmeHandler, err := NewApiReadmeHandler()
-	if err != nil {
-		log.Fatalf("Could not initialise readme handler %v", err)
-	}
-	defer apiReadmeHandler.Close()
 
 	router := mux.NewRouter()
 	router.HandleFunc("/",
@@ -44,8 +39,6 @@ func makeRouter() *mux.Router {
 		BasicAuth(apiTorrent))
 	router.HandleFunc("/api/v0.1/torrents/{infohash:[a-f0-9]{40}}/filelist",
 		BasicAuth(apiFileList))
-	router.Handle("/api/v0.1/torrents/{infohash:[a-f0-9]{40}}/readme",
-		apiReadmeHandler)
 
 	router.HandleFunc("/feed",
 		BasicAuth(feedHandler))
