@@ -1,3 +1,17 @@
+## [1.60.0](https://github.com/tgragnato/magnetico/compare/v1.59.0...v1.60.0) (2024-08-13)
+
+
+### Features
+
+* add arm64 to multi-platform container builds ([4a09971](https://github.com/tgragnato/magnetico/commit/4a09971b9f9ecd26c7dc3f40c5290b0f6a6138c3))
+* **ci:** publish multi-platform executables in releases ([89f7f02](https://github.com/tgragnato/magnetico/commit/89f7f020b6ccb20f80b54127d41c5004d542e5b1))
+
+
+### Bug Fixes
+
+* **ci:** enable cache support ([a8d2a49](https://github.com/tgragnato/magnetico/commit/a8d2a49764e603d3f3cda07303b346e6fd360254))
+* **ci:** replace actions/delete-package-versions with dataaxiom/ghcr-cleaner-action ([8838565](https://github.com/tgragnato/magnetico/commit/8838565c4bd197c0466b39a1ae38c3258a02ffde))
+
 ## [1.59.0](https://github.com/tgragnato/magnetico/compare/v1.58.3...v1.59.0) (2024-08-13)
 
 
