@@ -9,6 +9,7 @@ jobs:
 
     name: Release
     runs-on: ubuntu-latest
+    timeout-minutes: 1440
     permissions:
         actions: read
         contents: write
@@ -58,6 +59,7 @@ jobs:
       - name: Build and export to Docker
         uses: docker/build-push-action@v6
         with:
+          platforms: linux/amd64,linux/arm64
           context: .
           load: true
           tags: ghcr.io/${{ github.repository }}:test
@@ -69,6 +71,7 @@ jobs:
       - name: Build and push Docker Image
         uses: docker/build-push-action@v6
         with:
+          platforms: linux/amd64,linux/arm64
           context: .
           tags: ghcr.io/${{ github.repository }}:${{ steps.changelog.outputs.tag }}, ghcr.io/${{ github.repository }}:latest
           push: true
