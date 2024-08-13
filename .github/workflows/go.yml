@@ -9,6 +9,8 @@ on:
 jobs:
 
   build:
+
+    name: Build
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -48,6 +50,8 @@ jobs:
         args: --timeout=5m
 
   docker:
+
+    name: Docker
     needs: build
     if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest

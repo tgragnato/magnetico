@@ -4,6 +4,7 @@ on: [pull_request]
 
 jobs:
   commit-lint:
+    name: Commits linter
     runs-on: ubuntu-latest
 
     steps:
