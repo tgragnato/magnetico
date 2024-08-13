@@ -3,7 +3,6 @@ module github.com/tgragnato/magnetico
 go 1.22.6
 
 require (
-	github.com/anacrolix/dht/v2 v2.21.1
 	github.com/anacrolix/generics v0.0.2
 	github.com/anacrolix/missinggo/v2 v2.7.3
 	github.com/bits-and-blooms/bloom/v3 v3.7.0
@@ -22,9 +21,6 @@ require (
 )
 
 require (
-	github.com/anacrolix/missinggo v1.3.0 // indirect
-	github.com/anacrolix/multiless v0.3.1-0.20221221005021-2d12701f83f7 // indirect
-	github.com/anacrolix/torrent v1.56.1 // indirect
 	github.com/bits-and-blooms/bitset v1.13.0 // indirect
 	github.com/bradfitz/iter v0.0.0-20191230175014-e8f45d346db8 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
