@@ -53,8 +53,10 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
+      actions: read
       contents: read
       packages: write
+      security-events: read
 
     steps:
 
@@ -77,5 +79,14 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
-          tags: ghcr.io/tgragnato/magnetico:next
+          tags: ghcr.io/${{ github.repository }}:next
           push: true
+
+      - name: Delete untagged images
+        uses: actions/delete-package-versions@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          package-name: ${{ github.event.repository.name }}
+          package-type: container
+          delete-only-untagged-versions: true
+          min-versions-to-keep: 10

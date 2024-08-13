@@ -1,0 +1,74 @@
+name: Create release
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  release:
+
+    name: Create changelog
+    runs-on: ubuntu-latest
+    permissions:
+        actions: read
+        contents: write
+        packages: write
+        security-events: read
+
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Conventional Changelog Action
+        id: changelog
+        uses: TriPSs/conventional-changelog-action@v5
+        with:
+          preset: conventionalcommits
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          git-user-name: ${{ github.actor }}
+          git-user-email: ${{ github.actor }}@users.noreply.github.com
+          input-file: '.github/CHANGELOG.md'
+          output-file: '.github/CHANGELOG.md'
+          release-count: 10000
+          skip-on-empty: false
+          skip-version-file: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        with:
+          tag_name: ${{ steps.changelog.outputs.tag }}
+          body: ${{ steps.changelog.outputs.clean_changelog }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and export to Docker
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: ghcr.io/${{ github.repository }}:test
+      
+      - name: Test Docker Image
+        run: |
+          docker run --rm ghcr.io/${{ github.repository }}:test --help
+
+      - name: Build and push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          tags: ghcr.io/${{ github.repository }}:${{ steps.changelog.outputs.tag }}, ghcr.io/${{ github.repository }}:latest
+          push: true
