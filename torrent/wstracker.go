@@ -55,7 +55,11 @@ func (me *websocketTrackers) Get(url string, infoHash [20]byte) (*webtorrent.Tra
 	defer me.mu.Unlock()
 	value, ok := me.clients[url]
 	if !ok {
-		dialer := &websocket.Dialer{Proxy: me.Proxy, NetDialContext: me.DialContext, HandshakeTimeout: websocket.DefaultDialer.HandshakeTimeout}
+		dialer := &websocket.Dialer{
+			Proxy:            me.Proxy,
+			NetDialContext:   me.DialContext,
+			HandshakeTimeout: websocket.DefaultDialer.HandshakeTimeout,
+		}
 		value = &refCountedWebtorrentTrackerClient{
 			TrackerClient: webtorrent.TrackerClient{
 				Dialer:                     dialer,

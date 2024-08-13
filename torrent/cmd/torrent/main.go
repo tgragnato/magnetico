@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"os"
 
+	app "github.com/anacrolix/gostdapp"
+
 	"github.com/anacrolix/bargle"
 	"github.com/anacrolix/envpprof"
 	xprometheus "github.com/anacrolix/missinggo/v2/prometheus"
@@ -29,8 +31,14 @@ func init() {
 }
 
 func main() {
-	ctx := context.Background()
-	tracingExporter, _ := otlptracegrpc.New(ctx)
+	app.RunContext(mainErr)
+}
+
+func mainErr(ctx context.Context) error {
+	tracingExporter, err := otlptracegrpc.New(ctx)
+	if err != nil {
+		return fmt.Errorf("creating tracing exporter: %w", err)
+	}
 	tracerProvider := trace.NewTracerProvider(trace.WithBatcher(tracingExporter))
 	otel.SetTracerProvider(tracerProvider)
 
@@ -131,5 +139,8 @@ func main() {
 		bargle.Subcommand{Name: "serve", Command: serve()},
 		bargle.Subcommand{Name: "create", Command: create()},
 	)
+	// Well this sux, this old version of bargle doesn't return so we can let the gostdapp Context
+	// clean up.
 	main.Run()
+	return nil
 }

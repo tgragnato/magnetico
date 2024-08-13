@@ -317,6 +317,7 @@ func (tc *TrackerClient) trackerReadLoop(tracker *websocket.Conn) error {
 			}, ar.PeerID)
 		case ar.Answer != nil:
 			tc.handleAnswer(ar.OfferID, *ar.Answer)
+		default:
 		}
 	}
 }

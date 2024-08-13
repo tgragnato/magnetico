@@ -379,7 +379,7 @@ func downloadErr(flags downloadFlags) error {
 			<-ctx.Done()
 		}
 	}
-	spew.Dump(expvar.Get("torrent").(*expvar.Map).Get("chunks received"))
+	fmt.Printf("chunks received: %v\n", &torrent.ChunksReceived)
 	spew.Dump(client.ConnStats())
 	return err
 }
