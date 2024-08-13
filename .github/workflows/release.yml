@@ -5,9 +5,51 @@ on:
 
 jobs:
 
+  build:
+
+    name: Build Executables
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - { go-version: 1.22, go-os: linux, go-arch: amd64 }
+          - { go-version: 1.22, go-os: linux, go-arch: 386 }
+          - { go-version: 1.22, go-os: linux, go-arch: arm64 }
+          - { go-version: 1.22, go-os: linux, go-arch: arm }
+          - { go-version: 1.22, go-os: openbsd, go-arch: amd64 }
+          - { go-version: 1.22, go-os: openbsd, go-arch: 386 }
+          - { go-version: 1.22, go-os: openbsd, go-arch: arm64 }
+          - { go-version: 1.22, go-os: openbsd, go-arch: arm }
+          - { go-version: 1.22, go-os: darwin, go-arch: arm64 }
+          - { go-version: 1.22, go-os: freebsd, go-arch: amd64 }
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Set up Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+        
+      - name: Build binary
+        run: go build .
+        env:
+          CGO_ENABLED: 0
+          GOOS: ${{ matrix.go-os }}
+          GOARCH: ${{ matrix.go-arch }}
+      
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: magnetico-${{ matrix.go-os }}-${{ matrix.go-arch }}
+          path: magnetico
+
   release:
 
     name: Release
+    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 1440
     permissions:
@@ -35,14 +77,6 @@ jobs:
           skip-on-empty: false
           skip-version-file: true
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        if: ${{ steps.changelog.outputs.skipped == 'false' }}
-        with:
-          tag_name: ${{ steps.changelog.outputs.tag }}
-          body: ${{ steps.changelog.outputs.clean_changelog }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-      
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -59,11 +93,10 @@ jobs:
       - name: Build and export to Docker
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
           context: .
           load: true
           tags: ghcr.io/${{ github.repository }}:test
-      
+
       - name: Test Docker Image
         run: |
           docker run --rm ghcr.io/${{ github.repository }}:test --help
@@ -75,3 +108,18 @@ jobs:
           context: .
           tags: ghcr.io/${{ github.repository }}:${{ steps.changelog.outputs.tag }}, ghcr.io/${{ github.repository }}:latest
           push: true
+
+      - name: Download workflow artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: magnetico-*
+          merge-multiple: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        with:
+          tag_name: ${{ steps.changelog.outputs.tag }}
+          body: ${{ steps.changelog.outputs.clean_changelog }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: magnetico-*
