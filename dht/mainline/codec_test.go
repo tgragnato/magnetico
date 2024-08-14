@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/anacrolix/torrent/bencode"
+	"github.com/tgragnato/magnetico/bencode"
 )
 
 var codecTest_validInstances = []struct {

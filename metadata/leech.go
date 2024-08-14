@@ -12,8 +12,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/anacrolix/torrent/bencode"
-	"github.com/anacrolix/torrent/metainfo"
+	"github.com/tgragnato/magnetico/bencode"
+	"github.com/tgragnato/magnetico/metainfo"
 	"github.com/tgragnato/magnetico/persistence"
 )
 

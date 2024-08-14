@@ -6,7 +6,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/anacrolix/torrent/bencode"
+	"github.com/tgragnato/magnetico/bencode"
 )
 
 var (
