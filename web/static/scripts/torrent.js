@@ -41,18 +41,5 @@ window.onload = function () {
                 }
             }
         });
-
-        myFetch("/api/v0.1/torrents/" + infoHash + "/readme")
-            .then(response => {
-                return response.text();
-            })
-            .then(x => {
-                const readme = document.getElementById("readme");
-                readme.innerText = x;
-            })
-            .catch(err => {
-                const readme = document.getElementById("readme");
-                readme.innerText = err;
-            });
     });
 };
