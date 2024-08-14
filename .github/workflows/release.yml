@@ -113,7 +113,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           pattern: magnetico-*
-          merge-multiple: true
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
