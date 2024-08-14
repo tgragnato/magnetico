@@ -1,3 +1,11 @@
+## [1.60.1](https://github.com/tgragnato/magnetico/compare/v1.60.0...v1.60.1) (2024-08-14)
+
+
+### Bug Fixes
+
+* **deps:** drop a benchmark to unload a bunch of dependencies ([61c3239](https://github.com/tgragnato/magnetico/commit/61c3239ff2c7a3714b769391408b4c68643c44b8))
+* **web:** drop the assets related to the readme endpoint ([a1884eb](https://github.com/tgragnato/magnetico/commit/a1884eb8c15dcbf83c213164e107e122bdad8509))
+
 ## [1.60.0](https://github.com/tgragnato/magnetico/compare/v1.59.0...v1.60.0) (2024-08-13)
 
 
