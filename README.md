@@ -1,8 +1,8 @@
 # magnetico
 *Autonomous (self-hosted) BitTorrent DHT search engine suite.*
 
-[![Go](https://github.com/tgragnato/magnetico/actions/workflows/go.yml/badge.svg)](https://github.com/tgragnato/magnetico/actions/workflows/go.yml)
-[![CodeQL](https://github.com/tgragnato/magnetico/actions/workflows/codeql.yml/badge.svg)](https://github.com/tgragnato/magnetico/actions/workflows/codeql.yml)
+[![Go](https://github.com/tgragnato/magnetico/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/tgragnato/magnetico/actions/workflows/go.yml)
+[![CodeQL](https://github.com/tgragnato/magnetico/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/tgragnato/magnetico/actions/workflows/codeql.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/tgragnato/magnetico)](https://goreportcard.com/report/github.com/tgragnato/magnetico)
 
 ![Flow of Operations](/doc/operations.svg)
