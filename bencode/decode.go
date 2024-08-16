@@ -734,9 +734,6 @@ func (d *Decoder) parseStringInterface() string {
 	}
 	b := d.readBytes(int(length))
 	d.Offset += int64(len(b))
-	if err != nil {
-		panic(&SyntaxError{Offset: d.Offset, What: err})
-	}
 	return bytesAsString(b)
 }
 
