@@ -5,7 +5,6 @@ import (
 	"encoding"
 	"encoding/hex"
 	"fmt"
-	"unsafe"
 
 	"github.com/multiformats/go-multihash"
 
@@ -57,8 +56,10 @@ func (t *T) FromHexString(s string) (err error) {
 }
 
 // Truncates the hash to 20 bytes for use in auxiliary interfaces, like DHT and trackers.
-func (t *T) ToShort() (short *infohash.T) {
-	return (*infohash.T)(unsafe.Pointer(t))
+func (t *T) ToShort() infohash.T {
+	short := infohash.T{}
+	copy(short[:], t[:infohash.Size])
+	return short
 }
 
 var (
