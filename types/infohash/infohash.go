@@ -42,6 +42,10 @@ func (t *T) FromHexString(s string) (err error) {
 		err = fmt.Errorf("hash hex string has bad length: %d", len(s))
 		return
 	}
+	if len(s) == 0 {
+		*t = T{}
+		return
+	}
 	n, err := hex.Decode(t[:], []byte(s))
 	if err != nil {
 		return
@@ -72,7 +76,7 @@ func (t T) MarshalText() (text []byte, err error) {
 func FromHexString(s string) (h T) {
 	err := h.FromHexString(s)
 	if err != nil {
-		panic(err)
+		h.FromHexString("")
 	}
 	return
 }
