@@ -7,6 +7,8 @@ import (
 )
 
 func TestT_Format(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		name     string
 		hash     T
@@ -35,6 +37,8 @@ func TestT_Format(t *testing.T) {
 }
 
 func TestT_String_FromHexString(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
 		tr   T
@@ -63,6 +67,8 @@ func TestT_String_FromHexString(t *testing.T) {
 }
 
 func TestT_IsZero(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
 		tr   *T
@@ -90,6 +96,8 @@ func TestT_IsZero(t *testing.T) {
 }
 
 func TestT_UnmarshalText(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name    string
 		tr      *T
@@ -120,6 +128,8 @@ func TestT_UnmarshalText(t *testing.T) {
 }
 
 func TestT_MarshalText(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		name     string
 		hash     T
@@ -151,6 +161,8 @@ func TestT_MarshalText(t *testing.T) {
 }
 
 func TestFromHexString(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		name     string
 		input    string
@@ -184,6 +196,8 @@ func TestFromHexString(t *testing.T) {
 }
 
 func TestHashBytes(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name     string
 		input    []byte
@@ -212,6 +226,8 @@ func TestHashBytes(t *testing.T) {
 }
 
 func TestHashBytesV2(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name     string
 		input    []byte
