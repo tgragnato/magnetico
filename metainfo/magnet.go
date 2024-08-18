@@ -8,8 +8,6 @@ import (
 	"net/url"
 	"strings"
 
-	g "github.com/anacrolix/generics"
-
 	"github.com/tgragnato/magnetico/types/infohash"
 )
 
@@ -88,7 +86,7 @@ func ParseMagnetUri(uri string) (m Magnet, err error) {
 		return
 	}
 	q.Del("xt")
-	m.DisplayName = popFirstValue(q, "dn").UnwrapOrZeroValue()
+	m.DisplayName = popFirstValue(q, "dn")
 	m.Trackers = q["tr"]
 	q.Del("tr")
 	copyParams(&m.Params, q)
@@ -120,16 +118,16 @@ func parseEncodedV1Infohash(encoded string) (ih infohash.T, err error) {
 	return
 }
 
-func popFirstValue(vs url.Values, key string) g.Option[string] {
+func popFirstValue(vs url.Values, key string) string {
 	sl := vs[key]
 	switch len(sl) {
 	case 0:
-		return g.None[string]()
+		return ""
 	case 1:
 		vs.Del(key)
-		return g.Some(sl[0])
+		return sl[0]
 	default:
 		vs[key] = sl[1:]
-		return g.Some(sl[0])
+		return sl[0]
 	}
 }

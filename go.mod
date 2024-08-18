@@ -3,8 +3,6 @@ module github.com/tgragnato/magnetico
 go 1.22.6
 
 require (
-	github.com/anacrolix/generics v0.0.2
-	github.com/anacrolix/missinggo/v2 v2.7.3
 	github.com/bits-and-blooms/bloom/v3 v3.7.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dustin/go-humanize v1.0.1
@@ -22,8 +20,6 @@ require (
 
 require (
 	github.com/bits-and-blooms/bitset v1.13.0 // indirect
-	github.com/bradfitz/iter v0.0.0-20191230175014-e8f45d346db8 // indirect
-	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/puddle/v2 v2.2.1 // indirect

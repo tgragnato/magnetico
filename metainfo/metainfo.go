@@ -104,10 +104,10 @@ func (mi *MetaInfo) MagnetV2() (m MagnetV2, err error) {
 	}
 	m.DisplayName = info.BestName()
 	if info.HasV1() {
-		m.InfoHash.Set(mi.HashInfoBytes())
+		m.InfoHash = mi.HashInfoBytes()
 	}
 	if info.HasV2() {
-		m.V2InfoHash.Set(infohash_v2.HashBytes(mi.InfoBytes))
+		m.V2InfoHash = infohash_v2.HashBytes(mi.InfoBytes)
 	}
 	m.Params = make(url.Values)
 	m.Params["ws"] = mi.UrlList

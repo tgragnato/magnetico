@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io"
 	"reflect"
-
-	"github.com/anacrolix/missinggo/v2/expect"
 )
 
 //----------------------------------------------------------------------------
@@ -129,7 +127,9 @@ func Marshal(v interface{}) ([]byte, error) {
 
 func MustMarshal(v interface{}) []byte {
 	b, err := Marshal(v)
-	expect.Nil(err)
+	if err != nil {
+		panic(fmt.Sprintf("expected nil; got %v", err))
+	}
 	return b
 }
 

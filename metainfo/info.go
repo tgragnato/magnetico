@@ -6,9 +6,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
-
-	"github.com/anacrolix/missinggo/v2/slices"
 )
 
 // The info dictionary. See BEP 3 and BEP 52.
@@ -76,8 +75,8 @@ func (info *Info) BuildFromFilePath(root string) (err error) {
 	if err != nil {
 		return
 	}
-	slices.Sort(info.Files, func(l, r FileInfo) bool {
-		return strings.Join(l.BestPath(), "/") < strings.Join(r.BestPath(), "/")
+	sort.Slice(info.Files, func(i, j int) bool {
+		return strings.Join(info.Files[i].BestPath(), "/") < strings.Join(info.Files[j].BestPath(), "/")
 	})
 	if info.PieceLength == 0 {
 		info.PieceLength = ChoosePieceLength(info.TotalLength())

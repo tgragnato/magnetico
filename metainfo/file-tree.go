@@ -3,7 +3,6 @@ package metainfo
 import (
 	"sort"
 
-	g "github.com/anacrolix/generics"
 	"github.com/tgragnato/magnetico/bencode"
 	"golang.org/x/exp/maps"
 )
@@ -34,7 +33,7 @@ func (ft *FileTree) UnmarshalBencode(bytes []byte) (err error) {
 		}
 	}
 	delete(dir, "")
-	g.MakeMapWithCap(&ft.Dir, len(dir))
+	ft.Dir = make(map[string]FileTree, len(dir))
 	for key, bytes := range dir {
 		var sub FileTree
 		err = sub.UnmarshalBencode(bytes)
@@ -50,7 +49,7 @@ var _ bencode.Unmarshaler = (*FileTree)(nil)
 
 func (ft *FileTree) NumEntries() (num int) {
 	num = len(ft.Dir)
-	if g.MapContains(ft.Dir, FileTreePropertiesKey) {
+	if _, ok := ft.Dir[FileTreePropertiesKey]; ok {
 		num--
 	}
 	return
@@ -82,7 +81,10 @@ func (ft *FileTree) upvertedFilesInner(
 			if key == FileTreePropertiesKey {
 				continue
 			}
-			sub := g.MapMustGet(ft.Dir, key)
+			sub, ok := ft.Dir[key]
+			if !ok {
+				panic(key)
+			}
 			sub.upvertedFilesInner(pieceLength, append(path, key), offset, out)
 		}
 	} else {
@@ -108,15 +110,14 @@ func (ft *FileTree) Walk(path []string, f func(path []string, ft *FileTree)) {
 	}
 }
 
-func (ft *FileTree) PiecesRootAsByteArray() (ret g.Option[[32]byte]) {
+func (ft *FileTree) PiecesRootAsByteArray() (ret [32]byte) {
 	if ft.File.PiecesRoot == "" {
-		return
+		return [32]byte{}
 	}
-	n := copy(ret.Value[:], ft.File.PiecesRoot)
+	n := copy(ret[:], ft.File.PiecesRoot)
 	if n != 32 {
 		// Must be 32 bytes for meta version 2 and non-empty files. See BEP 52.
-		panic(n)
+		return [32]byte{}
 	}
-	ret.Ok = true
 	return
 }

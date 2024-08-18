@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"reflect"
 	"strings"
 
-	g "github.com/anacrolix/generics"
 	"github.com/multiformats/go-multihash"
 
 	infohash_v2 "github.com/tgragnato/magnetico/types/infohash-v2"
@@ -15,8 +15,8 @@ import (
 
 // Magnet link components.
 type MagnetV2 struct {
-	InfoHash    g.Option[Hash] // Expected in this implementation
-	V2InfoHash  g.Option[infohash_v2.T]
+	InfoHash    Hash // Expected in this implementation
+	V2InfoHash  infohash_v2.T
 	Trackers    []string   // "tr" values
 	DisplayName string     // "dn" value, if not empty
 	Params      url.Values // All other values, such as "x.pe", "as", "xs" etc.
@@ -47,13 +47,13 @@ func (m MagnetV2) String() string {
 		Scheme: "magnet",
 	}
 	var queryParts []string
-	if m.InfoHash.Ok {
-		queryParts = append(queryParts, "xt="+btihPrefix+m.InfoHash.Value.HexString())
+	if reflect.DeepEqual(m.InfoHash, Hash{}) {
+		queryParts = append(queryParts, "xt="+btihPrefix+m.InfoHash.HexString())
 	}
-	if m.V2InfoHash.Ok {
+	if reflect.DeepEqual(m.V2InfoHash, infohash_v2.T{}) {
 		queryParts = append(
 			queryParts,
-			"xt="+btmhPrefix+infohash_v2.ToMultihash(m.V2InfoHash.Value).HexString(),
+			"xt="+btmhPrefix+infohash_v2.ToMultihash(m.V2InfoHash).HexString(),
 		)
 	}
 	if rem := vs.Encode(); rem != "" {
@@ -77,33 +77,31 @@ func ParseMagnetV2Uri(uri string) (m MagnetV2, err error) {
 	q := u.Query()
 	for _, xt := range q["xt"] {
 		if hashStr, found := strings.CutPrefix(xt, btihPrefix); found {
-			if m.InfoHash.Ok {
+			if !reflect.DeepEqual(m.InfoHash, Hash{}) {
 				err = errors.New("more than one infohash found in magnet link")
 				return
 			}
-			m.InfoHash.Value, err = parseEncodedV1Infohash(hashStr)
+			m.InfoHash, err = parseEncodedV1Infohash(hashStr)
 			if err != nil {
 				err = fmt.Errorf("error parsing infohash %q: %w", hashStr, err)
 				return
 			}
-			m.InfoHash.Ok = true
 		} else if hashStr, found := strings.CutPrefix(xt, btmhPrefix); found {
-			if m.V2InfoHash.Ok {
+			if !reflect.DeepEqual(m.V2InfoHash, infohash_v2.T{}) {
 				err = errors.New("more than one infohash found in magnet link")
 				return
 			}
-			m.V2InfoHash.Value, err = parseV2Infohash(hashStr)
+			m.V2InfoHash, err = parseV2Infohash(hashStr)
 			if err != nil {
 				err = fmt.Errorf("error parsing infohash %q: %w", hashStr, err)
 				return
 			}
-			m.V2InfoHash.Ok = true
 		} else {
 			lazyAddParam(&m.Params, "xt", xt)
 		}
 	}
 	q.Del("xt")
-	m.DisplayName = popFirstValue(q, "dn").UnwrapOrZeroValue()
+	m.DisplayName = popFirstValue(q, "dn")
 	m.Trackers = q["tr"]
 	q.Del("tr")
 	// Add everything we haven't consumed.
@@ -113,7 +111,7 @@ func ParseMagnetV2Uri(uri string) (m MagnetV2, err error) {
 
 func lazyAddParam(vs *url.Values, k, v string) {
 	if *vs == nil {
-		g.MakeMap(vs)
+		*vs = make(url.Values)
 	}
 	vs.Add(k, v)
 }

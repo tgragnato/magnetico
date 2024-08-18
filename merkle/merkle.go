@@ -4,8 +4,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"math/bits"
-
-	g "github.com/anacrolix/generics"
 )
 
 // The leaf block size for BitTorrent v2 Merkle trees.
@@ -40,7 +38,7 @@ func RootWithPadHash(hashes [][sha256.Size]byte, padHash [sha256.Size]byte) [sha
 }
 
 func CompactLayerToSliceHashes(compactLayer string) (hashes [][sha256.Size]byte, err error) {
-	g.MakeSliceWithLength(&hashes, len(compactLayer)/sha256.Size)
+	hashes = make([][sha256.Size]byte, len(compactLayer)/sha256.Size)
 	for i := range hashes {
 		n := copy(hashes[i][:], compactLayer[i*sha256.Size:])
 		if n != sha256.Size {

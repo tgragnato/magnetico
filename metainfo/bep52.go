@@ -2,6 +2,7 @@ package metainfo
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/tgragnato/magnetico/merkle"
 )
@@ -19,10 +20,10 @@ func ValidatePieceLayers(
 			return
 		}
 		piecesRoot := ft.PiecesRootAsByteArray()
-		if !piecesRoot.Ok {
+		if reflect.DeepEqual(piecesRoot, [32]byte{}) {
 			return
 		}
-		filePieceLayers, ok := pieceLayers[string(piecesRoot.Value[:])]
+		filePieceLayers, ok := pieceLayers[string(piecesRoot[:])]
 		if !ok {
 			// BEP 52: "For each file in the file tree that is larger than the piece size it
 			// contains one string value.". The reference torrent creator in
@@ -37,8 +38,8 @@ func ValidatePieceLayers(
 		var layerHashes [][32]byte
 		layerHashes, err = merkle.CompactLayerToSliceHashes(filePieceLayers)
 		root := merkle.RootWithPadHash(layerHashes, HashForPiecePad(pieceLength))
-		if root != piecesRoot.Value {
-			err = fmt.Errorf("file %q: expected hash %x got %x", path, piecesRoot.Value, root)
+		if root != piecesRoot {
+			err = fmt.Errorf("file %q: expected hash %x got %x", path, piecesRoot, root)
 			return
 		}
 	})

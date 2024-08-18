@@ -2,8 +2,6 @@ package metainfo
 
 import (
 	"strings"
-
-	g "github.com/anacrolix/generics"
 )
 
 // Information specific to a single file inside the MetaInfo structure.
@@ -20,8 +18,8 @@ type FileInfo struct {
 
 	// BEP 52. This isn't encoded in a v1 FileInfo, but is exposed here for APIs that expect to deal
 	// v1 files.
-	PiecesRoot    g.Option[[32]byte] `bencode:"-"`
-	TorrentOffset int64              `bencode:"-"`
+	PiecesRoot    [32]byte `bencode:"-"`
+	TorrentOffset int64    `bencode:"-"`
 }
 
 func (fi *FileInfo) DisplayPath(info *Info) string {

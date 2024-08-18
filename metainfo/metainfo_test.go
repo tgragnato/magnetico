@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/anacrolix/missinggo/v2"
 	"github.com/davecgh/go-spew/spew"
 	qt "github.com/frankban/quicktest"
 	"github.com/stretchr/testify/assert"
@@ -53,6 +52,18 @@ func TestFile(t *testing.T) {
 	c.Check(err, qt.ErrorMatches, ".*expected EOF")
 }
 
+var ZeroReader zeroReader
+
+type zeroReader struct{}
+
+func (me zeroReader) Read(b []byte) (n int, err error) {
+	for i := range b {
+		b[i] = 0
+	}
+	n = len(b)
+	return
+}
+
 // Ensure that the correct number of pieces are generated when hashing files.
 func TestNumPieces(t *testing.T) {
 	for _, _case := range []struct {
@@ -71,7 +82,7 @@ func TestNumPieces(t *testing.T) {
 			PieceLength: _case.PieceLength,
 		}
 		err := info.GeneratePieces(func(fi FileInfo) (io.ReadCloser, error) {
-			return io.NopCloser(missinggo.ZeroReader), nil
+			return io.NopCloser(ZeroReader), nil
 		})
 		assert.NoError(t, err)
 		assert.EqualValues(t, _case.NumPieces, info.NumPieces())
