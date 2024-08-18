@@ -54,5 +54,8 @@ func RoundUpToPowerOfTwo(n uint) (ret uint) {
 }
 
 func Log2RoundingUp(n uint) (ret uint) {
+	if n == 0 {
+		return 0
+	}
 	return uint(bits.Len(n - 1))
 }
