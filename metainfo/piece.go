@@ -1,5 +1,7 @@
 package metainfo
 
+import "github.com/tgragnato/magnetico/types/infohash"
+
 type Piece struct {
 	Info *Info // Can we embed the fields here instead, or is it something to do with saving memory?
 	i    pieceIndex
@@ -57,11 +59,11 @@ func (p Piece) Offset() int64 {
 	return int64(p.i) * p.Info.PieceLength
 }
 
-func (p Piece) V1Hash() (ret Hash) {
+func (p Piece) V1Hash() (ret infohash.T) {
 	if !p.Info.HasV1() {
-		return Hash{}
+		return infohash.T{}
 	}
-	copy(ret[:], p.Info.Pieces[p.i*HashSize:(p.i+1)*HashSize])
+	copy(ret[:], p.Info.Pieces[p.i*infohash.Size:(p.i+1)*infohash.Size])
 	return
 }
 

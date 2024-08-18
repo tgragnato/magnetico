@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/tgragnato/magnetico/bencode"
+	"github.com/tgragnato/magnetico/types/infohash"
 	infohash_v2 "github.com/tgragnato/magnetico/types/infohash-v2"
 )
 
@@ -63,8 +64,8 @@ func (mi *MetaInfo) UnmarshalInfo() (info Info, err error) {
 	return
 }
 
-func (mi *MetaInfo) HashInfoBytes() (infoHash Hash) {
-	return HashBytes(mi.InfoBytes)
+func (mi *MetaInfo) HashInfoBytes() (infoHash infohash.T) {
+	return infohash.HashBytes(mi.InfoBytes)
 }
 
 // Encode to bencoded form.
@@ -80,7 +81,7 @@ func (mi *MetaInfo) SetDefaults() {
 
 // Deprecated: Use MagnetV2. Creates a Magnet from a MetaInfo. Optional infohash and parsed info can
 // be provided.
-func (mi MetaInfo) Magnet(infoHash *Hash, info *Info) (m Magnet) {
+func (mi MetaInfo) Magnet(infoHash *infohash.T, info *Info) (m Magnet) {
 	m.Trackers = append(m.Trackers, mi.UpvertedAnnounceList().DistinctValues()...)
 	if info != nil {
 		m.DisplayName = info.BestName()

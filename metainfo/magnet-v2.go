@@ -10,12 +10,13 @@ import (
 
 	"github.com/multiformats/go-multihash"
 
+	"github.com/tgragnato/magnetico/types/infohash"
 	infohash_v2 "github.com/tgragnato/magnetico/types/infohash-v2"
 )
 
 // Magnet link components.
 type MagnetV2 struct {
-	InfoHash    Hash // Expected in this implementation
+	InfoHash    infohash.T // Expected in this implementation
 	V2InfoHash  infohash_v2.T
 	Trackers    []string   // "tr" values
 	DisplayName string     // "dn" value, if not empty
@@ -47,7 +48,7 @@ func (m MagnetV2) String() string {
 		Scheme: "magnet",
 	}
 	var queryParts []string
-	if reflect.DeepEqual(m.InfoHash, Hash{}) {
+	if reflect.DeepEqual(m.InfoHash, infohash.T{}) {
 		queryParts = append(queryParts, "xt="+btihPrefix+m.InfoHash.HexString())
 	}
 	if reflect.DeepEqual(m.V2InfoHash, infohash_v2.T{}) {
@@ -77,7 +78,7 @@ func ParseMagnetV2Uri(uri string) (m MagnetV2, err error) {
 	q := u.Query()
 	for _, xt := range q["xt"] {
 		if hashStr, found := strings.CutPrefix(xt, btihPrefix); found {
-			if !reflect.DeepEqual(m.InfoHash, Hash{}) {
+			if !reflect.DeepEqual(m.InfoHash, infohash.T{}) {
 				err = errors.New("more than one infohash found in magnet link")
 				return
 			}
