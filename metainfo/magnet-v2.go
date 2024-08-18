@@ -48,10 +48,11 @@ func (m MagnetV2) String() string {
 		Scheme: "magnet",
 	}
 	var queryParts []string
-	if reflect.DeepEqual(m.InfoHash, infohash.T{}) {
+
+	if !reflect.DeepEqual(m.InfoHash, infohash.T{}) {
 		queryParts = append(queryParts, "xt="+btihPrefix+m.InfoHash.HexString())
 	}
-	if reflect.DeepEqual(m.V2InfoHash, infohash_v2.T{}) {
+	if !reflect.DeepEqual(m.V2InfoHash, infohash_v2.T{}) {
 		queryParts = append(
 			queryParts,
 			"xt="+btmhPrefix+infohash_v2.ToMultihash(m.V2InfoHash).HexString(),

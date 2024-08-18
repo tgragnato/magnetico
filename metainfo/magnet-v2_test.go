@@ -1,12 +1,17 @@
 package metainfo
 
 import (
+	"net/url"
 	"testing"
 
 	qt "github.com/frankban/quicktest"
+	"github.com/tgragnato/magnetico/types/infohash"
+	infohash_v2 "github.com/tgragnato/magnetico/types/infohash-v2"
 )
 
 func TestParseMagnetV2(t *testing.T) {
+	t.Parallel()
+
 	c := qt.New(t)
 
 	const v2Only = "magnet:?xt=urn:btmh:1220caf1e1c30e81cb361b9ee167c4aa64228a7fa4fa9f6105232b28ad099f3a302e&dn=bittorrent-v2-test"
@@ -32,4 +37,26 @@ func TestParseMagnetV2(t *testing.T) {
 	c.Assert(err, qt.IsNil)
 	c.Check(m.InfoHash.HexString(), qt.Equals, "631a31dd0a46257d5078c0dee4e66e26f73e42ac")
 	c.Check(m.Params["xt"], qt.HasLen, 1)
+}
+
+func TestMagnetV2String(t *testing.T) {
+	t.Parallel()
+
+	c := qt.New(t)
+
+	m := MagnetV2{
+		InfoHash:    infohash.T{},
+		V2InfoHash:  infohash_v2.T{},
+		Trackers:    []string{"http://tracker1.example.com", "http://tracker2.example.com"},
+		DisplayName: "Test Magnet",
+		Params: url.Values{
+			"param1": []string{"value1"},
+			"param2": []string{"value2"},
+		},
+	}
+
+	expected := "magnet:?dn=Test+Magnet&param1=value1&param2=value2&tr=http%3A%2F%2Ftracker1.example.com&tr=http%3A%2F%2Ftracker2.example.com"
+	actual := m.String()
+
+	c.Assert(actual, qt.Equals, expected)
 }
