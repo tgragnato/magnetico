@@ -3,11 +3,9 @@ package metainfo
 import "github.com/tgragnato/magnetico/types/infohash"
 
 type Piece struct {
-	Info *Info // Can we embed the fields here instead, or is it something to do with saving memory?
-	i    pieceIndex
+	Info  *Info
+	index int
 }
-
-type pieceIndex = int
 
 func (p Piece) Length() int64 {
 	if p.Info.HasV2() {
@@ -20,14 +18,14 @@ func (p Piece) Length() int64 {
 				return
 			}
 			fileStartPiece := int(offset / pieceLength)
-			if fileStartPiece > p.i {
+			if fileStartPiece > p.index {
 				done = true
 				return
 			}
 			lastFileEnd = offset + fi.Length
 			offset = (lastFileEnd + pieceLength - 1) / pieceLength * pieceLength
 		})
-		ret := min(lastFileEnd-int64(p.i)*pieceLength, pieceLength)
+		ret := min(lastFileEnd-int64(p.index)*pieceLength, pieceLength)
 		if ret <= 0 {
 			panic(ret)
 		}
@@ -37,7 +35,7 @@ func (p Piece) Length() int64 {
 }
 
 func (p Piece) V1Length() int64 {
-	i := p.i
+	i := p.index
 	lastPiece := p.Info.NumPieces() - 1
 	switch {
 	case 0 <= i && i < lastPiece:
@@ -56,17 +54,17 @@ func (p Piece) V1Length() int64 {
 }
 
 func (p Piece) Offset() int64 {
-	return int64(p.i) * p.Info.PieceLength
+	return int64(p.index) * p.Info.PieceLength
 }
 
 func (p Piece) V1Hash() (ret infohash.T) {
 	if !p.Info.HasV1() {
 		return infohash.T{}
 	}
-	copy(ret[:], p.Info.Pieces[p.i*infohash.Size:(p.i+1)*infohash.Size])
+	copy(ret[:], p.Info.Pieces[p.index*infohash.Size:(p.index+1)*infohash.Size])
 	return
 }
 
 func (p Piece) Index() int {
-	return p.i
+	return p.index
 }
