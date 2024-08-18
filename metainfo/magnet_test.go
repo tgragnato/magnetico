@@ -2,12 +2,8 @@ package metainfo
 
 import (
 	"encoding/hex"
+	"reflect"
 	"testing"
-
-	"github.com/davecgh/go-spew/spew"
-	qt "github.com/frankban/quicktest"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -27,12 +23,20 @@ func init() {
 
 // Converting from our Magnet type to URL string.
 func TestMagnetString(t *testing.T) {
+	t.Parallel()
+
 	m, err := ParseMagnetUri(exampleMagnet.String())
-	require.NoError(t, err)
-	assert.EqualValues(t, exampleMagnet, m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(exampleMagnet, m) {
+		t.Errorf("Expected %v, but got %v", exampleMagnet, m)
+	}
 }
 
 func TestParseMagnetURI(t *testing.T) {
+	t.Parallel()
+
 	var uri string
 	var m Magnet
 	var err error
@@ -46,8 +50,12 @@ func TestParseMagnetURI(t *testing.T) {
 
 	// Checking if the magnet instance struct is built correctly from parsing
 	m, err = ParseMagnetUri(exampleMagnetURI)
-	assert.EqualValues(t, exampleMagnet, m)
-	assert.NoError(t, err)
+	if !reflect.DeepEqual(exampleMagnet, m) {
+		t.Errorf("Expected %v, but got %v", exampleMagnet, m)
+	}
+	if err != nil {
+		t.Errorf("Expected no error, but got %v", err)
+	}
 
 	// empty string URI case
 	_, err = ParseMagnetUri("")
@@ -72,14 +80,22 @@ func TestParseMagnetURI(t *testing.T) {
 }
 
 func TestMagnetize(t *testing.T) {
+	t.Parallel()
+
 	mi, err := LoadFromFile("testdata/bootstrap.dat.torrent")
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	info, err := mi.UnmarshalInfo()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 	m := mi.Magnet(nil, &info)
 
-	assert.EqualValues(t, "bootstrap.dat", m.DisplayName)
+	if m.DisplayName != "bootstrap.dat" {
+		t.Errorf("Expected display name to be \"bootstrap.dat\", but got %s", m.DisplayName)
+	}
 
 	ih := [20]byte{
 		54, 113, 155, 162, 206, 207, 159, 59, 215, 197,
@@ -118,18 +134,21 @@ func contains(haystack []string, needle string) bool {
 // Check that we can parse the magnet link generated from a real-world torrent. This was added due
 // to a regression in copyParams.
 func TestParseSintelMagnet(t *testing.T) {
-	c := qt.New(t)
+	t.Parallel()
+
 	mi, err := LoadFromFile("testdata/sintel.torrent")
-	c.Assert(err, qt.IsNil)
+	if err != nil {
+		t.Fatalf("Error: %v", err)
+	}
 	m := mi.Magnet(nil, nil)
 	ms := m.String()
 	t.Logf("magnet link: %q", ms)
-	m, err = ParseMagnetUri(ms)
-	c.Check(err, qt.IsNil)
-	spewCfg := spew.NewDefaultConfig()
-	spewCfg.DisableMethods = true
-	spewCfg.Dump(m)
-	m2, err := ParseMagnetV2Uri(ms)
-	spewCfg.Dump(m2)
-	c.Check(err, qt.IsNil)
+	_, err = ParseMagnetUri(ms)
+	if err != nil {
+		t.Errorf("Expected no error, but got %v", err)
+	}
+	_, err = ParseMagnetV2Uri(ms)
+	if err != nil {
+		t.Errorf("Expected no error, but got %v", err)
+	}
 }

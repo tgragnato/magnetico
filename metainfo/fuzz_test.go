@@ -23,6 +23,8 @@ func Fuzz(f *testing.F) {
 		f.Add(b)
 	}
 	f.Fuzz(func(t *testing.T, b []byte) {
+		t.Parallel()
+
 		var mi MetaInfo
 		err := bencode.Unmarshal(b, &mi)
 		if err != nil {

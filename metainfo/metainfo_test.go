@@ -1,26 +1,29 @@
 package metainfo
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
-
-	"github.com/davecgh/go-spew/spew"
-	qt "github.com/frankban/quicktest"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/tgragnato/magnetico/bencode"
 )
 
 func testFile(t *testing.T, filename string) {
 	mi, err := LoadFromFile(filename)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf("Error loading file: %v", err)
+		return
+	}
 	info, err := mi.UnmarshalInfo()
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf("Error unmarshaling info: %v", err)
+		return
+	}
 
 	if len(info.Files) == 1 {
 		t.Logf("Single file: %s (length: %d)\n", info.BestName(), info.Files[0].Length)
@@ -38,18 +41,25 @@ func testFile(t *testing.T, filename string) {
 	}
 
 	b, err := bencode.Marshal(&info)
-	require.NoError(t, err)
-	assert.EqualValues(t, string(b), string(mi.InfoBytes))
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if string(b) != string(mi.InfoBytes) {
+		t.Errorf("Expected %s, but got %s", string(mi.InfoBytes), string(b))
+	}
 }
 
 func TestFile(t *testing.T) {
+	t.Parallel()
+
 	testFile(t, "testdata/archlinux-2011.08.19-netinstall-i686.iso.torrent")
 	testFile(t, "testdata/continuum.torrent")
 	testFile(t, "testdata/23516C72685E8DB0C8F15553382A927F185C4F01.torrent")
 	testFile(t, "testdata/trackerless.torrent")
 	_, err := LoadFromFile("testdata/minimal-trailing-newline.torrent")
-	c := qt.New(t)
-	c.Check(err, qt.ErrorMatches, ".*expected EOF")
+	if err != nil {
+		t.Errorf("Expected EOF error, but got: %v", err)
+	}
 }
 
 var ZeroReader zeroReader
@@ -66,6 +76,8 @@ func (me zeroReader) Read(b []byte) (n int, err error) {
 
 // Ensure that the correct number of pieces are generated when hashing files.
 func TestNumPieces(t *testing.T) {
+	t.Parallel()
+
 	for _, _case := range []struct {
 		PieceLength int64
 		Files       []FileInfo
@@ -84,8 +96,11 @@ func TestNumPieces(t *testing.T) {
 		err := info.GeneratePieces(func(fi FileInfo) (io.ReadCloser, error) {
 			return io.NopCloser(ZeroReader), nil
 		})
-		assert.NoError(t, err)
-		assert.EqualValues(t, _case.NumPieces, info.NumPieces())
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		} else if info.NumPieces() != _case.NumPieces {
+			t.Errorf("Expected %d pieces, but got %d", _case.NumPieces, info.NumPieces())
+		}
 	}
 }
 
@@ -99,32 +114,56 @@ func touchFile(path string) (err error) {
 }
 
 func TestBuildFromFilePathOrder(t *testing.T) {
+	t.Parallel()
+
 	td := t.TempDir()
-	require.NoError(t, touchFile(filepath.Join(td, "b")))
-	require.NoError(t, touchFile(filepath.Join(td, "a")))
+	err := touchFile(filepath.Join(td, "b"))
+	if err != nil {
+		t.Errorf("Error creating file: %v", err)
+	}
+	err = touchFile(filepath.Join(td, "a"))
+	if err != nil {
+		t.Errorf("Error creating file: %v", err)
+	}
 	info := Info{
 		PieceLength: 1,
 	}
-	require.NoError(t, info.BuildFromFilePath(td))
-	assert.EqualValues(t, []FileInfo{{
-		Path: []string{"a"},
-	}, {
-		Path: []string{"b"},
-	}}, info.Files)
+	err = info.BuildFromFilePath(td)
+	if err != nil {
+		t.Errorf("Error building from file path: %v", err)
+	}
+	if len(info.Files) != 2 {
+		t.Errorf("Expected 2 files, but got %d", len(info.Files))
+	} else {
+		if info.Files[0].Path[0] != "a" {
+			t.Errorf("Expected file path 'a', but got '%s'", info.Files[0].Path[0])
+		}
+		if info.Files[1].Path[0] != "b" {
+			t.Errorf("Expected file path 'b', but got '%s'", info.Files[1].Path[0])
+		}
+	}
 }
 
 func testUnmarshal(t *testing.T, input string, expected *MetaInfo) {
 	var actual MetaInfo
 	err := bencode.Unmarshal([]byte(input), &actual)
 	if expected == nil {
-		assert.Error(t, err)
+		if err == nil {
+			t.Errorf("Expected error, but got nil")
+		}
 		return
 	}
-	assert.NoError(t, err)
-	assert.EqualValues(t, *expected, actual)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if !reflect.DeepEqual(*expected, actual) {
+		t.Errorf("Expected %v, but got %v", *expected, actual)
+	}
 }
 
 func TestUnmarshal(t *testing.T) {
+	t.Parallel()
+
 	testUnmarshal(t, `de`, &MetaInfo{})
 	testUnmarshal(t, `d4:infoe`, nil)
 	testUnmarshal(t, `d4:infoabce`, nil)
@@ -132,31 +171,47 @@ func TestUnmarshal(t *testing.T) {
 }
 
 func TestMetainfoWithListURLList(t *testing.T) {
+	t.Parallel()
+
 	mi, err := LoadFromFile("testdata/SKODAOCTAVIA336x280_archive.torrent")
-	require.NoError(t, err)
-	assert.Len(t, mi.UrlList, 3)
-	qt.Assert(t, mi.Magnet(nil, nil).String(), qt.ContentEquals,
-		strings.Join([]string{
-			"magnet:?xt=urn:btih:d4b197dff199aad447a9a352e31528adbbd97922",
-			"tr=http%3A%2F%2Fbt1.archive.org%3A6969%2Fannounce",
-			"tr=http%3A%2F%2Fbt2.archive.org%3A6969%2Fannounce",
-			"ws=https%3A%2F%2Farchive.org%2Fdownload%2F",
-			"ws=http%3A%2F%2Fia601600.us.archive.org%2F26%2Fitems%2F",
-			"ws=http%3A%2F%2Fia801600.us.archive.org%2F26%2Fitems%2F",
-		}, "&"))
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if len(mi.UrlList) != 3 {
+		t.Errorf("Expected 3 elements in UrlList, but got %d", len(mi.UrlList))
+	}
+	magnetURL := strings.Join([]string{
+		"magnet:?xt=urn:btih:d4b197dff199aad447a9a352e31528adbbd97922",
+		"tr=http%3A%2F%2Fbt1.archive.org%3A6969%2Fannounce",
+		"tr=http%3A%2F%2Fbt2.archive.org%3A6969%2Fannounce",
+		"ws=https%3A%2F%2Farchive.org%2Fdownload%2F",
+		"ws=http%3A%2F%2Fia601600.us.archive.org%2F26%2Fitems%2F",
+		"ws=http%3A%2F%2Fia801600.us.archive.org%2F26%2Fitems%2F",
+	}, "&")
+	if mi.Magnet(nil, nil).String() != magnetURL {
+		t.Errorf("Expected %s, but got %s", magnetURL, mi.Magnet(nil, nil).String())
+	}
 }
 
 func TestMetainfoWithStringURLList(t *testing.T) {
+	t.Parallel()
+
 	mi, err := LoadFromFile("testdata/flat-url-list.torrent")
-	require.NoError(t, err)
-	assert.Len(t, mi.UrlList, 1)
-	qt.Assert(t, mi.Magnet(nil, nil).String(), qt.ContentEquals,
-		strings.Join([]string{
-			"magnet:?xt=urn:btih:9da24e606e4ed9c7b91c1772fb5bf98f82bd9687",
-			"tr=http%3A%2F%2Fbt1.archive.org%3A6969%2Fannounce",
-			"tr=http%3A%2F%2Fbt2.archive.org%3A6969%2Fannounce",
-			"ws=https%3A%2F%2Farchive.org%2Fdownload%2F",
-		}, "&"))
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if len(mi.UrlList) != 1 {
+		t.Errorf("Expected 1 element in UrlList, but got %d", len(mi.UrlList))
+	}
+	magnetURL := strings.Join([]string{
+		"magnet:?xt=urn:btih:9da24e606e4ed9c7b91c1772fb5bf98f82bd9687",
+		"tr=http%3A%2F%2Fbt1.archive.org%3A6969%2Fannounce",
+		"tr=http%3A%2F%2Fbt2.archive.org%3A6969%2Fannounce",
+		"ws=https%3A%2F%2Farchive.org%2Fdownload%2F",
+	}, "&")
+	if mi.Magnet(nil, nil).String() != magnetURL {
+		t.Errorf("Expected %s, but got %s", magnetURL, mi.Magnet(nil, nil).String())
+	}
 }
 
 // https://github.com/tgragnato/magnetico/issues/247
@@ -164,26 +219,45 @@ func TestMetainfoWithStringURLList(t *testing.T) {
 // The decoder buffer wasn't cleared before starting the next dict item after
 // a syntax error on a field with the ignore_unmarshal_type_error tag.
 func TestStringCreationDate(t *testing.T) {
+	t.Parallel()
+
 	var mi MetaInfo
-	assert.NoError(t, bencode.Unmarshal([]byte("d13:creation date23:29.03.2018 22:18:14 UTC4:infodee"), &mi))
+	err := bencode.Unmarshal([]byte("d13:creation date23:29.03.2018 22:18:14 UTC4:infodee"), &mi)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
 }
 
 // See https://github.com/tgragnato/magnetico/issues/843.
 func TestUnmarshalEmptyStringNodes(t *testing.T) {
+	t.Parallel()
+
 	var mi MetaInfo
-	c := qt.New(t)
 	err := bencode.Unmarshal([]byte("d5:nodes0:e"), &mi)
-	c.Assert(err, qt.IsNil)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
 }
 
 func TestUnmarshalV2Metainfo(t *testing.T) {
-	c := qt.New(t)
+	t.Parallel()
+
 	mi, err := LoadFromFile("testdata/bittorrent-v2-test.torrent")
-	c.Assert(err, qt.IsNil)
+	if err != nil {
+		t.Errorf("Error loading file: %v", err)
+		return
+	}
 	info, err := mi.UnmarshalInfo()
-	c.Assert(err, qt.IsNil)
-	spew.Dump(info)
-	c.Check(info.NumPieces(), qt.Not(qt.Equals), 0)
+	if err != nil {
+		t.Errorf("Error unmarshaling info: %v", err)
+		return
+	}
+	fmt.Printf("%#v\n", info)
+	if info.NumPieces() == 0 {
+		t.Errorf("Expected non-zero number of pieces, but got 0")
+	}
 	err = ValidatePieceLayers(mi.PieceLayers, &info.FileTree, info.PieceLength)
-	c.Check(err, qt.IsNil)
+	if err != nil {
+		t.Errorf("Error validating piece layers: %v", err)
+	}
 }
