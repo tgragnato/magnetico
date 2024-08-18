@@ -1,12 +1,13 @@
 package bencode
 
 import (
+	"reflect"
 	"testing"
-
-	qt "github.com/frankban/quicktest"
 )
 
 func TestBytesMarshalNil(t *testing.T) {
+	t.Parallel()
+
 	var b Bytes
 	Marshal(b)
 }
@@ -17,9 +18,14 @@ type structWithBytes struct {
 }
 
 func TestMarshalNilStructBytes(t *testing.T) {
-	_, err := Marshal(structWithBytes{B: Bytes("i42e")})
-	c := qt.New(t)
-	c.Assert(err, qt.IsNotNil)
+	t.Parallel()
+
+	t.Run("Nil test", func(t *testing.T) {
+		_, err := Marshal(structWithBytes{A: Bytes("i42e")})
+		if err == nil {
+			t.Error("Marshal was expected to fail")
+		}
+	})
 }
 
 type structWithOmitEmptyBytes struct {
@@ -28,12 +34,22 @@ type structWithOmitEmptyBytes struct {
 }
 
 func TestMarshalNilStructBytesOmitEmpty(t *testing.T) {
-	c := qt.New(t)
-	b, err := Marshal(structWithOmitEmptyBytes{B: Bytes("i42e")})
-	c.Assert(err, qt.IsNil)
-	t.Logf("%q", b)
-	var s structWithBytes
-	err = Unmarshal(b, &s)
-	c.Assert(err, qt.IsNil)
-	c.Check(s.B, qt.DeepEquals, Bytes("i42e"))
+	t.Parallel()
+
+	t.Run("Marshal-Unmarshal test", func(t *testing.T) {
+		b, err := Marshal(structWithOmitEmptyBytes{A: Bytes("i42e")})
+		if err != nil {
+			t.Error("Marshal failed with error:", err.Error())
+		}
+		t.Logf("%q", b)
+
+		var s structWithBytes
+		err = Unmarshal(b, &s)
+		if err != nil {
+			t.Error("Unmarshal failed with error:", err.Error())
+		}
+		if reflect.DeepEqual(s.B, Bytes("i42e")) {
+			t.Error("Unmarshal failed to preserve marshaled bytes")
+		}
+	})
 }

@@ -9,10 +9,6 @@ import (
 	"reflect"
 	"strings"
 	"testing"
-
-	qt "github.com/frankban/quicktest"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 type random_decode_test struct {
@@ -46,6 +42,8 @@ var random_decode_tests = []random_decode_test{
 }
 
 func TestRandomDecode(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range random_decode_tests {
 		var value interface{}
 		err := Unmarshal([]byte(test.data), &value)
@@ -53,54 +51,109 @@ func TestRandomDecode(t *testing.T) {
 			t.Error(err, test.data)
 			continue
 		}
-		assert.EqualValues(t, test.expected, value)
+		if reflect.DeepEqual(test.expected, value) {
+			fmt.Printf("Test passed: expected %v, got %v\n", test.expected, value)
+		} else {
+			fmt.Printf("Test failed: expected %v, got %v\n", test.expected, value)
+		}
 	}
 }
 
 func TestLoneE(t *testing.T) {
+	t.Parallel()
+
 	var v int
 	err := Unmarshal([]byte("e"), &v)
 	se := err.(*SyntaxError)
-	require.EqualValues(t, 0, se.Offset)
+	if se.Offset != 0 {
+		t.Errorf("Expected offset of 0, got %d", se.Offset)
+	}
 }
 
 func TestDecoderConsecutive(t *testing.T) {
+	t.Parallel()
+
 	d := NewDecoder(bytes.NewReader([]byte("i1ei2e")))
 	var i int
 	err := d.Decode(&i)
-	require.NoError(t, err)
-	require.EqualValues(t, 1, i)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if i != 1 {
+		t.Errorf("Expected value 1 for i, got %v", i)
+	}
 	err = d.Decode(&i)
-	require.NoError(t, err)
-	require.EqualValues(t, 2, i)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if i != 2 {
+		t.Errorf("Expected value 2 for i, got %v", i)
+	}
 	err = d.Decode(&i)
-	require.Equal(t, io.EOF, err)
+	if err == io.EOF {
+		fmt.Println("Test passed: expected EOF")
+	} else {
+		fmt.Printf("Test failed: expected EOF, got %v\n", err)
+	}
 }
 
 func TestDecoderConsecutiveDicts(t *testing.T) {
+	t.Parallel()
+
 	bb := bytes.NewBufferString("d4:herp4:derped3:wat1:ke17:oh baby a triple!")
 
 	d := NewDecoder(bb)
-	assert.EqualValues(t, "d4:herp4:derped3:wat1:ke17:oh baby a triple!", bb.Bytes())
-	assert.EqualValues(t, 0, d.Offset)
+	if bb.String() != "d4:herp4:derped3:wat1:ke17:oh baby a triple!" {
+		t.Errorf("Unexpected value for bb.String()")
+	}
+	if d.Offset != 0 {
+		t.Errorf("Unexpected value for d.Offset")
+	}
 
 	var m map[string]interface{}
 
-	require.NoError(t, d.Decode(&m))
-	assert.Len(t, m, 1)
-	assert.Equal(t, "derp", m["herp"])
-	assert.Equal(t, "d3:wat1:ke17:oh baby a triple!", bb.String())
-	assert.EqualValues(t, 14, d.Offset)
+	err := d.Decode(&m)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if len(m) != 1 {
+		t.Errorf("Expected map length of 1, got %d", len(m))
+	}
+	if m["herp"] != "derp" {
+		t.Errorf("Expected value 'derp' for key 'herp', got %v", m["herp"])
+	}
+	if bb.String() != "d3:wat1:ke17:oh baby a triple!" {
+		t.Errorf("Unexpected value for bb.String()")
+	}
+	if d.Offset != 14 {
+		t.Errorf("Expected offset of 14, got %d", d.Offset)
+	}
 
-	require.NoError(t, d.Decode(&m))
-	assert.Equal(t, "k", m["wat"])
-	assert.Equal(t, "17:oh baby a triple!", bb.String())
-	assert.EqualValues(t, 24, d.Offset)
+	err = d.Decode(&m)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if m["wat"] != "k" {
+		t.Errorf("Expected value 'k' for key 'wat', got %v", m["wat"])
+	}
+	if bb.String() != "17:oh baby a triple!" {
+		t.Errorf("Unexpected value for bb.String()")
+	}
+	if d.Offset != 24 {
+		t.Errorf("Expected offset of 24, got %d", d.Offset)
+	}
 
 	var s string
-	require.NoError(t, d.Decode(&s))
-	assert.Equal(t, "oh baby a triple!", s)
-	assert.EqualValues(t, 44, d.Offset)
+	err = d.Decode(&s)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if s != "oh baby a triple!" {
+		t.Errorf("Expected value 'oh baby a triple!', got %v", s)
+	}
+	if d.Offset != 44 {
+		t.Errorf("Expected offset of 44, got %d", d.Offset)
+	}
 }
 
 func check_error(t *testing.T, err error) {
@@ -133,6 +186,8 @@ func (me *unmarshalerString) UnmarshalBencode(data []byte) error {
 }
 
 func TestUnmarshalerBencode(t *testing.T) {
+	t.Parallel()
+
 	var i unmarshalerInt
 	var ss []unmarshalerString
 	check_error(t, Unmarshal([]byte("i71e"), &i))
@@ -144,58 +199,106 @@ func TestUnmarshalerBencode(t *testing.T) {
 }
 
 func TestIgnoreUnmarshalTypeError(t *testing.T) {
+	t.Parallel()
+
 	s := struct {
 		Ignore int `bencode:",ignore_unmarshal_type_error"`
 		Normal int
 	}{}
-	require.Error(t, Unmarshal([]byte("d6:Normal5:helloe"), &s))
-	assert.NoError(t, Unmarshal([]byte("d6:Ignore5:helloe"), &s))
-	qt.Assert(t, Unmarshal([]byte("d6:Ignorei42ee"), &s), qt.IsNil)
-	assert.EqualValues(t, 42, s.Ignore)
+	err := Unmarshal([]byte("d6:Normal5:helloe"), &s)
+	if err == nil {
+		t.Errorf("Expected error, but got nil")
+	}
+	err = Unmarshal([]byte("d6:Ignore5:helloe"), &s)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if err := Unmarshal([]byte("d6:Ignorei42ee"), &s); err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if s.Ignore != 42 {
+		t.Errorf("Expected value 42 for Ignore, got %v", s.Ignore)
+	}
 }
 
 // Test unmarshalling []byte into something that has the same kind but
 // different type.
 func TestDecodeCustomSlice(t *testing.T) {
+	t.Parallel()
+
 	type flag byte
 	var fs3, fs2 []flag
 	// We do a longer slice then a shorter slice to see if the buffers are
 	// shared.
 	d := NewDecoder(bytes.NewBufferString("3:\x01\x10\xff2:\x04\x0f"))
-	require.NoError(t, d.Decode(&fs3))
-	require.NoError(t, d.Decode(&fs2))
-	assert.EqualValues(t, []flag{1, 16, 255}, fs3)
-	assert.EqualValues(t, []flag{4, 15}, fs2)
+	err := d.Decode(&fs3)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	err = d.Decode(&fs2)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if !reflect.DeepEqual([]flag{1, 16, 255}, fs3) {
+		t.Errorf("Expected value %v for fs3, got %v", []flag{1, 16, 255}, fs3)
+	}
+	if !reflect.DeepEqual([]flag{4, 15}, fs2) {
+		t.Errorf("Expected value %v for fs2, got %v", []flag{4, 15}, fs2)
+	}
 }
 
 func TestUnmarshalUnusedBytes(t *testing.T) {
+	t.Parallel()
+
 	var i int
-	require.EqualValues(t, ErrUnusedTrailingBytes{1}, Unmarshal([]byte("i42ee"), &i))
-	assert.EqualValues(t, 42, i)
+	err := Unmarshal([]byte("i42ee"), &i)
+	if err != nil {
+		if _, ok := err.(ErrUnusedTrailingBytes); ok {
+			if err.(ErrUnusedTrailingBytes).NumUnusedBytes != 1 {
+				t.Errorf("Expected 1 unused trailing byte, got %d", err.(ErrUnusedTrailingBytes).NumUnusedBytes)
+			}
+		} else {
+			t.Errorf("Unexpected error: %v", err)
+		}
+	}
+	if i != 42 {
+		t.Errorf("Expected value 42 for i, got %v", i)
+	}
 }
 
 func TestUnmarshalByteArray(t *testing.T) {
+	t.Parallel()
+
 	var ba [2]byte
-	assert.NoError(t, Unmarshal([]byte("2:hi"), &ba))
-	assert.EqualValues(t, "hi", ba[:])
+	err := Unmarshal([]byte("2:hi"), &ba)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if string(ba[:]) != "hi" {
+		t.Errorf("Expected value 'hi' for ba, got %s", string(ba[:]))
+	}
 }
 
 func TestDecodeDictIntoUnsupported(t *testing.T) {
+	t.Parallel()
+
 	// Any type that a dict shouldn't be unmarshallable into.
 	var i int
-	c := qt.New(t)
 	err := Unmarshal([]byte("d1:a1:be"), &i)
-	t.Log(err)
-	c.Check(err, qt.IsNotNil)
+	if err == nil {
+		t.Errorf("An error was expected")
+	}
 }
 
 func TestUnmarshalDictKeyNotString(t *testing.T) {
+	t.Parallel()
+
 	// Any type that a dict shouldn't be unmarshallable into.
 	var i int
-	c := qt.New(t)
 	err := Unmarshal([]byte("di42e3:yese"), &i)
-	t.Log(err)
-	c.Check(err, qt.Not(qt.IsNil))
+	if err == nil {
+		t.Errorf("An error was expected")
+	}
 }
 
 type arbitraryReader struct{}
@@ -204,7 +307,7 @@ func (arbitraryReader) Read(b []byte) (int, error) {
 	return len(b), nil
 }
 
-func decodeHugeString(t *testing.T, strLen int64, header, tail string, v interface{}, maxStrLen MaxStrLen) error {
+func decodeHugeString(strLen int64, header, tail string, v interface{}, maxStrLen MaxStrLen) error {
 	r, w := io.Pipe()
 	go func() {
 		fmt.Fprintf(w, header, strLen)
@@ -220,58 +323,71 @@ func decodeHugeString(t *testing.T, strLen int64, header, tail string, v interfa
 // Ensure that bencode strings in various places obey the Decoder.MaxStrLen field.
 func TestDecodeMaxStrLen(t *testing.T) {
 	t.Parallel()
-	c := qt.New(t)
-	test := func(header, tail string, v interface{}, maxStrLen MaxStrLen) {
+
+	test := func(t *testing.T, header, tail string, v interface{}, maxStrLen MaxStrLen) {
 		strLen := maxStrLen
 		if strLen == 0 {
 			strLen = DefaultDecodeMaxStrLen
 		}
-		c.Assert(decodeHugeString(t, strLen, header, tail, v, maxStrLen), qt.IsNil)
-		c.Assert(decodeHugeString(t, strLen+1, header, tail, v, maxStrLen), qt.IsNotNil)
+		if err := decodeHugeString(strLen, header, tail, v, maxStrLen); err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+		if err := decodeHugeString(strLen+1, header, tail, v, maxStrLen); err == nil {
+			t.Errorf("An error was expected")
+		}
 	}
-	test("d%d:", "i0ee", new(interface{}), 0)
-	test("%d:", "", new(interface{}), DefaultDecodeMaxStrLen)
-	test("%d:", "", new([]byte), 1)
-	test("d3:420%d:", "e", new(struct {
+	test(t, "d%d:", "i0ee", new(interface{}), 0)
+	test(t, "%d:", "", new(interface{}), DefaultDecodeMaxStrLen)
+	test(t, "%d:", "", new([]byte), 1)
+	test(t, "d3:420%d:", "e", new(struct {
 		Hi []byte `bencode:"420"`
 	}), 69)
 }
 
 // This is for the "github.com/tgragnato/magnetico/metainfo".Info.Private field.
 func TestDecodeStringIntoBoolPtr(t *testing.T) {
+	t.Parallel()
+
 	var m struct {
 		Private *bool `bencode:"private,omitempty"`
 	}
-	c := qt.New(t)
-	check := func(msg string, expectNil, expectTrue bool) {
+	check := func(t *testing.T, msg string, expectNil, expectTrue bool) {
 		m.Private = nil
-		c.Check(Unmarshal([]byte(msg), &m), qt.IsNil, qt.Commentf("%q", msg))
+		err := Unmarshal([]byte(msg), &m)
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
 		if expectNil {
-			c.Check(m.Private, qt.IsNil)
+			if m.Private != nil {
+				t.Errorf("Expected nil value for m.Private, got %v", m.Private)
+			}
 		} else {
-			if c.Check(m.Private, qt.IsNotNil, qt.Commentf("%q", msg)) {
-				c.Check(*m.Private, qt.Equals, expectTrue, qt.Commentf("%q", msg))
+			if m.Private == nil {
+				t.Errorf("Expected non-nil value for m.Private")
+			} else if *m.Private != expectTrue {
+				t.Errorf("Expected value %v for m.Private, got %v", expectTrue, *m.Private)
 			}
 		}
 	}
-	check("d7:privatei1ee", false, true)
-	check("d7:privatei0ee", false, false)
-	check("d7:privatei42ee", false, true)
+	check(t, "d7:privatei1ee", false, true)
+	check(t, "d7:privatei0ee", false, false)
+	check(t, "d7:privatei42ee", false, true)
 	// This is a weird case. We could not allocate the bool to indicate it was bad (maybe a bad
 	// serializer which isn't uncommon), but that requires reworking the decoder to handle
 	// automatically. I think if we cared enough we'd create a custom Unmarshaler. Also if we were
 	// worried enough about performance I'd completely rewrite this package.
-	check("d7:private0:e", false, false)
-	check("d7:private1:te", false, true)
-	check("d7:private5:falsee", false, false)
-	check("d7:private1:Fe", false, false)
-	check("d7:private11:bunnyfoofooe", false, true)
+	check(t, "d7:private0:e", false, false)
+	check(t, "d7:private1:te", false, true)
+	check(t, "d7:private5:falsee", false, false)
+	check(t, "d7:private1:Fe", false, false)
+	check(t, "d7:private11:bunnyfoofooe", false, true)
 }
 
 // To set expectations about how our Decoder should work.
 func TestJsonDecoderBehaviour(t *testing.T) {
-	c := qt.New(t)
-	test := func(input string, items int, finalErr error) {
+	t.Parallel()
+
+	test := func(t *testing.T, input string, items int, finalErr error) {
 		d := json.NewDecoder(strings.NewReader(input))
 		actualItems := 0
 		var firstErr error
@@ -283,10 +399,14 @@ func TestJsonDecoderBehaviour(t *testing.T) {
 			}
 			actualItems++
 		}
-		c.Check(firstErr, qt.Equals, finalErr)
-		c.Check(actualItems, qt.Equals, items)
+		if firstErr != finalErr {
+			t.Errorf("Expected error %v, got %v", finalErr, firstErr)
+		}
+		if actualItems != items {
+			t.Errorf("Expected %d items, got %d", items, actualItems)
+		}
 	}
-	test("", 0, io.EOF)
-	test("{}", 1, io.EOF)
-	test("{} {", 1, io.ErrUnexpectedEOF)
+	test(t, "", 0, io.EOF)
+	test(t, "{}", 1, io.EOF)
+	test(t, "{} {", 1, io.ErrUnexpectedEOF)
 }

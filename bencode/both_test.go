@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"os"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func loadFile(name string, t *testing.T) []byte {
 	data, err := os.ReadFile(name)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 	return data
 }
 
@@ -20,15 +19,23 @@ func testFileInterface(t *testing.T, filename string) {
 
 	var iface interface{}
 	err := Unmarshal(data1, &iface)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	data2, err := Marshal(iface)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	assert.EqualValues(t, data1, data2)
+	if !bytes.Equal(data1, data2) {
+		t.Fatalf("equality expected")
+	}
 }
 
 func TestBothInterface(t *testing.T) {
+	t.Parallel()
+
 	testFileInterface(t, "testdata/archlinux-2011.08.19-netinstall-i686.iso.torrent")
 	testFileInterface(t, "testdata/continuum.torrent")
 }
@@ -72,5 +79,7 @@ func testFile(t *testing.T, filename string) {
 }
 
 func TestBoth(t *testing.T) {
+	t.Parallel()
+
 	testFile(t, "testdata/archlinux-2011.08.19-netinstall-i686.iso.torrent")
 }

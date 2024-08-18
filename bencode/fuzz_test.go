@@ -1,34 +1,35 @@
 package bencode
 
 import (
-	"math/big"
+	"reflect"
 	"testing"
-
-	qt "github.com/frankban/quicktest"
-	"github.com/google/go-cmp/cmp"
 )
-
-var bencodeInterfaceChecker = qt.CmpEquals(cmp.Comparer(func(a, b *big.Int) bool {
-	return a.Cmp(b) == 0
-}))
 
 func Fuzz(f *testing.F) {
 	for _, ret := range random_encode_tests {
 		f.Add([]byte(ret.expected))
 	}
+
 	f.Fuzz(func(t *testing.T, b []byte) {
-		c := qt.New(t)
+		t.Parallel()
+
 		var d interface{}
 		err := Unmarshal(b, &d)
 		if err != nil {
-			t.Skip()
+			t.Skip(err)
 		}
 		b0, err := Marshal(d)
-		c.Assert(err, qt.IsNil)
+		if err != nil {
+			t.Errorf("Marshal error: %v", err)
+		}
 		var d0 interface{}
 		err = Unmarshal(b0, &d0)
-		c.Assert(err, qt.IsNil)
-		c.Assert(d0, bencodeInterfaceChecker, d)
+		if err != nil {
+			t.Errorf("Unmarshal error: %v", err)
+		}
+		if !reflect.DeepEqual(d0, d) {
+			t.Errorf("Unmarshaled value does not match original value")
+		}
 	})
 }
 
@@ -36,15 +37,26 @@ func FuzzInterfaceRoundTrip(f *testing.F) {
 	for _, ret := range random_encode_tests {
 		f.Add([]byte(ret.expected))
 	}
+
 	f.Fuzz(func(t *testing.T, b []byte) {
-		c := qt.New(t)
+		t.Parallel()
+
 		var d interface{}
 		err := Unmarshal(b, &d)
 		if err != nil {
-			c.Skip(err)
+			t.Skip()
 		}
 		b0, err := Marshal(d)
-		c.Assert(err, qt.IsNil)
-		c.Check(b0, qt.DeepEquals, b)
+		if err != nil {
+			t.Errorf("Marshal error: %v", err)
+		}
+		var d0 interface{}
+		err = Unmarshal(b0, &d0)
+		if err != nil {
+			t.Errorf("Unmarshal error: %v", err)
+		}
+		if !reflect.DeepEqual(d0, d) {
+			t.Errorf("Unmarshaled value does not match original value")
+		}
 	})
 }

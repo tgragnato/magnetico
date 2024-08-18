@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"math/big"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 type random_encode_test struct {
@@ -83,9 +81,15 @@ func bigIntFromString(s string) *big.Int {
 }
 
 func TestRandomEncode(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range random_encode_tests {
 		data, err := Marshal(test.value)
-		assert.NoError(t, err, "%s", test)
-		assert.EqualValues(t, test.expected, string(data))
+		if err != nil {
+			t.Errorf("Error encoding value: %v", err)
+		}
+		if string(data) != test.expected {
+			t.Errorf("Unexpected encoded value. Got: %s, Expected: %s", string(data), test.expected)
+		}
 	}
 }

@@ -31,6 +31,7 @@ type Decoder struct {
 	buf    bytes.Buffer
 }
 
+// NewDecoder returns a new decoder that reads from r.
 func (d *Decoder) Decode(v interface{}) (err error) {
 	defer func() {
 		if err != nil {
@@ -78,7 +79,7 @@ func (d *Decoder) ReadEOF() error {
 		if err != nil {
 			panic(err)
 		}
-		return errors.New("expected EOF")
+		return err
 	}
 	if err == io.EOF {
 		return nil
@@ -157,7 +158,7 @@ func (d *Decoder) parseInt(v reflect.Value) error {
 	if err := d.readInt(); err != nil {
 		return err
 	}
-	s := bytesAsString(d.buf.Bytes())
+	s := d.buf.String()
 
 	switch v.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
@@ -218,7 +219,7 @@ func (d *Decoder) parseStringLength() (int, error) {
 	// Really the limit should be the uint size for the platform. But we can't pass in an allocator,
 	// or limit total memory use in Go, the best we might hope to do is limit the size of a single
 	// decoded value (by reading it in in-place and then operating on a view).
-	length, err := strconv.ParseInt(bytesAsString(d.buf.Bytes()), 10, 0)
+	length, err := strconv.ParseInt(d.buf.String(), 10, 0)
 	checkForIntParseError(err, start)
 	if int64(length) > d.getMaxStrLen() {
 		err = fmt.Errorf("parsed string length %v exceeds limit (%v)", length, DefaultDecodeMaxStrLen)
@@ -249,7 +250,7 @@ func (d *Decoder) parseString(v reflect.Value) error {
 	case reflect.String:
 		b := make([]byte, length)
 		read(b)
-		v.SetString(bytesAsString(b))
+		v.SetString(string(b))
 		return nil
 	case reflect.Slice:
 		if v.Type().Elem().Kind() != reflect.Uint8 {
@@ -272,7 +273,7 @@ func (d *Decoder) parseString(v reflect.Value) error {
 		d.buf.Grow(length)
 		b := d.buf.Bytes()[:length]
 		read(b)
-		x, err := strconv.ParseBool(bytesAsString(b))
+		x, err := strconv.ParseBool(string(b))
 		if err != nil {
 			x = length != 0
 		}
@@ -557,7 +558,7 @@ func (d *Decoder) readOneValue() bool {
 		if b >= '0' && b <= '9' {
 			start := d.buf.Len() - 1
 			d.readUntil(':')
-			length, err := strconv.ParseInt(bytesAsString(d.buf.Bytes()[start:]), 10, 64)
+			length, err := strconv.ParseInt(d.buf.String()[start:], 10, 64)
 			checkForIntParseError(err, d.Offset-1)
 
 			d.buf.WriteString(":")
@@ -734,7 +735,7 @@ func (d *Decoder) parseStringInterface() string {
 	}
 	b := d.readBytes(int(length))
 	d.Offset += int64(len(b))
-	return bytesAsString(b)
+	return string(b)
 }
 
 func (d *Decoder) parseDictInterface() interface{} {
