@@ -9,6 +9,7 @@ import (
 // The leaf block size for BitTorrent v2 Merkle trees.
 const BlockSize = 1 << 14 // 16KiB
 
+// Calculates the Merkle root of a list of hashes.
 func Root(hashes [][sha256.Size]byte) [sha256.Size]byte {
 	switch len(hashes) {
 	case 0:
@@ -30,6 +31,7 @@ func Root(hashes [][sha256.Size]byte) [sha256.Size]byte {
 	return Root(next)
 }
 
+// Calculates the Merkle root of a list of hashes with a padding hash.
 func RootWithPadHash(hashes [][sha256.Size]byte, padHash [sha256.Size]byte) [sha256.Size]byte {
 	for uint(len(hashes)) < RoundUpToPowerOfTwo(uint(len(hashes))) {
 		hashes = append(hashes, padHash)
@@ -37,6 +39,7 @@ func RootWithPadHash(hashes [][sha256.Size]byte, padHash [sha256.Size]byte) [sha
 	return Root(hashes)
 }
 
+// Converts a compact layer string into a slice of sha256 hashes.
 func CompactLayerToSliceHashes(compactLayer string) (hashes [][sha256.Size]byte, err error) {
 	hashes = make([][sha256.Size]byte, len(compactLayer)/sha256.Size)
 	for i := range hashes {
@@ -49,10 +52,12 @@ func CompactLayerToSliceHashes(compactLayer string) (hashes [][sha256.Size]byte,
 	return
 }
 
+// Returns the smallest power of two greater than or equal to the unsigned integer n.
 func RoundUpToPowerOfTwo(n uint) (ret uint) {
 	return 1 << bits.Len(n-1)
 }
 
+// Returns the smallest logarithm base two greater than or equal to the unsigned integer n.
 func Log2RoundingUp(n uint) (ret uint) {
 	if n == 0 {
 		return 0

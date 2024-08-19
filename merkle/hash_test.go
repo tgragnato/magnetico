@@ -66,3 +66,27 @@ func TestHash_Sum(t *testing.T) {
 		}
 	}
 }
+
+func TestHash_Size(t *testing.T) {
+	t.Parallel()
+
+	h := NewHash()
+	expectedSize := 32
+
+	if size := h.Size(); size != expectedSize {
+		t.Errorf("Expected hash size %d, but got %d", expectedSize, size)
+	}
+}
+
+func TestHash_SumMinLength(t *testing.T) {
+	t.Parallel()
+
+	h := NewHash()
+	data := []byte("Hello, World!")
+	expectedLength := 45
+
+	sum := h.SumMinLength(data, 20+len(data))
+	if len(sum) != expectedLength {
+		t.Errorf("Expected sum length %d, but got %d", expectedLength, len(sum))
+	}
+}

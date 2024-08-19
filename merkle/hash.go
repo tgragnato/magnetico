@@ -3,7 +3,6 @@ package merkle
 import (
 	"crypto/sha256"
 	"hash"
-	"unsafe"
 )
 
 func NewHash() *Hash {
@@ -14,7 +13,7 @@ func NewHash() *Hash {
 }
 
 type Hash struct {
-	blocks    [][32]byte
+	blocks    [][sha256.Size]byte
 	nextBlock hash.Hash
 	// How many bytes have been written to nextBlock so far.
 	nextBlockWritten int
@@ -43,14 +42,12 @@ func (h *Hash) Write(p []byte) (n int, err error) {
 	return
 }
 
-func (h *Hash) nextBlockSum() (sum [32]byte) {
-	if unsafe.SliceData(h.nextBlock.Sum(sum[:0])) != unsafe.SliceData(sum[:]) {
-		panic("go sux")
-	}
+func (h *Hash) nextBlockSum() (sum [sha256.Size]byte) {
+	copy(sum[:], h.nextBlock.Sum(sum[:0]))
 	return
 }
 
-func (h *Hash) curBlocks() [][32]byte {
+func (h *Hash) curBlocks() [][sha256.Size]byte {
 	blocks := h.blocks
 	if h.nextBlockWritten != 0 {
 		blocks = append(blocks, h.nextBlockSum())
@@ -59,7 +56,7 @@ func (h *Hash) curBlocks() [][32]byte {
 }
 
 func (h *Hash) Sum(b []byte) []byte {
-	sum := RootWithPadHash(h.curBlocks(), [32]byte{})
+	sum := RootWithPadHash(h.curBlocks(), [sha256.Size]byte{})
 	return append(b, sum[:]...)
 }
 
@@ -68,21 +65,24 @@ func (h *Hash) Sum(b []byte) []byte {
 func (h *Hash) SumMinLength(b []byte, length int) []byte {
 	blocks := h.curBlocks()
 	minBlocks := (length + BlockSize - 1) / BlockSize
-	blocks = append(blocks, make([][32]byte, minBlocks-len(blocks))...)
-	sum := RootWithPadHash(blocks, [32]byte{})
+	blocks = append(blocks, make([][sha256.Size]byte, minBlocks-len(blocks))...)
+	sum := RootWithPadHash(blocks, [sha256.Size]byte{})
 	return append(b, sum[:]...)
 }
 
+// Reset resets the Hash to its initial state.
 func (h *Hash) Reset() {
 	h.blocks = h.blocks[:0]
 	h.nextBlock.Reset()
 	h.nextBlockWritten = 0
 }
 
+// Size returns the size of the hash in bytes.
 func (h *Hash) Size() int {
-	return 32
+	return sha256.Size
 }
 
+// BlockSize returns the block size of the hash.
 func (h *Hash) BlockSize() int {
 	return h.nextBlock.BlockSize()
 }
