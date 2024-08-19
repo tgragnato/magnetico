@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"math/big"
+	"reflect"
 	"testing"
 )
 
@@ -90,6 +91,38 @@ func TestRandomEncode(t *testing.T) {
 		}
 		if string(data) != test.expected {
 			t.Errorf("Unexpected encoded value. Got: %s, Expected: %s", string(data), test.expected)
+		}
+	}
+}
+
+func TestIsEmptyValue(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		value    interface{}
+		expected bool
+	}{
+		{nil, true},
+		{0, true},
+		{0.0, true},
+		{false, true},
+		{"", true},
+		{[]int{}, false},
+		{[2]int{0, 0}, true},
+		{[2]int{0, 1}, false},
+		{map[string]string{}, false},
+		{struct{}{}, true},
+		{random_struct{123, "nono", "hello"}, false},
+		{&struct{}{}, false},
+		{make(chan int), false},
+		{func() {}, false},
+	}
+
+	for _, tc := range testCases {
+		v := reflect.ValueOf(tc.value)
+		isEmpty := isEmptyValue(v)
+		if isEmpty != tc.expected {
+			t.Errorf("Unexpected result for value %v. Got: %v, Expected: %v", tc.value, isEmpty, tc.expected)
 		}
 	}
 }

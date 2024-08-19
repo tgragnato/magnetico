@@ -53,3 +53,33 @@ func TestMarshalNilStructBytesOmitEmpty(t *testing.T) {
 		}
 	})
 }
+
+func TestGoString(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		b    Bytes
+		want string
+	}{
+		{
+			name: "Empty Bytes",
+			b:    Bytes{},
+			want: "bencode.Bytes(\"\")",
+		},
+		{
+			name: "Non-empty Bytes",
+			b:    Bytes("hello"),
+			want: "bencode.Bytes(\"hello\")",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.b.GoString()
+			if got != tt.want {
+				t.Errorf("GoString() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}

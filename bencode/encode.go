@@ -26,10 +26,14 @@ func isEmptyValue(v reflect.Value) bool {
 			z = z && isEmptyValue(v.Field(i))
 		}
 		return z
+	default:
+		if !v.IsValid() {
+			return true
+		}
+		// Compare other types directly:
+		z := reflect.Zero(v.Type())
+		return v.Interface() == z.Interface()
 	}
-	// Compare other types directly:
-	z := reflect.Zero(v.Type())
-	return v.Interface() == z.Interface()
 }
 
 type Encoder struct {
@@ -98,8 +102,8 @@ func (e *Encoder) reflectByteSlice(s []byte) {
 // Returns true if the value implements Marshaler interface and marshaling was
 // done successfully.
 func (e *Encoder) reflectMarshaler(v reflect.Value) bool {
-	if !v.Type().Implements(marshalerType) {
-		if v.Kind() != reflect.Ptr && v.CanAddr() && v.Addr().Type().Implements(marshalerType) {
+	if !v.Type().Implements(reflect.TypeOf((*Marshaler)(nil)).Elem()) {
+		if v.Kind() != reflect.Ptr && v.CanAddr() && v.Addr().Type().Implements(reflect.TypeOf((*Marshaler)(nil)).Elem()) {
 			v = v.Addr()
 		} else {
 			return false

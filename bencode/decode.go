@@ -581,8 +581,8 @@ func (d *Decoder) readOneValue() bool {
 }
 
 func (d *Decoder) parseUnmarshaler(v reflect.Value) bool {
-	if !v.Type().Implements(unmarshalerType) {
-		if v.Addr().Type().Implements(unmarshalerType) {
+	if !v.Type().Implements(reflect.TypeOf((*Unmarshaler)(nil)).Elem()) {
+		if v.Addr().Type().Implements(reflect.TypeOf((*Unmarshaler)(nil)).Elem()) {
 			v = v.Addr()
 		} else {
 			return false
