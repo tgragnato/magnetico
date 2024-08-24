@@ -254,13 +254,11 @@ func (cnis CompactNodeInfos) MarshalBencode() ([]byte, error) {
 
 func (cni CompactNodeInfo) MarshalBinary() []byte {
 	ret := make([]byte, 20)
-
 	copy(ret, cni.ID)
 
 	ip := cni.Addr.IP.To4()
 	if ip == nil {
 		ip = cni.Addr.IP.To16()
-		ret = make([]byte, 32)
 	}
 	ret = append(ret, ip...)
 

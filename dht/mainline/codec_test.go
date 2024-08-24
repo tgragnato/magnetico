@@ -427,3 +427,42 @@ func TestMarshalBinary(t *testing.T) {
 		})
 	}
 }
+
+func TestCompactNodeInfo_MarshalBinary(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		ID   []byte
+		IP   net.IP
+		Port int
+		want []byte
+	}{
+		{
+			name: "IPv4:Port",
+			ID:   []byte("abcdefghijklmnopqrst"),
+			IP:   net.IPv4(127, 0, 0, 1),
+			Port: 443,
+			want: []byte{97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 127, 0, 0, 1, 1, 187},
+		},
+		{
+			name: "IPv6:Port",
+			ID:   []byte("abcdefghijklmnopqrst"),
+			IP:   net.ParseIP("::1"),
+			Port: 443,
+			want: []byte{97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 187},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cni := CompactNodeInfo{
+				ID:   tt.ID,
+				Addr: net.UDPAddr{IP: tt.IP, Port: tt.Port},
+			}
+			if got := cni.MarshalBinary(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("CompactNodeInfo.MarshalBinary() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
