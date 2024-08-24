@@ -4,7 +4,6 @@ import (
 	"sort"
 
 	"github.com/tgragnato/magnetico/bencode"
-	"golang.org/x/exp/maps"
 )
 
 const FileTreePropertiesKey = ""
@@ -60,7 +59,10 @@ func (ft *FileTree) IsDir() bool {
 }
 
 func (ft *FileTree) orderedKeys() []string {
-	keys := maps.Keys(ft.Dir)
+	keys := make([]string, 0, len(ft.Dir))
+	for key := range ft.Dir {
+		keys = append(keys, key)
+	}
 	sort.Strings(keys)
 	return keys
 }
