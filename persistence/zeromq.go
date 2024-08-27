@@ -50,7 +50,6 @@ func (instance *zeromq) AddNewTorrent(infoHash []byte, name string, files []File
 		return errors.New("Failed to transmit " + err.Error())
 	}
 	instance.cache.Set(string(infoHash), data, cache.DefaultExpiration)
-	//zap.L().Debug(string(data))
 	return nil
 }
 
