@@ -60,6 +60,7 @@ const (
 	Sqlite3 databaseEngine = iota + 1
 	Postgres
 	Cockroach
+	ZeroMQ
 )
 
 type Statistics struct {
@@ -113,6 +114,9 @@ func MakeDatabase(rawURL string) (Database, error) {
 
 	case "postgres", "cockroach":
 		return makePostgresDatabase(url_)
+
+	case "zeromq", "zmq":
+		return makeZeroMQ(url_)
 
 	default:
 		return nil, fmt.Errorf("unknown URI scheme: `%s`", url_.Scheme)
