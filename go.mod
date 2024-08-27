@@ -11,6 +11,8 @@ require (
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/multiformats/go-multihash v0.2.3
+	github.com/patrickmn/go-cache v2.1.0+incompatible
+	github.com/zeromq/goczmq v4.1.0+incompatible
 	golang.org/x/crypto v0.26.0
 )
 

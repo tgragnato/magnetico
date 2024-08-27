@@ -10,7 +10,7 @@ RUN apk add --no-cache alpine-sdk && go mod download && go build --tags fts5 . &
 FROM alpine:3.20
 WORKDIR /tmp
 COPY --from=builder /workspace/magnetico /usr/bin/
-RUN apk add --no-cache libstdc++ libgcc \
+RUN apk add --no-cache libstdc++ libgcc libsodium-dev libzmq czmq \
     && echo '#!/bin/sh' >> /usr/bin/magneticod \
     && echo '/usr/bin/magnetico "$@" --daemon' >> /usr/bin/magneticod \
     && chmod +x /usr/bin/magneticod \
