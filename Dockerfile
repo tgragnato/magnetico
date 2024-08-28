@@ -1,4 +1,4 @@
-FROM golang:alpine3.20 as builder
+FROM golang:alpine3.20 AS builder
 ENV CGO_ENABLED=1
 ENV CGO_CFLAGS=-D_LARGEFILE64_SOURCE
 WORKDIR /workspace
