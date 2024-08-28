@@ -4,10 +4,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"github.com/patrickmn/go-cache"
-	zmq "github.com/zeromq/goczmq"
 	"net/url"
 	"time"
+
+	"gopkg.in/patrickmn/go-cache.v2"
+	zmq "gopkg.in/zeromq/goczmq.v4"
 )
 
 type zeromq struct {
