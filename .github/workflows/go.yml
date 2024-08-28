@@ -26,6 +26,9 @@ jobs:
       with:
         go-version: ${{ matrix.go-version }}
 
+    - name: Install cgo dependencies
+      run: sudo apt-get install -y libczmq-dev libsodium-dev
+
     - name: Build
       run: go build -v -tags fts5 .
 
