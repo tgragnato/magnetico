@@ -10,6 +10,7 @@ vet:
 
 test:
 	CGO_ENABLED=1 go test --tags fts5 -v -race ./...
+	CGO_ENABLED=0 go test -v ./...
 
 format:
 	gofmt -w ./dht/

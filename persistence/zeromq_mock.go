@@ -1,5 +1,5 @@
-//go:build cgo
-// +build cgo
+//go:build !cgo
+// +build !cgo
 
 package persistence
 
@@ -11,23 +11,16 @@ import (
 	"time"
 
 	"gopkg.in/patrickmn/go-cache.v2"
-	zmq "gopkg.in/zeromq/goczmq.v4"
 )
 
 type zeromq struct {
-	context *zmq.Sock
-	cache   *cache.Cache
+	cache *cache.Cache
 }
 
 func makeZeroMQ(url_ *url.URL) (Database, error) {
-	url_.Scheme = "tcp"
-	instance := new(zeromq)
-	context, err := zmq.NewPub(url_.String())
-	if err != nil {
-		return nil, err
+	instance := &zeromq{
+		cache: cache.New(5*time.Minute, 10*time.Minute),
 	}
-	instance.context = context
-	instance.cache = cache.New(5*time.Minute, 10*time.Minute)
 	return instance, nil
 }
 
@@ -49,16 +42,11 @@ func (instance *zeromq) AddNewTorrent(infoHash []byte, name string, files []File
 	if err != nil {
 		return errors.New("Failed to encode metadata " + err.Error())
 	}
-	err = instance.context.SendMessage([][]byte{data})
-	if err != nil {
-		return errors.New("Failed to transmit " + err.Error())
-	}
 	instance.cache.Set(string(infoHash), data, cache.DefaultExpiration)
 	return nil
 }
 
 func (instance *zeromq) Close() error {
-	instance.context.Destroy()
 	return nil
 }
 
