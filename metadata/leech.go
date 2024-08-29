@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/tgragnato/magnetico/bencode"
+	"github.com/tgragnato/magnetico/metadata/btconn"
 	"github.com/tgragnato/magnetico/metainfo"
 	"github.com/tgragnato/magnetico/persistence"
 )
@@ -38,7 +39,7 @@ type Leech struct {
 	peerAddr *net.TCPAddr
 	ev       LeechEventHandlers
 
-	conn     *net.TCPConn
+	conn     net.Conn
 	clientID [20]byte
 
 	ut_metadata                    uint8
@@ -71,40 +72,6 @@ func (l *Leech) writeAll(b []byte) error {
 		}
 		b = b[n:]
 	}
-	return nil
-}
-
-func (l *Leech) doBtHandshake() error {
-	lHandshake := []byte(fmt.Sprintf(
-		"\x13BitTorrent protocol\x00\x00\x00\x00\x00\x10\x00\x01%s%s",
-		l.infoHash,
-		l.clientID,
-	))
-
-	// ASSERTION
-	if len(lHandshake) != 68 {
-		panic(fmt.Sprintf("len(lHandshake) == %d", len(lHandshake)))
-	}
-
-	err := l.writeAll(lHandshake)
-	if err != nil {
-		return errors.New("writeAll lHandshake " + err.Error())
-	}
-
-	rHandshake, err := l.readExactly(68)
-	if err != nil {
-		return errors.New("readExactly rHandshake " + err.Error())
-	}
-	if !bytes.HasPrefix(rHandshake, []byte("\x13BitTorrent protocol")) {
-		return fmt.Errorf("corrupt BitTorrent handshake received")
-	}
-
-	// TODO: maybe check for the infohash sent by the remote peer to double check?
-
-	if (rHandshake[25] & 0x10) == 0 {
-		return fmt.Errorf("peer does not support the extension protocol")
-	}
-
 	return nil
 }
 
@@ -237,44 +204,6 @@ func (l *Leech) readUmMessage() ([]byte, error) {
 	}
 }
 
-func (l *Leech) connect(deadline time.Time) error {
-	var err error
-
-	x, err := net.DialTimeout("tcp", l.peerAddr.String(), time.Second)
-	if err != nil {
-		return errors.New("dial " + err.Error())
-	}
-	l.conn = x.(*net.TCPConn)
-
-	// > If sec == 0, operating system discards any unsent or unacknowledged data [after Close()
-	// > has been called].
-	err = l.conn.SetLinger(0)
-	if err != nil {
-		if err := l.conn.Close(); err != nil {
-			log.Panicf("couldn't close leech connection! %v", err)
-		}
-		return errors.New("SetLinger " + err.Error())
-	}
-
-	err = l.conn.SetNoDelay(true)
-	if err != nil {
-		if err := l.conn.Close(); err != nil {
-			log.Panicf("couldn't close leech connection! %v", err)
-		}
-		return errors.New("NODELAY " + err.Error())
-	}
-
-	err = l.conn.SetDeadline(deadline)
-	if err != nil {
-		if err := l.conn.Close(); err != nil {
-			log.Panicf("couldn't close leech connection! %v", err)
-		}
-		return errors.New("SetDeadline " + err.Error())
-	}
-
-	return nil
-}
-
 func (l *Leech) closeConn() {
 	if l.connClosed {
 		return
@@ -289,18 +218,29 @@ func (l *Leech) closeConn() {
 }
 
 func (l *Leech) Do(deadline time.Time) {
-	err := l.connect(deadline)
+	conn, cipher, peerExtensions, peerID, err := btconn.Dial(
+		l.peerAddr,
+		deadline,
+		true,
+		false,
+		[8]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x01},
+		l.infoHash,
+		l.clientID,
+	)
 	if err != nil {
-		l.OnError(errors.New("connect " + err.Error()))
+		l.OnError(errors.New("btconn.Dial " + err.Error()))
 		return
 	}
-	defer l.closeConn()
 
-	err = l.doBtHandshake()
-	if err != nil {
-		l.OnError(errors.New("doBtHandshake " + err.Error()))
-		return
-	}
+	l.conn = conn
+	log.Printf(
+		"Connected to %s with cipher %d and extensions %v and peerID %s\n",
+		l.peerAddr,
+		cipher,
+		peerExtensions,
+		peerID,
+	)
+	defer l.closeConn()
 
 	err = l.doExHandshake()
 	if err != nil {
