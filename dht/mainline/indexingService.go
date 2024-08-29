@@ -132,8 +132,13 @@ func (is *IndexingService) findNeighbors() {
 }
 
 func (is *IndexingService) onFindNodeResponse(response *Message, addr *net.UDPAddr) {
+	neighbors := []net.UDPAddr{}
 	for _, node := range response.R.Nodes {
-		go is.nodes.addNode(node.Addr)
+		neighbors = append(neighbors, node.Addr)
+	}
+
+	if len(neighbors) > 0 {
+		go is.nodes.addNodes(neighbors)
 	}
 }
 
@@ -188,11 +193,15 @@ func (is *IndexingService) onSampleInfohashesResponse(msg *Message, addr *net.UD
 		is.counter++
 	}
 
+	neighbors := []net.UDPAddr{}
 	if msg.R.Num > len(msg.R.Samples)/20 && time.Duration(msg.R.Interval) <= is.interval {
-		go is.nodes.addNode(*addr)
+		neighbors = append(neighbors, *addr)
 	}
 	for _, node := range msg.R.Nodes {
-		go is.nodes.addNode(node.Addr)
+		neighbors = append(neighbors, node.Addr)
+	}
+	if len(neighbors) > 0 {
+		go is.nodes.addNodes(neighbors)
 	}
 }
 

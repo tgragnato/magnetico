@@ -43,8 +43,15 @@ func (rt *routingTable) isAllowed(node net.UDPAddr) bool {
 	return true
 }
 
-func (rt *routingTable) addNode(node net.UDPAddr) {
-	if !rt.isAllowed(node) {
+func (rt *routingTable) addNodes(nodes []net.UDPAddr) {
+	filteredNodes := []net.UDPAddr{}
+	for _, node := range nodes {
+		if !rt.isAllowed(node) {
+			continue
+		}
+		filteredNodes = append(filteredNodes, node)
+	}
+	if len(filteredNodes) == 0 {
 		return
 	}
 
@@ -54,12 +61,12 @@ func (rt *routingTable) addNode(node net.UDPAddr) {
 	if len(rt.nodes) > int(rt.maxNeighbors*rt.maxNeighbors) {
 		rt.nodes = append(
 			rt.nodes[len(rt.nodes)-int(rt.maxNeighbors):len(rt.nodes)-1],
-			node,
+			filteredNodes...,
 		)
 		return
 	}
 
-	rt.nodes = append(rt.nodes, node)
+	rt.nodes = append(rt.nodes, filteredNodes...)
 }
 
 func (rt *routingTable) getNodes() []net.UDPAddr {
