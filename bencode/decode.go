@@ -455,7 +455,6 @@ func (d *Decoder) parseDict(v reflect.Value) error {
 			continue
 		}
 		setValue := reflect.New(df.Type).Elem()
-		// log.Printf("parsing into %v", setValue.Type())
 		ok, err = d.parseValue(setValue)
 		if err != nil {
 			var target *UnmarshalTypeError
