@@ -51,6 +51,14 @@ func (rt *routingTable) addNode(node net.UDPAddr) {
 	rt.Lock()
 	defer rt.Unlock()
 
+	if len(rt.nodes) > int(rt.maxNeighbors*rt.maxNeighbors) {
+		rt.nodes = append(
+			rt.nodes[len(rt.nodes)-int(rt.maxNeighbors):len(rt.nodes)-1],
+			node,
+		)
+		return
+	}
+
 	rt.nodes = append(rt.nodes, node)
 }
 
