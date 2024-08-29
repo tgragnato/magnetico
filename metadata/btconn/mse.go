@@ -126,8 +126,16 @@ func (s *Stream) HandshakeOutgoing(sKey []byte, cryptoProvide CryptoMethod, init
 	writeBuf.Write(hashSKey)
 	writeBuf.Write(vc)
 	_ = binary.Write(writeBuf, binary.BigEndian, cryptoProvide)
+	if len(padC) > math.MaxUint16 {
+		err = errors.New("padC is too big")
+		return
+	}
 	_ = binary.Write(writeBuf, binary.BigEndian, uint16(len(padC)))
 	writeBuf.Write(padC)
+	if len(initialPayload) > math.MaxUint16 {
+		err = errors.New("initial payload is too big")
+		return
+	}
 	_ = binary.Write(writeBuf, binary.BigEndian, uint16(len(initialPayload)))
 	writeBuf.Write(initialPayload)
 	encBytes := writeBuf.Bytes()[40:]
@@ -304,6 +312,10 @@ func (s *Stream) HandshakeIncoming(
 	_ = binary.Write(writeBuf, binary.BigEndian, selected)
 	padD, err := padZero()
 	if err != nil {
+		return
+	}
+	if len(padD) > math.MaxUint16 {
+		err = errors.New("padD is too big")
 		return
 	}
 	_ = binary.Write(writeBuf, binary.BigEndian, uint16(len(padD)))
