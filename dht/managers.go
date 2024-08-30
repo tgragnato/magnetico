@@ -1,7 +1,6 @@
 package dht
 
 import (
-	"log"
 	"net"
 	"time"
 
@@ -46,7 +45,13 @@ func (m *Manager) onIndexingResult(res mainline.IndexingResult) {
 	select {
 	case m.output <- res:
 	default:
-		log.Println("DHT manager output ch is full, idx result dropped!")
+		newChan := make(chan Result, len(m.output)+10)
+		for oldRes := range m.output {
+			newChan <- oldRes
+		}
+		close(m.output)
+		m.output = newChan
+		m.output <- res
 	}
 }
 
