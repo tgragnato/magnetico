@@ -13,6 +13,7 @@ import (
 	"io"
 	"math"
 	"math/big"
+	mrand "math/rand"
 )
 
 // The MIT License (MIT)
@@ -85,10 +86,7 @@ func (s *Stream) HandshakeOutgoing(sKey []byte, cryptoProvide CryptoMethod, init
 
 	writeBuf := bytes.NewBuffer(make([]byte, 0, 96+512))
 
-	Xa, Ya, err := keyPair()
-	if err != nil {
-		return
-	}
+	Xa, Ya := keyPair()
 
 	// Step 1 | A->B: Diffie Hellman Ya, PadA
 	writeBuf.Write(bytesWithPad(Ya))
@@ -205,10 +203,7 @@ func (s *Stream) HandshakeIncoming(
 	cryptoSelect func(provided CryptoMethod) (selected CryptoMethod)) (err error) {
 	writeBuf := bytes.NewBuffer(make([]byte, 0, 96+512))
 
-	Xb, Yb, err := keyPair()
-	if err != nil {
-		return
-	}
+	Xb, Yb := keyPair()
 
 	// Step 1 | A->B: Diffie Hellman Ya, PadA
 	b := make([]byte, 96+512)
@@ -382,14 +377,16 @@ func (s *Stream) readSync(key []byte, max int) error {
 	}
 }
 
-func privateKey() (*big.Int, error) {
+func privateKey() *big.Int {
 	b := make([]byte, 20)
 	_, err := rand.Read(b)
 	if err != nil {
-		return nil, err
+		for i := 0; i < 20; i++ {
+			b[i] = byte(mrand.Intn(256))
+		}
 	}
 	var n big.Int
-	return n.SetBytes(b), nil
+	return n.SetBytes(b)
 }
 
 func publicKey(private *big.Int) *big.Int {
@@ -397,11 +394,8 @@ func publicKey(private *big.Int) *big.Int {
 	return n.Exp(g, private, p)
 }
 
-func keyPair() (private, public *big.Int, err error) {
-	private, err = privateKey()
-	if err != nil {
-		return
-	}
+func keyPair() (private, public *big.Int) {
+	private = privateKey()
 	public = publicKey(private)
 	return
 }
@@ -460,7 +454,12 @@ func padRandom() ([]byte, error) {
 		return nil, err
 	}
 	_, err = rand.Read(b)
-	return b, err
+	if err != nil {
+		for i := 0; i < len(b); i++ {
+			b[i] = byte(mrand.Intn(256))
+		}
+	}
+	return b, nil
 }
 
 func padZero() ([]byte, error) {

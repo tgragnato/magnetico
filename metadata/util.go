@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"log"
+	mrand "math/rand"
 
 	"github.com/tgragnato/magnetico/metainfo"
 	"github.com/tgragnato/magnetico/persistence"
@@ -57,7 +57,7 @@ func randomDigit() byte {
 	b := make([]byte, 1)
 	_, err := rand.Read(b)
 	if err != nil {
-		log.Fatal(err)
+		b[0] = byte(mrand.Intn(256))
 	}
 	return (b[0] % 10) + '0'
 }
