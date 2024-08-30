@@ -1,6 +1,7 @@
 package mainline
 
 import (
+	"log"
 	"net"
 	"sync"
 )
@@ -14,7 +15,7 @@ type routingTable struct {
 
 func newRoutingTable(maxNeighbors uint, filterNodes []net.IPNet) *routingTable {
 	return &routingTable{
-		nodes:        make([]net.UDPAddr, 0, maxNeighbors),
+		nodes:        make([]net.UDPAddr, 0, maxNeighbors*maxNeighbors),
 		maxNeighbors: maxNeighbors,
 		filterNodes:  filterNodes,
 	}
@@ -58,12 +59,9 @@ func (rt *routingTable) addNodes(nodes []net.UDPAddr) {
 	rt.Lock()
 	defer rt.Unlock()
 
-	if len(rt.nodes) > int(rt.maxNeighbors*rt.maxNeighbors) {
-		rt.nodes = append(
-			rt.nodes[len(rt.nodes)-int(rt.maxNeighbors):len(rt.nodes)-1],
-			filteredNodes...,
-		)
-		return
+	if len(rt.nodes)+len(filteredNodes) > int(rt.maxNeighbors*rt.maxNeighbors) {
+		rt.nodes = rt.nodes[:0]
+		log.Println("routingTable nodes are full.. crawling too fast? (try to set max-rps lower)")
 	}
 
 	rt.nodes = append(rt.nodes, filteredNodes...)
@@ -73,14 +71,14 @@ func (rt *routingTable) getNodes() []net.UDPAddr {
 	rt.Lock()
 	defer rt.Unlock()
 
-	if len(rt.nodes) <= int(rt.maxNeighbors) {
+	if len(rt.nodes) <= int(rt.maxNeighbors) || rt.maxNeighbors < 2 {
 		nodes := rt.nodes
-		rt.nodes = []net.UDPAddr{}
+		rt.nodes = rt.nodes[:0]
 		return nodes
 	}
 
-	nodes := rt.nodes[:rt.maxNeighbors]
-	rt.nodes = rt.nodes[rt.maxNeighbors+1:]
+	nodes := rt.nodes[:rt.maxNeighbors-1]
+	rt.nodes = rt.nodes[rt.maxNeighbors:]
 	return nodes
 }
 
