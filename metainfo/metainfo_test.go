@@ -1,7 +1,6 @@
 package metainfo
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path"
@@ -252,7 +251,6 @@ func TestUnmarshalV2Metainfo(t *testing.T) {
 		t.Errorf("Error unmarshaling info: %v", err)
 		return
 	}
-	fmt.Printf("%#v\n", info)
 	if info.NumPieces() == 0 {
 		t.Errorf("Expected non-zero number of pieces, but got 0")
 	}
