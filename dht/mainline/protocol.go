@@ -165,6 +165,10 @@ func (p *Protocol) onMessage(msg *Message, addr *net.UDPAddr) {
 }
 
 func (p *Protocol) SendMessage(msg *Message, addr *net.UDPAddr) {
+	if addr.Port < 1 || addr.Port > 65535 {
+		return
+	}
+
 	if err := p.transport.WriteMessages(msg, addr); err != nil {
 		go stats.GetInstance().IncUDPError(true)
 	}
