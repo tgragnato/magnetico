@@ -3,7 +3,6 @@ package web
 import (
 	"encoding/hex"
 	"html/template"
-	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -148,7 +147,7 @@ func BasicAuth(handler http.HandlerFunc) http.HandlerFunc {
 func mustAsset(name string) []byte {
 	data, err := fs.ReadFile(name)
 	if err != nil {
-		log.Panicf("Could NOT access the requested resource! THIS IS A BUG, PLEASE REPORT. %v", err)
+		return []byte{}
 	}
 	return data
 }

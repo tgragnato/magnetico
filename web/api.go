@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -93,7 +92,7 @@ func apiTorrents(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set(ContentType, ContentTypeJson)
 	if err = json.NewEncoder(w).Encode(torrents); err != nil {
-		log.Printf("%s %v", MsgJsonError, err)
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
@@ -117,7 +116,7 @@ func apiTorrent(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set(ContentType, ContentTypeJson)
 	if err = json.NewEncoder(w).Encode(torrentMetadata); err != nil {
-		log.Printf("%s %v", MsgJsonError, err)
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
@@ -141,7 +140,7 @@ func apiFileList(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set(ContentType, ContentTypeJson)
 	if err = json.NewEncoder(w).Encode(files); err != nil {
-		log.Printf("%s %v", MsgJsonError, err)
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
@@ -172,7 +171,7 @@ func apiStatistics(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set(ContentType, ContentTypeJson)
 	if err = json.NewEncoder(w).Encode(stats); err != nil {
-		log.Printf("%s %v", MsgJsonError, err)
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
