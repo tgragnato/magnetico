@@ -501,3 +501,54 @@ func TestPostgresDatabase_QueryTorrents(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestPostgresDatabase_AddNewTorrent(t *testing.T) {
+	t.Parallel()
+
+	conn, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+
+	db := &postgresDatabase{conn: conn}
+
+	infoHash := []byte("infohash")
+	name := "Test Torrent"
+	files := []File{
+		{Size: 1024, Path: "/path/to/file1"},
+		{Size: 2048, Path: "/path/to/file2"},
+	}
+
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT 1 FROM torrents WHERE info_hash = \\$1;").
+		WithArgs(infoHash).
+		WillReturnRows(sqlmock.NewRows([]string{"1"}))
+	mock.ExpectQuery(`
+		INSERT INTO torrents \(
+			info_hash,
+			name,
+			total_size,
+			discovered_on
+		\) VALUES \(\$1, \$2, \$3, \$4\)
+		RETURNING id;
+	`).
+		WithArgs(infoHash, name, uint64(3072), sqlmock.AnyArg()).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+	mock.ExpectExec("INSERT INTO files \\(torrent_id, size, path\\) VALUES \\(\\$1, \\$2, \\$3\\);").
+		WithArgs(1, 1024, "/path/to/file1").
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec("INSERT INTO files \\(torrent_id, size, path\\) VALUES \\(\\$1, \\$2, \\$3\\);").
+		WithArgs(1, 2048, "/path/to/file2").
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	err = db.AddNewTorrent(infoHash, name, files)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Error(err)
+	}
+}
