@@ -2,6 +2,10 @@ package metadata
 
 import (
 	"bytes"
+	"io"
+	"net"
+	"reflect"
+	"sync"
 	"testing"
 
 	"github.com/tgragnato/magnetico/bencode"
@@ -43,4 +47,64 @@ func TestDecoder(t *testing.T) {
 			t.Errorf("Surplus #%d is not equal to what we expected! `%s`", i+1, bufSurplus)
 		}
 	}
+}
+
+func TestWriteAll(t *testing.T) {
+	t.Parallel()
+
+	peer1, peer2 := net.Pipe()
+	leech := &Leech{conn: peer1}
+	data := []byte("Hello, World!")
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		buffer := new(bytes.Buffer)
+		_, err := io.Copy(buffer, peer2)
+		if err != nil {
+			t.Error(err)
+		}
+		if !reflect.DeepEqual(data, buffer.Bytes()) {
+			t.Errorf("Expected to read %v, but got %v", data, buffer.Bytes())
+		}
+		wg.Done()
+	}()
+
+	if err := leech.writeAll(data); err != nil {
+		t.Errorf("Unexpected error: %s", err.Error())
+	}
+	leech.closeConn()
+	leech.closeConn()
+	wg.Wait()
+}
+
+func TestReadExactly(t *testing.T) {
+	t.Parallel()
+
+	peer1, peer2 := net.Pipe()
+	leech := &Leech{conn: peer1}
+	data := []byte("Hello, World!")
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		received, err := leech.readExactly(uint(len(data)))
+		if err != nil {
+			t.Error(err)
+		}
+		if !reflect.DeepEqual(data, received) {
+			t.Errorf("Expected to read %v, but got %v", data, received)
+		}
+		wg.Done()
+	}()
+
+	if _, err := peer2.Write(data); err != nil {
+		t.Errorf("Unexpected error: %s", err.Error())
+	}
+	if err := peer2.Close(); err != nil {
+		t.Errorf("Unexpected error: %s", err.Error())
+	}
+	wg.Wait()
 }
