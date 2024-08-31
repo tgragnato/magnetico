@@ -21,6 +21,7 @@ import (
 	"github.com/tgragnato/magnetico/dht/mainline"
 	"github.com/tgragnato/magnetico/metadata"
 	"github.com/tgragnato/magnetico/persistence"
+	"github.com/tgragnato/magnetico/stats"
 	"github.com/tgragnato/magnetico/web"
 )
 
@@ -61,24 +62,24 @@ func main() {
 	go func() {
 		for range sighupChan {
 			if opFlags.Credentials == nil {
-				log.Println("Ignoring SIGHUP since no credential file was supplied")
+				// Ignoring SIGHUP since no credential file was supplied
 				continue
 			}
 
 			opFlags.Credentials = make(map[string][]byte)
 			if err := loadCred(opFlags.CredentialsPath); err != nil {
-				log.Printf("couldn't load credentials %v", err)
+				log.Fatalf("couldn't load credentials %s\n", err.Error())
 			}
 		}
 	}()
 
 	database, err := persistence.MakeDatabase(opFlags.DatabaseURL)
 	if err != nil {
-		log.Fatalf("Could not open the database %s. %v", opFlags.DatabaseURL, err)
+		log.Fatalf("Could not open the database %s. %s\n", opFlags.DatabaseURL, err.Error())
 	}
 	defer func() {
 		if err = database.Close(); err != nil {
-			log.Printf("Could not close database! %v", err)
+			log.Printf("Could not close database! %s\n", err.Error())
 		}
 	}()
 
@@ -102,14 +103,14 @@ func main() {
 
 			exists, err := database.DoesTorrentExist(infoHash[:])
 			if err != nil {
-				log.Fatalf("Could not check whether torrent exists! %V", err)
+				go stats.GetInstance().IncDBError(false)
 			} else if !exists {
 				metadataSink.Sink(result)
 			}
 
 		case md := <-metadataSink.Drain():
 			if err := database.AddNewTorrent(md.InfoHash, md.Name, md.Files); err != nil {
-				log.Fatalf("Could not add new torrent to the database. %v", err)
+				go stats.GetInstance().IncDBError(true)
 			}
 
 		case <-interruptChan:
@@ -169,7 +170,7 @@ func parseFlags() error {
 
 	if opFlags.RunDaemon {
 		if err := checkAddrs(cmdF.IndexerAddrs); err != nil {
-			log.Fatalf("Of argument (list) `trawler-ml-addr` %v", err)
+			log.Fatalf("Of argument (list) `trawler-ml-addr` %s\n", err.Error())
 		} else {
 			opFlags.IndexerAddrs = cmdF.IndexerAddrs
 		}
@@ -196,11 +197,10 @@ func parseFlags() error {
 			if _, ipnet, err := net.ParseCIDR(cidr); err == nil {
 				opFlags.FilterNodesCIDRs = append(opFlags.FilterNodesCIDRs, *ipnet)
 			} else {
-				log.Fatalf("Error while parsing CIDR %s: %s", cidr, err.Error())
+				log.Fatalf("Error while parsing CIDR %s: %s\n", cidr, err.Error())
 			}
 		}
 		if len(opFlags.FilterNodesCIDRs) != 0 && reflect.DeepEqual(cmdF.BootstrappingNodes, []string{"dht.tgragnato.it"}) {
-			log.Printf("%v\n", cmdF.FilterNodesCIDRs[0])
 			log.Fatalln("You should specify your own internal bootstrapping nodes in filter mode.")
 		}
 	}
