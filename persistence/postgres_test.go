@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/sha1"
 	mrand "math/rand"
+	"reflect"
 	"testing"
 	"text/template"
 	"time"
@@ -309,6 +310,75 @@ func TestPostgresDatabase_GetFiles(t *testing.T) {
 	}
 	if len(files) != 0 {
 		t.Errorf("Expected 0 files, but got %d", len(files))
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestPostgresDatabase_GetStatistics(t *testing.T) {
+	t.Parallel()
+
+	conn, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+
+	from := "2023-08-31"
+	n := uint(1)
+
+	rows := sqlmock.NewRows([]string{"dT", "tS", "nD", "nF"}).
+		AddRow("1640995200", uint64(1024), uint64(10), uint64(5)).
+		AddRow("1641081600", uint64(2048), uint64(20), uint64(10))
+	mock.ExpectQuery("SELECT discovered_on AS dT, sum\\(files.size\\) AS tS, count\\(DISTINCT torrents.id\\) AS nD, count\\(DISTINCT files.id\\) AS nF FROM torrents, files WHERE torrents.id = files.torrent_id AND discovered_on >= \\$1 AND discovered_on <= \\$2 GROUP BY dt;").
+		WithArgs(1693526399, 1693612799).
+		WillReturnRows(rows)
+
+	db := &postgresDatabase{conn: conn}
+	stats, err := db.GetStatistics(from, n)
+	if err != nil {
+		t.Error(err)
+	}
+	if stats == nil {
+		t.Fatal("Expected statistics to be found, but got nil")
+	}
+
+	expectedStats := &Statistics{
+		NDiscovered: map[string]uint64{
+			"2022-01-01": 10,
+			"2022-01-02": 20,
+		},
+		TotalSize: map[string]uint64{
+			"2022-01-01": 1024,
+			"2022-01-02": 2048,
+		},
+		NFiles: map[string]uint64{
+			"2022-01-01": 5,
+			"2022-01-02": 10,
+		},
+	}
+	if !reflect.DeepEqual(stats, expectedStats) {
+		t.Errorf("Expected statistics to be %v, but got %v", expectedStats, stats)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Error(err)
+	}
+
+	rows = sqlmock.NewRows([]string{"dT", "tS", "nD", "nF"})
+	mock.ExpectQuery("SELECT discovered_on AS dT, sum\\(files.size\\) AS tS, count\\(DISTINCT torrents.id\\) AS nD, count\\(DISTINCT files.id\\) AS nF FROM torrents, files WHERE torrents.id = files.torrent_id AND discovered_on >= \\$1 AND discovered_on <= \\$2 GROUP BY dt;").
+		WithArgs(1693526399, 1693612799).
+		WillReturnRows(rows)
+
+	stats, err = db.GetStatistics(from, n)
+	if err != nil {
+		t.Error(err)
+	}
+	expectedStats = NewStatistics()
+	if !reflect.DeepEqual(stats, expectedStats) {
+		t.Errorf("Expected statistics to be %v, but got %v", expectedStats, stats)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
