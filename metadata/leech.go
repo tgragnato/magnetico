@@ -2,7 +2,6 @@ package metadata
 
 import (
 	"bytes"
-	"crypto/sha1"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -13,8 +12,6 @@ import (
 
 	"github.com/tgragnato/magnetico/bencode"
 	"github.com/tgragnato/magnetico/metadata/btconn"
-	"github.com/tgragnato/magnetico/metainfo"
-	"github.com/tgragnato/magnetico/persistence"
 	"github.com/tgragnato/magnetico/stats"
 )
 
@@ -73,6 +70,28 @@ func (l *Leech) writeAll(b []byte) error {
 		b = b[n:]
 	}
 	return nil
+}
+
+func (l *Leech) readExactly(n uint) ([]byte, error) {
+	b := make([]byte, n)
+	_, err := io.ReadFull(l.conn, b)
+	return b, err
+}
+
+func (l *Leech) closeConn() {
+	if l.connClosed {
+		return
+	}
+
+	if err := l.conn.Close(); err != nil {
+		panic("couldn't close leech connection! " + err.Error())
+	}
+
+	l.connClosed = true
+}
+
+func (l *Leech) OnError(err error) {
+	l.ev.OnError(l.infoHash, err)
 }
 
 func (l *Leech) doExHandshake() error {
@@ -204,18 +223,6 @@ func (l *Leech) readUmMessage() ([]byte, error) {
 	}
 }
 
-func (l *Leech) closeConn() {
-	if l.connClosed {
-		return
-	}
-
-	if err := l.conn.Close(); err != nil {
-		panic("couldn't close leech connection! " + err.Error())
-	}
-
-	l.connClosed = true
-}
-
 func (l *Leech) Do(deadline time.Time) {
 	conn, cipher, peerExtensions, _, err := btconn.Dial(
 		l.peerAddr,
@@ -302,67 +309,15 @@ func (l *Leech) Do(deadline time.Time) {
 		}
 	}
 
-	// We are done with the transfer, close socket as soon as possible (i.e. NOW) to avoid hitting "too many open files"
-	// error.
+	// We are done with the transfer, close socket as soon as possible (i.e. NOW)
+	// Avoid hitting "too many open files" error
 	l.closeConn()
 
-	// Verify the checksum
-	sha1Sum := sha1.Sum(l.metadata)
-	if !bytes.Equal(sha1Sum[:], l.infoHash[:]) {
-		l.OnError(fmt.Errorf("infohash mismatch"))
-		return
-	}
-
-	// Check the info dictionary
-	info := new(metainfo.Info)
-	err = bencode.Unmarshal(l.metadata, info)
-	if err != nil {
-		l.OnError(errors.New("unmarshal info " + err.Error()))
-		return
-	}
-	err = validateInfo(info)
-	if err != nil {
-		l.OnError(errors.New("validateInfo " + err.Error()))
-		return
-	}
-
-	var files []persistence.File
-	// If there is only one file, there won't be a Files slice. That's why we need to add it here
-	if len(info.Files) == 0 {
-		files = append(files, persistence.File{
-			Size: info.Length,
-			Path: info.Name,
-		})
-	} else {
-		for _, file := range info.Files {
-			files = append(files, persistence.File{
-				Size: file.Length,
-				Path: file.DisplayPath(info),
-			})
-		}
-	}
-
-	totalSize, err := totalSize(files)
+	extracted, err := extractMetadata(l.metadata, l.infoHash, time.Now())
 	if err != nil {
 		l.OnError(err)
 		return
 	}
 
-	l.ev.OnSuccess(Metadata{
-		InfoHash:     l.infoHash[:],
-		Name:         info.Name,
-		TotalSize:    totalSize,
-		DiscoveredOn: time.Now().Unix(),
-		Files:        files,
-	})
-}
-
-func (l *Leech) readExactly(n uint) ([]byte, error) {
-	b := make([]byte, n)
-	_, err := io.ReadFull(l.conn, b)
-	return b, err
-}
-
-func (l *Leech) OnError(err error) {
-	l.ev.OnError(l.infoHash, err)
+	l.ev.OnSuccess(*extracted)
 }

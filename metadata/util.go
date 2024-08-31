@@ -1,12 +1,16 @@
 package metadata
 
 import (
+	"bytes"
 	"crypto/rand"
+	"crypto/sha1"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	mrand "math/rand"
+	"time"
 
+	"github.com/tgragnato/magnetico/bencode"
 	"github.com/tgragnato/magnetico/metainfo"
 	"github.com/tgragnato/magnetico/persistence"
 )
@@ -27,6 +31,23 @@ func totalSize(files []persistence.File) (uint64, error) {
 	return totalSize, nil
 }
 
+// Unmarshal the metainfo from the metadata
+func unmarshalMetainfo(metadata []byte) (info *metainfo.Info, err error) {
+	info = new(metainfo.Info)
+	err = bencode.Unmarshal(metadata, info)
+	if err != nil {
+		info = nil
+		return
+	}
+
+	err = validateInfo(info)
+	if err != nil {
+		info = nil
+	}
+	return
+}
+
+// Check the info dictionary
 func validateInfo(info *metainfo.Info) error {
 	if len(info.Pieces)%20 != 0 {
 		return errors.New("pieces has invalid length")
@@ -40,6 +61,66 @@ func validateInfo(info *metainfo.Info) error {
 	return nil
 }
 
+// Extract the files from the metainfo
+func extractFiles(info *metainfo.Info) (files []persistence.File) {
+	if len(info.Files) == 0 {
+		// Single file
+		files = append(files, persistence.File{
+			Size: info.Length,
+			Path: info.Name,
+		})
+		return
+	}
+
+	// Multiple files
+	for _, file := range info.Files {
+		files = append(files, persistence.File{
+			Size: file.Length,
+			Path: file.DisplayPath(info),
+		})
+	}
+	return
+}
+
+// extractMetadata extracts metadata from a byte array and verifies it with an infohash.
+// Returns a pointer to a Metadata structure and an error, if any.
+//
+// Parameters:
+// - meta: a byte array containing the metadata to be extracted.
+// - infohash: a 20-byte array representing the infohash for verification.
+// - discovery: a timestamp representing the discovery time of the metadata.
+//
+// Returns:
+// - A pointer to a Metadata structure containing the extracted and verified metadata.
+// - An error if any validation or check does not complete with success.
+func extractMetadata(meta []byte, infohash [20]byte, discovery time.Time) (*Metadata, error) {
+	sha1Sum := sha1.Sum(meta)
+	if !bytes.Equal(sha1Sum[:], infohash[:]) {
+		return nil, errors.New("infohash mismatch")
+	}
+
+	info, err := unmarshalMetainfo(meta)
+	if err != nil {
+		return nil, err
+	}
+
+	files := extractFiles(info)
+	totalSize, err := totalSize(files)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Metadata{
+		InfoHash:     infohash[:],
+		Name:         info.Name,
+		TotalSize:    totalSize,
+		DiscoveredOn: discovery.Unix(),
+		Files:        files,
+	}, nil
+}
+
+// randomID generates a random peer ID with a predefined prefix.
+// Returns a byte slice representing the generated peer ID.
 func randomID() []byte {
 	prefix := []byte(PeerPrefix)
 	var rando []byte
