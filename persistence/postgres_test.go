@@ -246,3 +246,72 @@ func TestPostgresDatabase_GetTorrent(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestPostgresDatabase_GetFiles(t *testing.T) {
+	t.Parallel()
+
+	conn, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+
+	var random [100]byte
+	_, err = rand.Read(random[:])
+	if err != nil {
+		for i := 0; i < 100; i++ {
+			random[i] = byte(mrand.Intn(256))
+		}
+	}
+	infohash := sha1.Sum(random[:])
+
+	rows := sqlmock.NewRows([]string{"size", "path"}).
+		AddRow(1024, "/path/to/file1").
+		AddRow(2048, "/path/to/file2")
+	mock.ExpectQuery("SELECT f.size, f.path FROM files f, torrents t WHERE f.torrent_id = t.id AND t.info_hash = \\$1;").
+		WithArgs(infohash[:]).
+		WillReturnRows(rows)
+
+	db := &postgresDatabase{conn: conn}
+	files, err := db.GetFiles(infohash[:])
+	if err != nil {
+		t.Error(err)
+	}
+	if len(files) != 2 {
+		t.Errorf("Expected 2 files, but got %d", len(files))
+	}
+
+	expectedFiles := []File{
+		{Size: 1024, Path: "/path/to/file1"},
+		{Size: 2048, Path: "/path/to/file2"},
+	}
+	for i, file := range files {
+		if file.Size != expectedFiles[i].Size {
+			t.Errorf("Expected file size to be %d, but got %d", expectedFiles[i].Size, file.Size)
+		}
+		if file.Path != expectedFiles[i].Path {
+			t.Errorf("Expected file path to be %q, but got %q", expectedFiles[i].Path, file.Path)
+		}
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Error(err)
+	}
+
+	rows = sqlmock.NewRows([]string{"size", "path"})
+	mock.ExpectQuery("SELECT f.size, f.path FROM files f, torrents t WHERE f.torrent_id = t.id AND t.info_hash = \\$1;").
+		WithArgs(infohash[:]).
+		WillReturnRows(rows)
+
+	files, err = db.GetFiles(infohash[:])
+	if err != nil {
+		t.Error(err)
+	}
+	if len(files) != 0 {
+		t.Errorf("Expected 0 files, but got %d", len(files))
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Error(err)
+	}
+}
