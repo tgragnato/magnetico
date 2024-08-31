@@ -35,6 +35,9 @@ func Dial(
 		}
 	}(conn)
 
+	// Try to use MPTCP - https://www.mptcp.dev/
+	dialer.SetMultipathTCP(true)
+
 	// Write first part of BitTorrent handshake to a buffer because we will use it in both encrypted and unencrypted handshake.
 	out := bytes.NewBuffer(make([]byte, 0, 68))
 	err = writeHandshake(out, ih, ourID, ourExtensions)
