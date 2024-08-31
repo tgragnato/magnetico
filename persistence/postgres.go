@@ -286,10 +286,10 @@ func (db *postgresDatabase) GetTorrent(infoHash []byte) (*TorrentMetadata, error
 		WHERE t.info_hash = $1;`,
 		infoHash,
 	)
-	defer db.closeRows(rows)
 	if err != nil {
 		return nil, err
 	}
+	defer db.closeRows(rows)
 
 	if !rows.Next() {
 		return nil, nil
