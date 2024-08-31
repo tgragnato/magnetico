@@ -126,3 +126,12 @@ func Test_zeromq_GetStatistics(t *testing.T) {
 		t.Errorf("zeromq.GetStatistics() = %v, want nil", got)
 	}
 }
+
+func Test_zeromq_Engine(t *testing.T) {
+	t.Parallel()
+
+	instance := &zeromq{}
+	if got := instance.Engine(); got != ZeroMQ {
+		t.Errorf("zeromq.Engine() = %v, want %v", got, ZeroMQ)
+	}
+}

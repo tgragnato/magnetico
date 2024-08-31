@@ -346,3 +346,12 @@ func Test_sqlite3Database_GetStatistics(t *testing.T) {
 		})
 	}
 }
+
+func Test_sqlite3Database_Engine(t *testing.T) {
+	t.Parallel()
+
+	instance := &sqlite3Database{}
+	if got := instance.Engine(); got != Sqlite3 {
+		t.Errorf("zeromq.Engine() = %v, want %v", got, Sqlite3)
+	}
+}

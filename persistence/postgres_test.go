@@ -552,3 +552,12 @@ func TestPostgresDatabase_AddNewTorrent(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestPostgresDatabase_Engine(t *testing.T) {
+	t.Parallel()
+
+	instance := &postgresDatabase{}
+	if got := instance.Engine(); got != Postgres {
+		t.Errorf("zeromq.Engine() = %v, want %v", got, Postgres)
+	}
+}
