@@ -151,3 +151,23 @@ func TestPostgresDatabase_GetNumberOfTorrents(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestPostgresDatabase_Close(t *testing.T) {
+	t.Parallel()
+
+	conn, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	db := &postgresDatabase{conn: conn}
+
+	mock.ExpectClose()
+
+	err = db.Close()
+	if err != nil {
+		t.Error(err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Error(err)
+	}
+}
