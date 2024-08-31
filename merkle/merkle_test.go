@@ -2,6 +2,7 @@ package merkle
 
 import (
 	"crypto/sha256"
+	"reflect"
 	"testing"
 )
 
@@ -113,6 +114,42 @@ func TestRoundUpToPowerOfTwo(t *testing.T) {
 		result := RoundUpToPowerOfTwo(test.n)
 		if result != test.expected {
 			t.Errorf("For n=%d, expected %d, but got %d", test.n, test.expected, result)
+		}
+	}
+}
+
+func TestCompactLayerToSliceHashes(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		compactLayer string
+		expected     [][sha256.Size]byte
+	}{
+		{
+			compactLayer: "",
+			expected:     [][sha256.Size]byte{},
+		},
+		{
+			compactLayer: "0123456789abcdef",
+			expected:     [][sha256.Size]byte{},
+		},
+		{
+			compactLayer: "0123456789abcdef0123456789abcdef",
+			expected:     [][sha256.Size]byte{{48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 97, 98, 99, 100, 101, 102, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 97, 98, 99, 100, 101, 102}},
+		},
+		{
+			compactLayer: "0123456789abcdef0123456789abcdef0123456789abcdef",
+			expected:     [][sha256.Size]byte{{48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 97, 98, 99, 100, 101, 102, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 97, 98, 99, 100, 101, 102}},
+		},
+	}
+
+	for _, test := range tests {
+		result, err := CompactLayerToSliceHashes(test.compactLayer)
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+		if !reflect.DeepEqual(result, test.expected) {
+			t.Errorf("For compactLayer=%q, expected %v, but got %v", test.compactLayer, test.expected, result)
 		}
 	}
 }
