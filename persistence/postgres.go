@@ -15,6 +15,7 @@ import (
 
 	_ "github.com/jackc/pgx/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/tgragnato/magnetico/stats"
 )
 
 type postgresDatabase struct {
@@ -74,7 +75,8 @@ func (db *postgresDatabase) DoesTorrentExist(infoHash []byte) (bool, error) {
 
 func (db *postgresDatabase) AddNewTorrent(infoHash []byte, name string, files []File) error {
 	if !utf8.ValidString(name) {
-		log.Printf("Ignoring a torrent whose name is not UTF-8 compliant. infoHash: %s", infoHash)
+		go stats.GetInstance().IncNonUTF8()
+		// Returning nil so deferred tx.Rollback() will be called and transaction will be canceled.
 		return nil
 	}
 	name = strings.ReplaceAll(name, "\x00", "")
@@ -120,8 +122,7 @@ func (db *postgresDatabase) AddNewTorrent(infoHash []byte, name string, files []
 
 	for _, file := range files {
 		if !utf8.ValidString(file.Path) {
-			log.Printf("Ignoring a file whose path is not UTF-8 compliant. %s", file.Path)
-
+			go stats.GetInstance().IncNonUTF8()
 			// Returning nil so deferred tx.Rollback() will be called and transaction will be canceled.
 			return nil
 		}
@@ -509,14 +510,14 @@ func (db *postgresDatabase) setupDatabase() error {
 
 func (db *postgresDatabase) closeRows(rows *sql.Rows) {
 	if err := rows.Close(); err != nil {
-		log.Printf("could not close row %v", err)
+		panic("postgres: could not close row " + err.Error())
 	}
 }
 
 func (db *postgresDatabase) rollback(tx *sql.Tx) {
 	if err := tx.Rollback(); err != nil &&
 		!strings.Contains(err.Error(), "transaction has already been committed") {
-		log.Printf("could not rollback transaction %v", err)
+		panic("postgres: could not rollback transaction " + err.Error())
 	}
 }
 

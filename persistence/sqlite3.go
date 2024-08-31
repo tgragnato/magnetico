@@ -177,7 +177,7 @@ func (db *sqlite3Database) AddNewTorrent(infoHash []byte, name string, files []F
 	// Now, last_insert_rowid() should never return zero (or any negative values really) as we
 	// insert into torrents and handle any errors accordingly right afterwards.
 	if lastInsertId <= 0 {
-		log.Panicf("last_insert_rowid() <= 0 (this should have never happened!). lastInsertId: %d", lastInsertId)
+		panic("last_insert_rowid() <= 0")
 	}
 
 	for _, file := range files {
@@ -676,7 +676,7 @@ func (db *sqlite3Database) setupDatabase() error {
 func (db *sqlite3Database) rollback(tx *sql.Tx) {
 	if err := tx.Rollback(); err != nil &&
 		!strings.Contains(err.Error(), "transaction has already been committed") {
-		log.Printf("could not rollback transaction %v", err)
+		panic("sqlite: could not rollback transaction " + err.Error())
 	}
 }
 
@@ -693,6 +693,6 @@ func executeTemplate(text string, data interface{}, funcs template.FuncMap) stri
 
 func closeRows(rows *sql.Rows) {
 	if err := rows.Close(); err != nil {
-		log.Printf("could not close row %v", err)
+		panic("sqlite: could not close row " + err.Error())
 	}
 }
