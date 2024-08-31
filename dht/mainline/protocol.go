@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/sha1"
-	"log"
 	mrand "math/rand"
 	"net"
 	"sync"
 	"time"
+
+	"github.com/tgragnato/magnetico/stats"
 )
 
 type Protocol struct {
@@ -42,7 +43,7 @@ func NewProtocol(laddr string, eventHandlers ProtocolEventHandlers) (p *Protocol
 
 func (p *Protocol) Start() {
 	if p.started {
-		log.Panicln("Attempting to Start() a mainline/Protocol that has been already started! (Programmer error.)")
+		panic("Attempting to Start() a mainline/Protocol that has been already started!")
 	}
 	p.started = true
 
@@ -58,7 +59,7 @@ func (p *Protocol) Start() {
 
 func (p *Protocol) Terminate() {
 	if !p.started {
-		log.Panicln("Attempted to Terminate() a mainline/Protocol that has not been Start()ed! (Programmer error.)")
+		panic("Attempted to Terminate() a mainline/Protocol that has not been Start()ed!")
 	}
 
 	p.transport.Terminate()
@@ -164,9 +165,8 @@ func (p *Protocol) onMessage(msg *Message, addr *net.UDPAddr) {
 }
 
 func (p *Protocol) SendMessage(msg *Message, addr *net.UDPAddr) {
-	err := p.transport.WriteMessages(msg, addr)
-	if err != nil {
-		log.Printf("Error sending message to %s: %v", addr.String(), err)
+	if err := p.transport.WriteMessages(msg, addr); err != nil {
+		go stats.GetInstance().IncUDPError(true)
 	}
 }
 

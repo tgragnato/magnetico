@@ -1,9 +1,10 @@
 package mainline
 
 import (
-	"log"
 	"net"
 	"sync"
+
+	"github.com/tgragnato/magnetico/stats"
 )
 
 type routingTable struct {
@@ -61,7 +62,7 @@ func (rt *routingTable) addNodes(nodes []net.UDPAddr) {
 
 	if len(rt.nodes)+len(filteredNodes) > int(rt.maxNeighbors*rt.maxNeighbors) {
 		rt.nodes = rt.nodes[:0]
-		log.Println("routingTable nodes are full.. crawling too fast? (try to set max-rps lower)")
+		go stats.GetInstance().IncRtClearing()
 	}
 
 	rt.nodes = append(rt.nodes, filteredNodes...)

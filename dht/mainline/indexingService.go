@@ -3,10 +3,11 @@ package mainline
 import (
 	"crypto/rand"
 	"encoding/binary"
-	"log"
 	mrand "math/rand"
 	"net"
 	"time"
+
+	"github.com/tgragnato/magnetico/stats"
 )
 
 type IndexingService struct {
@@ -66,7 +67,7 @@ func NewIndexingService(laddr string, interval time.Duration, maxNeighbors uint,
 
 func (is *IndexingService) Start() {
 	if is.started {
-		log.Panicln("Attempting to Start() a mainline/IndexingService that has been already started! (Programmer error.)")
+		panic("Attempting to Start() a mainline/IndexingService that has been already started!")
 	}
 	is.started = true
 
@@ -91,26 +92,17 @@ func (is *IndexingService) index() {
 
 func (is *IndexingService) bootstrap() {
 	bootstrappingPorts := []int{80, 443, 1337, 6969, 6881, 25401}
-
 	bootstrappingIPs := make([]net.IP, 0)
-
-	if len(is.bootstrapNodes) == 0 {
-		log.Fatal("No bootstrapping nodes configured!")
-	}
-
-	log.Println(is.bootstrapNodes)
 	for _, dnsName := range is.bootstrapNodes {
 		if ipAddrs, err := net.LookupIP(dnsName); err == nil {
 			bootstrappingIPs = append(bootstrappingIPs, ipAddrs...)
-		} else {
-			log.Printf("Warning: Failed to lookup IP for bootstrap node %s: %v\n", dnsName, err)
 		}
 	}
-
 	if len(bootstrappingIPs) == 0 {
-		log.Println("Could NOT resolve the IP for any of the bootstrapping nodes!")
 		return
 	}
+
+	go stats.GetInstance().IncBootstrap()
 
 	for _, ip := range bootstrappingIPs {
 		for _, port := range bootstrappingPorts {

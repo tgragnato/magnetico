@@ -1,12 +1,12 @@
 package mainline
 
 import (
-	"errors"
 	"log"
 	"net"
 	"time"
 
 	"github.com/tgragnato/magnetico/bencode"
+	"github.com/tgragnato/magnetico/stats"
 )
 
 var (
@@ -50,7 +50,7 @@ func NewTransport(laddr string, onMessage func(*Message, *net.UDPAddr)) *Transpo
 	var err error
 	t.laddr, err = net.ResolveUDPAddr("udp", laddr)
 	if err != nil {
-		log.Panicf("Could not resolve the UDP address for the trawler! %v", err)
+		panic("Could not resolve the UDP address for the trawler! " + err.Error())
 	}
 
 	return t
@@ -71,14 +71,14 @@ func (t *Transport) Start() {
 	// end up in a debugging horror.
 	//                                                                   Here ends my justification.
 	if t.started {
-		log.Panicln("Attempting to Start() a mainline/Transport that has been already started! (Programmer error.)")
+		panic("Attempting to Start() a mainline/Transport that has been already started!")
 	}
 	t.started = true
 
 	var err error
 	t.conn, err = net.ListenUDP("udp", t.laddr)
 	if err != nil {
-		log.Fatalf("Could NOT bind the socket! %v", err)
+		log.Fatalf("Could NOT bind the socket! %s\n", err.Error())
 	}
 
 	go t.readMessages()
@@ -94,6 +94,7 @@ func (t *Transport) readMessages() {
 	for {
 		n, from, err := t.conn.ReadFromUDP(t.buffer)
 		if err != nil {
+			go stats.GetInstance().IncUDPError(false)
 			break
 		}
 
@@ -168,7 +169,7 @@ func (t *Transport) WriteMessages(msg *Message, addr *net.UDPAddr) error {
 
 	data, err := bencode.Marshal(msg)
 	if err != nil {
-		return errors.New("could not marshal an outgoing message! (programmer error)")
+		return err
 	}
 
 	_, err = t.conn.WriteToUDP(data, addr)
