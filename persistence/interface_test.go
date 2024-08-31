@@ -6,6 +6,8 @@ import (
 )
 
 func TestTorrentMetadata_MarshalJSON(t *testing.T) {
+	t.Parallel()
+
 	tm := &TorrentMetadata{
 		InfoHash: []byte{1, 2, 3, 4, 5, 6},
 	}
@@ -29,6 +31,8 @@ func TestTorrentMetadata_MarshalJSON(t *testing.T) {
 }
 
 func TestNewStatistics(t *testing.T) {
+	t.Parallel()
+
 	s := NewStatistics()
 
 	if s.NDiscovered == nil {

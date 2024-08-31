@@ -33,6 +33,7 @@ var validDates = []struct {
 
 func TestParseISO8601(t *testing.T) {
 	t.Parallel()
+
 	for i, date := range validDates {
 		_, gr, err := ParseISO8601(date.date)
 		if err != nil {
@@ -49,6 +50,8 @@ func TestParseISO8601(t *testing.T) {
 }
 
 func TestDaysOfMonth(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		month time.Month
 		year  int
@@ -78,6 +81,8 @@ func TestDaysOfMonth(t *testing.T) {
 }
 
 func TestIsLeap(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		year int
 		want bool
