@@ -316,10 +316,10 @@ func (db *postgresDatabase) GetFiles(infoHash []byte) ([]File, error) {
 			t.info_hash = $1;`,
 		infoHash,
 	)
-	defer db.closeRows(rows)
 	if err != nil {
 		return nil, err
 	}
+	defer db.closeRows(rows)
 
 	var files []File
 	for rows.Next() {
