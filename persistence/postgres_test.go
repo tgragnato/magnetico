@@ -1,11 +1,18 @@
 package persistence
 
 import (
+	"crypto/rand"
+	"crypto/sha1"
+	mrand "math/rand"
 	"testing"
 	"text/template"
+
+	"github.com/DATA-DOG/go-sqlmock"
 )
 
 func TestPostgresDatabase_ExecuteTemplate(t *testing.T) {
+	t.Parallel()
+
 	db := &postgresDatabase{}
 
 	text := "Hello, {{.Name}}!"
@@ -24,6 +31,8 @@ func TestPostgresDatabase_ExecuteTemplate(t *testing.T) {
 }
 
 func TestPostgresDatabase_OrderOn(t *testing.T) {
+	t.Parallel()
+
 	db := &postgresDatabase{}
 
 	testCases := []struct {
@@ -41,5 +50,51 @@ func TestPostgresDatabase_OrderOn(t *testing.T) {
 		if result != tc.expected {
 			t.Errorf("Expected orderOn(%v) to return %q, but got %q", tc.orderBy, tc.expected, result)
 		}
+	}
+}
+
+func TestDoesTorrentExist(t *testing.T) {
+	t.Parallel()
+
+	conn, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var random [100]byte
+	_, err = rand.Read(random[:])
+	if err != nil {
+		for i := 0; i < 100; i++ {
+			random[i] = byte(mrand.Intn(256))
+		}
+	}
+	infohash := sha1.Sum(random[:])
+
+	rows := sqlmock.NewRows([]string{"1"}).AddRow("1")
+	mock.ExpectQuery("SELECT 1 FROM torrents WHERE info_hash = \\$1;").WithArgs(infohash[:]).WillReturnRows(rows)
+
+	db := &postgresDatabase{conn: conn}
+	found, err := db.DoesTorrentExist(infohash[:])
+	if err != nil {
+		t.Error(err)
+	}
+	if !found {
+		t.Error("row returned but no result found")
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Error(err)
+	}
+
+	rows = sqlmock.NewRows([]string{"1"})
+	mock.ExpectQuery("SELECT 1 FROM torrents WHERE info_hash = \\$1;").WithArgs(infohash[:]).WillReturnRows(rows)
+	found, err = db.DoesTorrentExist(infohash[:])
+	if err != nil {
+		t.Error(err)
+	}
+	if found {
+		t.Error("no row returned but result found")
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Error(err)
 	}
 }

@@ -14,6 +14,7 @@ require (
 	golang.org/x/crypto v0.26.0
 	gopkg.in/patrickmn/go-cache.v2 v2.1.0
 	gopkg.in/zeromq/goczmq.v4 v4.1.0
+	github.com/DATA-DOG/go-sqlmock v1.5.2
 )
 
 require (
