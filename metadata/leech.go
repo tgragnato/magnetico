@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"math"
 	"net"
 	"time"
@@ -16,6 +15,7 @@ import (
 	"github.com/tgragnato/magnetico/metadata/btconn"
 	"github.com/tgragnato/magnetico/metainfo"
 	"github.com/tgragnato/magnetico/persistence"
+	"github.com/tgragnato/magnetico/stats"
 )
 
 const MAX_METADATA_SIZE = 10 * 1024 * 1024
@@ -210,15 +210,14 @@ func (l *Leech) closeConn() {
 	}
 
 	if err := l.conn.Close(); err != nil {
-		log.Panicf("couldn't close leech connection! %v", err)
-		return
+		panic("couldn't close leech connection! " + err.Error())
 	}
 
 	l.connClosed = true
 }
 
 func (l *Leech) Do(deadline time.Time) {
-	conn, cipher, peerExtensions, peerID, err := btconn.Dial(
+	conn, cipher, peerExtensions, _, err := btconn.Dial(
 		l.peerAddr,
 		deadline,
 		true,
@@ -233,14 +232,8 @@ func (l *Leech) Do(deadline time.Time) {
 	}
 
 	l.conn = conn
-	log.Printf(
-		"Connected to %s with cipher %d and extensions %v and peerID %s\n",
-		l.peerAddr,
-		cipher,
-		peerExtensions,
-		peerID,
-	)
 	defer l.closeConn()
+	go stats.GetInstance().IncLeech(cipher != 0, peerExtensions)
 
 	err = l.doExHandshake()
 	if err != nil {

@@ -1,7 +1,6 @@
 package metadata
 
 import (
-	"log"
 	"net"
 	"time"
 
@@ -53,7 +52,7 @@ func NewSink(deadline time.Duration, maxNLeeches int, filterNodes []net.IPNet) *
 
 func (ms *Sink) Sink(res dht.Result) {
 	if ms.terminated {
-		log.Panicln("Trying to Sink() an already closed Sink!")
+		panic("Trying to Sink() an already closed Sink!")
 	}
 
 	infoHash := res.InfoHash()
@@ -75,7 +74,7 @@ func (ms *Sink) leech(infoHash [20]byte, peerAddrs []net.TCPAddr, firstPeer net.
 
 func (ms *Sink) Drain() <-chan Metadata {
 	if ms.terminated {
-		log.Panicln("Trying to Drain() an already closed Sink!")
+		panic("Trying to Drain() an already closed Sink!")
 	}
 	return ms.drain
 }
