@@ -98,3 +98,56 @@ func TestDoesTorrentExist(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestPostgresDatabase_GetNumberOfTorrents(t *testing.T) {
+	t.Parallel()
+
+	conn, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+
+	rows := sqlmock.NewRows([]string{"exact_count"}).AddRow(10)
+	mock.ExpectQuery("SELECT COUNT\\(\\*\\)::BIGINT AS exact_count FROM torrents;").WillReturnRows(rows)
+
+	db := &postgresDatabase{conn: conn}
+	count, err := db.GetNumberOfTorrents()
+	if err != nil {
+		t.Error(err)
+	}
+	if count != 10 {
+		t.Errorf("Expected count to be 10, but got %d", count)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Error(err)
+	}
+
+	rows = sqlmock.NewRows([]string{"exact_count"})
+	mock.ExpectQuery("SELECT COUNT\\(\\*\\)::BIGINT AS exact_count FROM torrents;").WillReturnRows(rows)
+
+	count, err = db.GetNumberOfTorrents()
+	if err == nil {
+		t.Error("no rows returned for query without corresponding error")
+	}
+	if count != 0 {
+		t.Errorf("Expected count to be 0, but got %d", count)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Error(err)
+	}
+
+	rows = sqlmock.NewRows([]string{"exact_count"}).AddRow(nil)
+	mock.ExpectQuery("SELECT COUNT\\(\\*\\)::BIGINT AS exact_count FROM torrents;").WillReturnRows(rows)
+
+	count, err = db.GetNumberOfTorrents()
+	if err != nil {
+		t.Error(err)
+	}
+	if count != 0 {
+		t.Errorf("Expected count to be 0, but got %d", count)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Error(err)
+	}
+}
