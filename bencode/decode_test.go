@@ -51,10 +51,8 @@ func TestRandomDecode(t *testing.T) {
 			t.Error(err, test.data)
 			continue
 		}
-		if reflect.DeepEqual(test.expected, value) {
-			fmt.Printf("Test passed: expected %v, got %v\n", test.expected, value)
-		} else {
-			fmt.Printf("Test failed: expected %v, got %v\n", test.expected, value)
+		if !reflect.DeepEqual(test.expected, value) {
+			t.Errorf("Test failed: expected %v, got %v", test.expected, value)
 		}
 	}
 }
@@ -90,10 +88,8 @@ func TestDecoderConsecutive(t *testing.T) {
 		t.Errorf("Expected value 2 for i, got %v", i)
 	}
 	err = d.Decode(&i)
-	if err == io.EOF {
-		fmt.Println("Test passed: expected EOF")
-	} else {
-		fmt.Printf("Test failed: expected EOF, got %v\n", err)
+	if err != io.EOF {
+		t.Errorf("Test failed: expected EOF, got %v", err)
 	}
 }
 
