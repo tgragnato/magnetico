@@ -388,9 +388,6 @@ func (db *postgresDatabase) GetStatistics(from string, n uint) (*Statistics, err
 		var dT string
 		var tS, nD, nF uint64
 		if err := rows.Scan(&dT, &tS, &nD, &nF); err != nil {
-			if err := rows.Close(); err != nil {
-				panic(err.Error())
-			}
 			return nil, err
 		}
 
