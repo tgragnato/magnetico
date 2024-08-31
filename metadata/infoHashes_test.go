@@ -82,3 +82,44 @@ func TestInfoHashes_Pop_Nil(t *testing.T) {
 		t.Errorf("Expected pop(%v) to return nil, but got %v", infoHash, actual)
 	}
 }
+
+func Test_infoHashes_isAllowedFilter(t *testing.T) {
+	t.Parallel()
+
+	_, ipnet, err := net.ParseCIDR("127.0.0.0/8")
+	if err != nil {
+		t.Error(err)
+	}
+	ih := &infoHashes{
+		filterPeers: []net.IPNet{
+			*ipnet,
+		},
+	}
+
+	tests := []struct {
+		peer net.TCPAddr
+		want bool
+	}{
+		{
+			peer: net.TCPAddr{
+				IP:   net.ParseIP("127.0.0.1"),
+				Port: 5678,
+			},
+			want: true,
+		},
+		{
+			peer: net.TCPAddr{
+				IP:   net.ParseIP("192.168.1.1"),
+				Port: 6789,
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.peer.String(), func(t *testing.T) {
+			if got := ih.isAllowed(tt.peer); got != tt.want {
+				t.Errorf("infoHashes.isAllowed() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
