@@ -59,7 +59,6 @@ type databaseEngine uint8
 const (
 	Sqlite3 databaseEngine = iota + 1
 	Postgres
-	Cockroach
 	ZeroMQ
 )
 
