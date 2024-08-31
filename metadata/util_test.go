@@ -2,17 +2,22 @@ package metadata
 
 import (
 	"bytes"
+	"crypto/rand"
+	"crypto/sha1"
 	"math"
-	"math/rand"
+	mrand "math/rand"
+	"reflect"
 	"testing"
+	"time"
 
+	"github.com/tgragnato/magnetico/bencode"
 	"github.com/tgragnato/magnetico/metainfo"
 	"github.com/tgragnato/magnetico/persistence"
 )
 
 func TestTotalSize(t *testing.T) {
 	t.Parallel()
-	positiveRand := rand.Int63n(math.MaxInt64)
+	positiveRand := mrand.Int63n(math.MaxInt64)
 
 	tests := []struct {
 		name    string
@@ -30,7 +35,7 @@ func TestTotalSize(t *testing.T) {
 			name: "Negative size",
 			files: []persistence.File{
 				{
-					Size: -rand.Int63n(math.MaxInt64),
+					Size: -mrand.Int63n(math.MaxInt64),
 					Path: "",
 				},
 			},
@@ -261,5 +266,127 @@ func TestToBigEndianNegative(t *testing.T) {
 			}()
 			toBigEndian(test.i, test.n)
 		})
+	}
+}
+
+func TestUnmarshalMetainfo(t *testing.T) {
+	t.Parallel()
+
+	metadataBytes := make([]byte, 100)
+	if _, err := rand.Read(metadataBytes); err != nil {
+		for i := 0; i < 100; i++ {
+			metadataBytes[i] = byte(mrand.Intn(256))
+		}
+	}
+
+	info, err := unmarshalMetainfo(metadataBytes)
+	if err == nil {
+		t.Error("invalid metadata but unmarshalMetainfo() error = nil")
+		return
+	}
+	if info != nil {
+		t.Error("invalid metadata but unmarshalMetainfo() Info != nil")
+	}
+}
+
+func TestExtractFiles(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		info     *metainfo.Info
+		expected []persistence.File
+	}{
+		{
+			name: "Single file",
+			info: &metainfo.Info{
+				Length: 100,
+				Name:   "file.txt",
+			},
+			expected: []persistence.File{
+				{
+					Size: 100,
+					Path: "file.txt",
+				},
+			},
+		},
+		{
+			name: "Multiple files",
+			info: &metainfo.Info{
+				Files: []metainfo.FileInfo{
+					{
+						Length: 50,
+						Path:   []string{"dir1", "file1.txt"},
+					},
+					{
+						Length: 75,
+						Path:   []string{"dir2", "file2.txt"},
+					},
+				},
+			},
+			expected: []persistence.File{
+				{
+					Size: 50,
+					Path: "dir1/file1.txt",
+				},
+				{
+					Size: 75,
+					Path: "dir2/file2.txt",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := extractFiles(tt.info)
+			if !reflect.DeepEqual(got, tt.expected) {
+				t.Errorf("extractFiles() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestExtractMetadata(t *testing.T) {
+	t.Parallel()
+
+	meta, err := bencode.Marshal(&metainfo.Info{
+		PieceLength: 10,
+		Pieces:      []byte{},
+		Name:        "test",
+		NameUtf8:    "test",
+		Length:      10,
+		Source:      "",
+		Files: []metainfo.FileInfo{{
+			Length:   0,
+			Path:     []string{"test"},
+			PathUtf8: []string{"test"},
+		}},
+	})
+	if err != nil {
+		t.Error(err)
+	}
+
+	infohash := sha1.Sum(meta)
+	injectedTime := time.Now()
+
+	actualMetadata, err := extractMetadata(meta, infohash, injectedTime)
+	if err != nil {
+		t.Errorf("extractMetadata() error = %v, want nil", err)
+		return
+	}
+
+	expectedMetadata := &Metadata{
+		InfoHash:     infohash[:],
+		Name:         "test",
+		TotalSize:    0,
+		DiscoveredOn: injectedTime.Unix(),
+		Files: []persistence.File{{
+			Size: 0,
+			Path: "test",
+		}},
+	}
+	if !reflect.DeepEqual(actualMetadata, expectedMetadata) {
+		t.Errorf("extractMetadata() = %v, want %v", actualMetadata, expectedMetadata)
 	}
 }
