@@ -385,3 +385,119 @@ func TestPostgresDatabase_GetStatistics(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestPostgresDatabase_QueryTorrents(t *testing.T) {
+	t.Parallel()
+
+	conn, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+
+	db := &postgresDatabase{conn: conn}
+
+	query := "test"
+	epoch := int64(1693526399)
+	orderBy := ByTotalSize
+	ascending := true
+	limit := uint(10)
+	lastOrderedValue := float64(100)
+	lastID := uint64(5)
+
+	rows := sqlmock.NewRows([]string{"id", "info_hash", "name", "total_size", "discovered_on", "n_files", "relevance"}).
+		AddRow(1, []byte("infohash1"), "Torrent 1", uint64(1024), int64(1640995200), uint64(5), float64(0.5)).
+		AddRow(2, []byte("infohash2"), "Torrent 2", uint64(2048), int64(1641081600), uint64(10), float64(0.8))
+	mock.ExpectQuery(`
+			SELECT
+				id,
+				info_hash,
+				name,
+				total_size,
+				discovered_on,
+				\(SELECT COUNT\(\*\) FROM files WHERE torrents.id = files.torrent_id\) AS n_files,
+				0
+			FROM torrents
+			WHERE
+				name LIKE CONCAT\('%',\$1::text,'%'\) AND
+				discovered_on <= \$2 AND
+				total_size > \$3 AND
+				id > \$4
+			ORDER BY total_size ASC, id ASC
+			LIMIT \$5;
+		`).
+		WithArgs(query, epoch, lastOrderedValue, lastID, limit).
+		WillReturnRows(rows)
+
+	torrents, err := db.QueryTorrents(query, epoch, orderBy, ascending, limit, &lastOrderedValue, &lastID)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(torrents) != 2 {
+		t.Errorf("Expected 2 torrents, but got %d", len(torrents))
+	}
+
+	expectedTorrents := []TorrentMetadata{
+		{
+			ID:           1,
+			InfoHash:     []byte("infohash1"),
+			Name:         "Torrent 1",
+			Size:         1024,
+			DiscoveredOn: 1640995200,
+			NFiles:       5,
+			Relevance:    0.5,
+		},
+		{
+			ID:           2,
+			InfoHash:     []byte("infohash2"),
+			Name:         "Torrent 2",
+			Size:         2048,
+			DiscoveredOn: 1641081600,
+			NFiles:       10,
+			Relevance:    0.8,
+		},
+	}
+	for i, torrent := range torrents {
+		if !reflect.DeepEqual(torrent, expectedTorrents[i]) {
+			t.Errorf("Expected torrent to be %v, but got %v", expectedTorrents[i], torrent)
+		}
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Error(err)
+	}
+
+	rows = sqlmock.NewRows([]string{"id", "info_hash", "name", "total_size", "discovered_on", "n_files", "relevance"})
+	mock.ExpectQuery(`
+			SELECT
+				id,
+				info_hash,
+				name,
+				total_size,
+				discovered_on,
+				\(SELECT COUNT\(\*\) FROM files WHERE torrents.id = files.torrent_id\) AS n_files,
+				0
+			FROM torrents
+			WHERE
+				name LIKE CONCAT\('%',\$1::text,'%'\) AND
+				discovered_on <= \$2 AND
+				total_size > \$3 AND
+				id > \$4
+			ORDER BY total_size ASC, id ASC
+			LIMIT \$5;
+		`).
+		WithArgs(query, epoch, lastOrderedValue, lastID, limit).
+		WillReturnRows(rows)
+
+	torrents, err = db.QueryTorrents(query, epoch, orderBy, ascending, limit, &lastOrderedValue, &lastID)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(torrents) != 0 {
+		t.Errorf("Expected 0 torrents, but got %d", len(torrents))
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Error(err)
+	}
+}
