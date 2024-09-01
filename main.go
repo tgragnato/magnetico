@@ -129,7 +129,7 @@ func parseFlags() error {
 		IndexerMaxNeighbors uint     `long:"indexer-max-neighbors" description:"Maximum number of neighbors of an indexer." default:"10000"`
 
 		LeechMaxN uint `long:"leech-max-n" description:"Maximum number of leeches." default:"1000"`
-		MaxRPS    uint `long:"max-rps" description:"Maximum requests per second." default:"0"`
+		MaxRPS    uint `long:"max-rps" description:"Maximum requests per second." default:"500"`
 
 		BootstrappingNodes []string `long:"bootstrap-node" description:"Host(s) to be used for bootstrapping." default:"dht.tgragnato.it"`
 		FilterNodesCIDRs   []string `long:"filter-nodes-cidrs" description:"List of CIDRs on which Magnetico can operate. Empty is open mode." default:""`
