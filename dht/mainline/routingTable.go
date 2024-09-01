@@ -89,3 +89,10 @@ func (rt *routingTable) isEmpty() bool {
 
 	return len(rt.nodes) == 0
 }
+
+func (rt *routingTable) dump() []net.UDPAddr {
+	rt.RLock()
+	defer rt.RUnlock()
+
+	return rt.nodes
+}
