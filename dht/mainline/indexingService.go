@@ -286,7 +286,14 @@ func (is *IndexingService) onGetPeersQuery(msg *Message, addr *net.UDPAddr) {
 
 func (is *IndexingService) onSampleInfohashesQuery(msg *Message, addr *net.UDPAddr) {
 	go is.nodes.addNodes([]net.UDPAddr{*addr})
-	// TODO: implementation
+
+	// the remote is an indexer, send a find_node query to obtain some peers
+	go is.protocol.SendMessage(
+		NewFindNodeQuery(is.nodeID, randomNodeID()),
+		addr,
+	)
+
+	// TODO: implement NewSampleInfohashesResponse
 }
 
 // toBigEndianBytes Convert UInt16 To BigEndianBytes
