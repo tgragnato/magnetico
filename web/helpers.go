@@ -11,10 +11,9 @@ import (
 func StartWeb(address string, cred map[string][]byte, db persistence.Database) {
 	credentials = cred
 	database = db
+	log.Printf("magnetico is ready to serve on %s!\n", address)
 	if err := http.ListenAndServe(address, makeRouter()); err != nil {
 		log.Fatalf("ListenAndServe error %s\n", err.Error())
-	} else {
-		log.Printf("magnetico is ready to serve on %s!\n", address)
 	}
 }
 
