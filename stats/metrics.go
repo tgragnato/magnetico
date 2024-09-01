@@ -42,32 +42,32 @@ func (s *Stats) printMetrics() {
 	}
 
 	if s.writeError != 0 {
-		message += fmt.Sprintf("dht: there was an error writing a message to the UDP socket %d times\n", s.writeError)
+		message += fmt.Sprintf("dht: %d errors occurred while writing a message to the UDP socket\n", s.writeError)
 		s.writeError = 0
 	}
 
 	if s.readError != 0 {
-		message += fmt.Sprintf("dht: there was an error reading a message from the UDP socket %d times\n", s.readError)
+		message += fmt.Sprintf("dht: %d errors occurred while reading a message from the UDP socket\n", s.readError)
 		s.readError = 0
 	}
 
 	if s.nonUTF8 != 0 {
-		message += fmt.Sprintf("persistence: a torrent was ignored due to its name not being UTF-8 compliant %d times\n", s.nonUTF8)
+		message += fmt.Sprintf("persistence: %d torrents were ignored because their names were not UTF-8 compliant\n", s.nonUTF8)
 		s.nonUTF8 = 0
 	}
 
 	if s.checkError != 0 {
-		message += fmt.Sprintf("persistence: there was an error checking whether a torrent exists %d times\n", s.checkError)
+		message += fmt.Sprintf("persistence: %d errors occurred while checking whether a torrent exists\n", s.checkError)
 		s.checkError = 0
 	}
 
 	if s.addError != 0 {
-		message += fmt.Sprintf("persistence: there was an error adding a torrent to the database %d times\n", s.addError)
+		message += fmt.Sprintf("persistence: %d errors occurred while adding a torrent to the database\n", s.addError)
 		s.addError = 0
 	}
 
 	if s.mseEncryption != 0 && s.plaintext != 0 {
-		message += fmt.Sprintf("metainfo: the peer connection was obfuscated with mse %d%% of time\n", s.mseEncryption/s.plaintext)
+		message += fmt.Sprintf("metainfo: the peer connection was obfuscated with mse %d%% of the time\n", s.mseEncryption*100/(s.plaintext+s.mseEncryption))
 		s.mseEncryption = 0
 		s.plaintext = 0
 	}
@@ -84,7 +84,7 @@ func (s *Stats) printMetrics() {
 
 		// Add sorted extensions to the message and clear the map
 		for _, ext := range sortedExtensions {
-			message += fmt.Sprintf("metainfo: the extension %s was encountered %d times\n", ext, s.extensions[ext])
+			message += fmt.Sprintf("metainfo: the extension set %s was encountered %d times\n", ext, s.extensions[ext])
 			delete(s.extensions, ext)
 		}
 	}
