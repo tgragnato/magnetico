@@ -1,3 +1,10 @@
+## [1.61.1](https://github.com/tgragnato/magnetico/compare/v1.61.0...v1.61.1) (2024-09-01)
+
+
+### Bug Fixes
+
+* **dht:** this method cannot run in a goroutine because msg is shared ([f1cb43a](https://github.com/tgragnato/magnetico/commit/f1cb43a77b1c88bfddafc2f2b62354a37cc87c82))
+
 ## [1.61.0](https://github.com/tgragnato/magnetico/compare/v1.60.1...v1.61.0) (2024-09-01)
 
 
