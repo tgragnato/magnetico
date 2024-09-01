@@ -103,9 +103,6 @@ func (p *Protocol) onMessage(msg *Message, addr *net.UDPAddr) {
 				p.eventHandlers.OnAnnouncePeerQuery(msg, addr)
 			}
 
-		case "vote":
-			// Although we are aware that such method exists, we ignore.
-
 		case "sample_infohashes": // Added by BEP 51
 			if !validateSampleInfohashesQueryMessage(msg) {
 				return
