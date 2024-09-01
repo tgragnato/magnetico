@@ -20,7 +20,7 @@ func TestGetInstance(t *testing.T) {
 	}
 }
 
-func TestPrintMetrics(t *testing.T) {
+func TestFlush(t *testing.T) {
 	t.Parallel()
 
 	stats := &Stats{extensions: map[string]uint64{}}
@@ -42,7 +42,7 @@ func TestPrintMetrics(t *testing.T) {
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
 
-	stats.printMetrics()
+	stats.Flush()
 	if len(buf.String()) == 0 {
 		t.Error("Expected log message, but got an empty buffer")
 	}

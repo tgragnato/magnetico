@@ -18,15 +18,15 @@ func GetInstance() *Stats {
 	once.Do(func() {
 		instance = &Stats{extensions: map[string]uint64{}}
 		go func() {
-			for range time.NewTicker(time.Hour).C {
-				instance.printMetrics()
+			for range time.NewTicker(time.Minute).C {
+				instance.Flush()
 			}
 		}()
 	})
 	return instance
 }
 
-func (s *Stats) printMetrics() {
+func (s *Stats) Flush() {
 	s.Lock()
 	defer s.Unlock()
 	message := "\n --- \n"
