@@ -49,10 +49,15 @@ func NewIndexingService(laddr string, interval time.Duration, maxNeighbors uint,
 	service.protocol = NewProtocol(
 		laddr,
 		ProtocolEventHandlers{
-			OnFindNodeResponse:           service.onFindNodeResponse,
+			OnPingQuery:                  service.onPingQuery,
+			OnFindNodeQuery:              service.onFindNodeQuery,
+			OnGetPeersQuery:              service.onGetPeersQuery,
+			OnAnnouncePeerQuery:          service.onAnnouncePeerQuery,
 			OnGetPeersResponse:           service.onGetPeersResponse,
-			OnSampleInfohashesResponse:   service.onSampleInfohashesResponse,
+			OnFindNodeResponse:           service.onFindNodeResponse,
 			OnPingORAnnouncePeerResponse: service.onPingORAnnouncePeerResponse,
+			OnSampleInfohashesQuery:      service.onSampleInfohashesQuery,
+			OnSampleInfohashesResponse:   service.onSampleInfohashesResponse,
 		},
 	)
 	service.nodeID = randomNodeID()
@@ -198,10 +203,90 @@ func (is *IndexingService) onSampleInfohashesResponse(msg *Message, addr *net.UD
 }
 
 func (is *IndexingService) onPingORAnnouncePeerResponse(msg *Message, addr *net.UDPAddr) {
+	go is.nodes.addNodes([]net.UDPAddr{*addr})
+}
+
+func (is *IndexingService) onPingQuery(msg *Message, addr *net.UDPAddr) {
+	go is.nodes.addNodes([]net.UDPAddr{*addr})
+
+	is.protocol.SendMessage(
+		NewPingResponse(msg.T, is.nodeID),
+		addr,
+	)
+}
+
+func (is *IndexingService) onAnnouncePeerQuery(msg *Message, addr *net.UDPAddr) {
+	addresses := []net.UDPAddr{*addr}
+
+	if msg.A.Port > 0 &&
+		msg.A.Port <= 65535 &&
+		addr.Port != msg.A.Port {
+		addresses = append(addresses, net.UDPAddr{
+			IP:   addr.IP,
+			Port: msg.A.Port,
+		})
+	}
+
+	if msg.A.ImpliedPort > 0 &&
+		msg.A.ImpliedPort <= 65535 &&
+		addr.Port != msg.A.ImpliedPort &&
+		msg.A.Port != msg.A.ImpliedPort {
+		addresses = append(addresses, net.UDPAddr{
+			IP:   addr.IP,
+			Port: msg.A.ImpliedPort,
+		})
+	}
+
+	go is.nodes.addNodes(addresses)
+
 	is.protocol.SendMessage(
 		NewAnnouncePeerResponse(msg.T, is.nodeID),
 		addr,
 	)
+}
+
+func (is *IndexingService) onFindNodeQuery(msg *Message, addr *net.UDPAddr) {
+	compactNodeInfos := []CompactNodeInfo{}
+	for _, node := range is.nodes.dump() {
+		compactNodeInfos = append(compactNodeInfos, CompactNodeInfo{
+			ID:   randomNodeID(),
+			Addr: node,
+		})
+	}
+
+	is.protocol.SendMessage(
+		NewFindNodeResponse(msg.T, is.nodeID, compactNodeInfos),
+		addr,
+	)
+
+	go is.nodes.addNodes([]net.UDPAddr{*addr})
+}
+
+func (is *IndexingService) onGetPeersQuery(msg *Message, addr *net.UDPAddr) {
+	compactPeers := []CompactPeer{}
+	for _, node := range is.nodes.dump() {
+		compactPeers = append(compactPeers, CompactPeer{
+			IP:   node.IP,
+			Port: node.Port,
+		})
+	}
+
+	is.protocol.SendMessage(
+		NewGetPeersResponseWithValues(
+			msg.T,
+			is.nodeID,
+			is.protocol.CalculateToken(addr.IP),
+			compactPeers,
+		),
+		addr,
+	)
+
+	go is.nodes.addNodes([]net.UDPAddr{*addr})
+}
+
+func (is *IndexingService) onSampleInfohashesQuery(msg *Message, addr *net.UDPAddr) {
+	go is.nodes.addNodes([]net.UDPAddr{*addr})
+	// TODO: implementation
 }
 
 // toBigEndianBytes Convert UInt16 To BigEndianBytes
