@@ -90,9 +90,12 @@ func (rt *routingTable) isEmpty() bool {
 	return len(rt.nodes) == 0
 }
 
-func (rt *routingTable) dump() []net.UDPAddr {
+func (rt *routingTable) dump() (nodes []net.UDPAddr) {
 	rt.RLock()
 	defer rt.RUnlock()
 
-	return rt.nodes
+	for i := 0; i < 10 && i < len(rt.nodes); i++ {
+		nodes = append(nodes, rt.nodes[i])
+	}
+	return
 }
