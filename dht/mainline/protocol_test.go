@@ -349,3 +349,33 @@ func TestProtocol_Terminate(t *testing.T) {
 	protocol.Terminate()
 	protocol.Terminate()
 }
+
+func TestVerifyToken_ValidToken(t *testing.T) {
+	t.Parallel()
+
+	p := &Protocol{
+		tokenSecret: []byte("secret"),
+	}
+
+	address := net.IPv4(192, 168, 0, 1)
+	calculatedToken := p.CalculateToken(address)
+
+	if !p.VerifyToken(address, calculatedToken) {
+		t.Error("VerifyToken returned false for a valid token")
+	}
+}
+
+func TestVerifyToken_InvalidToken(t *testing.T) {
+	t.Parallel()
+
+	p := &Protocol{
+		tokenSecret: []byte("secret"),
+	}
+
+	address := net.IPv4(192, 168, 0, 1)
+	invalidToken := []byte("invalid")
+
+	if p.VerifyToken(address, invalidToken) {
+		t.Error("VerifyToken returned true for an invalid token")
+	}
+}
