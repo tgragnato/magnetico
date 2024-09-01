@@ -184,7 +184,7 @@ func (is *IndexingService) onSampleInfohashesResponse(msg *Message, addr *net.UD
 		t := toBigEndianBytes(is.counter)
 		msg.T = t[:]
 
-		is.protocol.SendMessage(msg, addr)
+		go is.protocol.SendMessage(msg, addr)
 
 		is.getPeersRequests[t] = infoHash
 		is.counter++

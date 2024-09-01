@@ -156,7 +156,7 @@ func (t *Transport) Throttle() {
 		}
 
 	} else {
-		//no limit, keep giving tickets to whoever requests it
+		// no limit, keep giving tickets to whoever requests it
 		for {
 			<-t.throttleTicketsChannel
 		}
@@ -164,8 +164,14 @@ func (t *Transport) Throttle() {
 }
 
 func (t *Transport) WriteMessages(msg *Message, addr *net.UDPAddr) error {
-	//get ticket
-	t.throttleTicketsChannel <- struct{}{}
+	if msg == nil || addr == nil {
+		return nil
+	}
+
+	// get ticket but prioritize get_peers and find_node
+	if msg.Q != "get_peers" && msg.Q != "find_node" {
+		t.throttleTicketsChannel <- struct{}{}
+	}
 
 	data, err := bencode.Marshal(msg)
 	if err != nil {
