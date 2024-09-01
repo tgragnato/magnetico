@@ -561,3 +561,72 @@ func TestPostgresDatabase_Engine(t *testing.T) {
 		t.Errorf("zeromq.Engine() = %v, want %v", got, Postgres)
 	}
 }
+
+func TestPostgresDatabase_SetupDatabase(t *testing.T) {
+	t.Parallel()
+
+	conn, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+
+	db := &postgresDatabase{conn: conn}
+
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT 1 FROM pg_extension WHERE extname = 'pg_trgm';").
+		WillReturnRows(sqlmock.NewRows([]string{"1"}).AddRow("1"))
+	mock.ExpectExec(`
+		-- Torrents ID sequence generator
+		CREATE SEQUENCE IF NOT EXISTS seq_torrents_id;
+		-- Files ID sequence generator
+		CREATE SEQUENCE IF NOT EXISTS seq_files_id;
+
+		CREATE TABLE IF NOT EXISTS torrents \(
+			id             INTEGER PRIMARY KEY DEFAULT nextval\('seq_torrents_id'\),
+			info_hash      bytea NOT NULL UNIQUE,
+			name           TEXT NOT NULL,
+			total_size     BIGINT NOT NULL CHECK\(total_size > 0\),
+			discovered_on  INTEGER NOT NULL CHECK\(discovered_on > 0\)
+		\);
+
+		-- Indexes for search sorting options
+		CREATE INDEX IF NOT EXISTS idx_torrents_total_size ON torrents \(total_size\);
+		CREATE INDEX IF NOT EXISTS idx_torrents_discovered_on ON torrents \(discovered_on\);
+
+		-- Using pg_trgm GIN index for fast ILIKE queries
+		-- You need to execute "CREATE EXTENSION pg_trgm" on your database for this index to work
+		-- Be aware that using this type of index implies that making ILIKE queries with less that
+		-- 3 character values will cause full table scan instead of using index.
+		-- You can try to avoid that by doing 'SET enable_seqscan=off'.
+		CREATE INDEX IF NOT EXISTS idx_torrents_name_gin_trgm ON torrents USING GIN \(name gin_trgm_ops\);
+
+		CREATE TABLE IF NOT EXISTS files \(
+			id          INTEGER PRIMARY KEY DEFAULT nextval\('seq_files_id'\),
+			torrent_id  INTEGER REFERENCES torrents ON DELETE CASCADE ON UPDATE RESTRICT,
+			size        BIGINT NOT NULL,
+			path        TEXT NOT NULL
+		\);
+
+		CREATE INDEX IF NOT EXISTS idx_files_torrent_id ON files \(torrent_id\);
+
+		CREATE TABLE IF NOT EXISTS migrations \(
+			schema_version		SMALLINT NOT NULL UNIQUE 
+		\);
+
+		INSERT INTO migrations \(schema_version\) VALUES \(0\) ON CONFLICT DO NOTHING;
+	`).
+		WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectQuery("SELECT MAX\\(schema_version\\) FROM migrations;").
+		WillReturnRows(sqlmock.NewRows([]string{"MAX(schema_version)"}).AddRow(0))
+	mock.ExpectCommit()
+
+	err = db.setupDatabase()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Error(err)
+	}
+}
