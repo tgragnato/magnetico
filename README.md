@@ -22,13 +22,50 @@ This allows anyone with a decent Internet connection to access the vast amount o
 The easiest way to run magnetico is to use the OCI image built within the CI pipeline:
 - `docker pull ghcr.io/tgragnato/magnetico:latest`
 - `docker run --rm -it ghcr.io/tgragnato/magnetico:latest --help`
-- `docker run --rm -it -v <your_data_dir>:/data -p 8080:8080/tcp ghcr.io/tgragnato/magnetico:latest --database=sqlite3:///data/magnetico.sqlite3 --max-rps=1000 --addr=0.0.0.0:8080`
+- `docker run --rm -it -v <your_data_dir>:/data -p 8080:8080/tcp ghcr.io/tgragnato/magnetico:latest --database=sqlite3:///data/magnetico.sqlite3`
+- visit `http://localhost:8080`
 
 To compile using the standard Golang toolchain:
 - Download the latest golang release from [the official website](https://go.dev/dl/)
 - Follow the [installation instructions for your platform](https://go.dev/doc/install)
-- Run `go install --tags fts5 .`
+- Checkout the repository and run `go install --tags fts5 .`
 - The `magnetico` binary is now available in your `$GOBIN` directory
+
+### PostgreSQL
+
+PostgreSQL is a powerful, scalable database with advanced features for complex applications and high concurrency.
+SQLite is lightweight and easy to embed, ideal for simpler or smaller-scale applications.
+You might prefer PostgreSQL if you need scalability, advanced features, and robust concurrency management.
+
+The installation of PostgreSQL varies depending on the OS and the final configuration you want to achieve.
+After setting it up, you should create a user, set a password, create a database owned by that user, and load the `pg_trgm` extension.
+
+- `CREATE USER magnetico WITH PASSWORD 'magnetico';`
+- `CREATE DATABASE magnetico OWNER magnetico;`
+- `\c magnetico`
+- `CREATE EXTENSION pg_trgm;`
+- `docker run --rm -it ghcr.io/tgragnato/magnetico:latest --help`
+- `docker run --rm -it -p 8080:8080/tcp ghcr.io/tgragnato/magnetico:latest --database=postgres://magnetico:magnetico@localhost:5432/magnetico?sslmode=disable`
+- visit `http://localhost:8080`
+
+### CockroachDB
+
+CockroachDB is ideal for situations when horizontal scalability, high availability, and global distribution is required.
+It currently does not support the `pg_trgm` extension, which provides functions for trigram-based similarity searching.
+
+- create a user and it's database
+- download the TLS certificate of your cluster
+- `docker run --rm -it ghcr.io/tgragnato/magnetico:latest --help`
+- `docker run --rm -it -v <your_cert_dir>:/data -p 8080:8080/tcp ghcr.io/tgragnato/magnetico:latest --database=cockroach://magneticouser:magneticopass@mycluster.crdb.io:26257/magnetico?sslmode=verify-full&sslrootcert=/data/cc-ca.crt`
+- visit `http://localhost:8080`
+
+### ZeroMQ
+
+ZeroMQ is a high-performance messaging library that provides a set of tools for communication between distributed applications.
+The integration is designed in the persistence layer as a ZMQ PUB firehose, and works under the zeromq and zmq URL schemas.
+
+- `docker run --rm -it ghcr.io/tgragnato/magnetico:latest --help`
+- `docker run --rm -it ghcr.io/tgragnato/magnetico:latest -d --database=zeromq://localhost:5555`
 
 ## Features
 
@@ -64,6 +101,7 @@ USERNAME:$2y$12$YE01LZ8jrbQbx6c0s2hdZO71dSjn2p/O9XsYJpz.5968yCysUgiaG
 |                                                                     __The Homepage__                                                                    |                                                                     __Searching for torrents__                                                                    |                                                     __Viewing the metadata of a torrent__                                                     |
 
 ## Why?
+
 BitTorrent, being a distributed P2P file sharing protocol, has long suffered because of the
 centralised entities that people depended on for searching torrents (websites) and for discovering
 other peers (trackers). Introduction of DHT (distributed hash table) eliminated the need for
