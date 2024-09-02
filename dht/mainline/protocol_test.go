@@ -303,11 +303,16 @@ func TestNewProtocol(t *testing.T) {
 
 	service := new(IndexingService)
 	protocol := NewProtocol("0.0.0.0:0", ProtocolEventHandlers{
-		OnFindNodeResponse:           service.onFindNodeResponse,
+		OnPingQuery:                  service.onPingQuery,
+		OnFindNodeQuery:              service.onFindNodeQuery,
+		OnGetPeersQuery:              service.onGetPeersQuery,
+		OnAnnouncePeerQuery:          service.onAnnouncePeerQuery,
 		OnGetPeersResponse:           service.onGetPeersResponse,
-		OnSampleInfohashesResponse:   service.onSampleInfohashesResponse,
+		OnFindNodeResponse:           service.onFindNodeResponse,
 		OnPingORAnnouncePeerResponse: service.onPingORAnnouncePeerResponse,
-	})
+		OnSampleInfohashesQuery:      service.onSampleInfohashesQuery,
+		OnSampleInfohashesResponse:   service.onSampleInfohashesResponse,
+	}, 1000)
 	protocol.Start()
 	protocol.Terminate()
 }
@@ -322,11 +327,16 @@ func TestProtocol_Start(t *testing.T) {
 
 	service := new(IndexingService)
 	protocol := NewProtocol("0.0.0.0:0", ProtocolEventHandlers{
-		OnFindNodeResponse:           service.onFindNodeResponse,
+		OnPingQuery:                  service.onPingQuery,
+		OnFindNodeQuery:              service.onFindNodeQuery,
+		OnGetPeersQuery:              service.onGetPeersQuery,
+		OnAnnouncePeerQuery:          service.onAnnouncePeerQuery,
 		OnGetPeersResponse:           service.onGetPeersResponse,
-		OnSampleInfohashesResponse:   service.onSampleInfohashesResponse,
+		OnFindNodeResponse:           service.onFindNodeResponse,
 		OnPingORAnnouncePeerResponse: service.onPingORAnnouncePeerResponse,
-	})
+		OnSampleInfohashesQuery:      service.onSampleInfohashesQuery,
+		OnSampleInfohashesResponse:   service.onSampleInfohashesResponse,
+	}, 1000)
 	protocol.Start()
 	protocol.Start()
 }
@@ -341,11 +351,16 @@ func TestProtocol_Terminate(t *testing.T) {
 
 	service := new(IndexingService)
 	protocol := NewProtocol("0.0.0.0:0", ProtocolEventHandlers{
-		OnFindNodeResponse:           service.onFindNodeResponse,
+		OnPingQuery:                  service.onPingQuery,
+		OnFindNodeQuery:              service.onFindNodeQuery,
+		OnGetPeersQuery:              service.onGetPeersQuery,
+		OnAnnouncePeerQuery:          service.onAnnouncePeerQuery,
 		OnGetPeersResponse:           service.onGetPeersResponse,
-		OnSampleInfohashesResponse:   service.onSampleInfohashesResponse,
+		OnFindNodeResponse:           service.onFindNodeResponse,
 		OnPingORAnnouncePeerResponse: service.onPingORAnnouncePeerResponse,
-	})
+		OnSampleInfohashesQuery:      service.onSampleInfohashesQuery,
+		OnSampleInfohashesResponse:   service.onSampleInfohashesResponse,
+	}, 1000)
 	protocol.Terminate()
 	protocol.Terminate()
 }

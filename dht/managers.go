@@ -2,7 +2,6 @@ package dht
 
 import (
 	"net"
-	"time"
 
 	"github.com/tgragnato/magnetico/dht/mainline"
 )
@@ -22,12 +21,12 @@ type Manager struct {
 	indexingServices []Service
 }
 
-func NewManager(addrs []string, interval time.Duration, maxNeighbors uint, bootstrappingNodes []string, filterNodes []net.IPNet) *Manager {
+func NewManager(addrs []string, maxNeighbors uint, bootstrappingNodes []string, filterNodes []net.IPNet) *Manager {
 	manager := new(Manager)
 	manager.output = make(chan Result, 20)
 
 	for _, addr := range addrs {
-		service := mainline.NewIndexingService(addr, interval, maxNeighbors, mainline.IndexingServiceEventHandlers{
+		service := mainline.NewIndexingService(addr, maxNeighbors, mainline.IndexingServiceEventHandlers{
 			OnResult: manager.onIndexingResult,
 		}, bootstrappingNodes, filterNodes)
 		manager.indexingServices = append(manager.indexingServices, service)

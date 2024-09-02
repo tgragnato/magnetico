@@ -3,6 +3,7 @@ package mainline
 import (
 	"log"
 	"net"
+	"sync/atomic"
 	"time"
 
 	"github.com/tgragnato/magnetico/bencode"
@@ -27,9 +28,11 @@ type Transport struct {
 
 	throttlingRate         int           //available messages per second. If <=0, it is considered disabled
 	throttleTicketsChannel chan struct{} //channel giving tickets (allowance) to make send a message
+	maxNeighbors           uint
+	queuedCommunications   uint64
 }
 
-func NewTransport(laddr string, onMessage func(*Message, *net.UDPAddr)) *Transport {
+func NewTransport(laddr string, onMessage func(*Message, *net.UDPAddr), maxNeighbors uint) *Transport {
 	t := new(Transport)
 	/*   The field size sets a theoretical limit of 65,535 bytes (8 byte header + 65,527 bytes of
 	 * data) for a UDP datagram. However the actual limit for the data length, which is imposed by
@@ -45,7 +48,9 @@ func NewTransport(laddr string, onMessage func(*Message, *net.UDPAddr)) *Transpo
 	t.buffer = make([]byte, 65507)
 	t.onMessage = onMessage
 	t.throttleTicketsChannel = make(chan struct{})
-	t.SetThrottle(DefaultThrottleRate)
+	t.throttlingRate = DefaultThrottleRate
+	t.maxNeighbors = maxNeighbors
+	t.queuedCommunications = 0
 
 	var err error
 	t.laddr, err = net.ResolveUDPAddr("udp", laddr)
@@ -54,11 +59,6 @@ func NewTransport(laddr string, onMessage func(*Message, *net.UDPAddr)) *Transpo
 	}
 
 	return t
-}
-
-// Sets t throttle rate at runtime
-func (t *Transport) SetThrottle(rate int) {
-	t.throttlingRate = rate
 }
 
 func (t *Transport) Start() {
@@ -168,16 +168,23 @@ func (t *Transport) WriteMessages(msg *Message, addr *net.UDPAddr) error {
 		return nil
 	}
 
-	// get ticket but prioritize get_peers and find_node
-	if msg.Q != "get_peers" && msg.Q != "find_node" {
-		t.throttleTicketsChannel <- struct{}{}
-	}
-
 	data, err := bencode.Marshal(msg)
 	if err != nil {
 		return err
 	}
 
+	// get ticket but prioritize get_peers and find_node
+	if msg.Q != "get_peers" && msg.Q != "find_node" {
+		atomic.AddUint64(&t.queuedCommunications, 1)
+		defer atomic.AddUint64(&t.queuedCommunications, ^uint64(0))
+		t.throttleTicketsChannel <- struct{}{}
+	}
+
 	_, err = t.conn.WriteToUDP(data, addr)
 	return err
+}
+
+// Transport is full if the queued communications are more than the maximum neighbors.
+func (t *Transport) Full() bool {
+	return t.queuedCommunications >= uint64(t.maxNeighbors)
 }

@@ -14,7 +14,6 @@ type IndexingService struct {
 	// Private
 	protocol      *Protocol
 	started       bool
-	interval      time.Duration
 	eventHandlers IndexingServiceEventHandlers
 
 	nodeID []byte
@@ -43,9 +42,8 @@ func (ir IndexingResult) PeerAddrs() []net.TCPAddr {
 	return ir.peerAddrs
 }
 
-func NewIndexingService(laddr string, interval time.Duration, maxNeighbors uint, eventHandlers IndexingServiceEventHandlers, bootstrapNodes []string, filterNodes []net.IPNet) *IndexingService {
+func NewIndexingService(laddr string, maxNeighbors uint, eventHandlers IndexingServiceEventHandlers, bootstrapNodes []string, filterNodes []net.IPNet) *IndexingService {
 	service := new(IndexingService)
-	service.interval = interval
 	service.protocol = NewProtocol(
 		laddr,
 		ProtocolEventHandlers{
@@ -59,6 +57,7 @@ func NewIndexingService(laddr string, interval time.Duration, maxNeighbors uint,
 			OnSampleInfohashesQuery:      service.onSampleInfohashesQuery,
 			OnSampleInfohashesResponse:   service.onSampleInfohashesResponse,
 		},
+		maxNeighbors,
 	)
 	service.nodeID = randomNodeID()
 	service.nodes = newRoutingTable(maxNeighbors, filterNodes)
@@ -85,11 +84,11 @@ func (is *IndexingService) Terminate() {
 }
 
 func (is *IndexingService) index() {
-	ticker := time.NewTicker(is.interval)
+	ticker := time.NewTicker(time.Second)
 	for ; true; <-ticker.C {
 		if is.nodes.isEmpty() {
 			is.bootstrap()
-		} else {
+		} else if !is.protocol.transport.Full() {
 			is.findNeighbors()
 		}
 	}
@@ -121,7 +120,7 @@ func (is *IndexingService) bootstrap() {
 
 func (is *IndexingService) findNeighbors() {
 	for _, addr := range is.nodes.getNodes() {
-		is.protocol.SendMessage(
+		go is.protocol.SendMessage(
 			NewSampleInfohashesQuery(is.nodeID, []byte("aa"), randomNodeID()),
 			&addr,
 		)
@@ -168,7 +167,7 @@ func (is *IndexingService) onGetPeersResponse(msg *Message, addr *net.UDPAddr) {
 		})
 	}
 
-	is.eventHandlers.OnResult(IndexingResult{
+	go is.eventHandlers.OnResult(IndexingResult{
 		infoHash:  infoHash,
 		peerAddrs: peerAddrs,
 	})
@@ -191,7 +190,7 @@ func (is *IndexingService) onSampleInfohashesResponse(msg *Message, addr *net.UD
 	}
 
 	neighbors := []net.UDPAddr{}
-	if msg.R.Num > len(msg.R.Samples)/20 && time.Duration(msg.R.Interval) <= is.interval {
+	if msg.R.Num > len(msg.R.Samples)/20 && time.Duration(msg.R.Interval) <= time.Minute {
 		neighbors = append(neighbors, *addr)
 	}
 	for _, node := range msg.R.Nodes {
@@ -209,7 +208,7 @@ func (is *IndexingService) onPingORAnnouncePeerResponse(msg *Message, addr *net.
 func (is *IndexingService) onPingQuery(msg *Message, addr *net.UDPAddr) {
 	go is.nodes.addNodes([]net.UDPAddr{*addr})
 
-	is.protocol.SendMessage(
+	go is.protocol.SendMessage(
 		NewPingResponse(msg.T, is.nodeID),
 		addr,
 	)
@@ -239,7 +238,7 @@ func (is *IndexingService) onAnnouncePeerQuery(msg *Message, addr *net.UDPAddr) 
 
 	go is.nodes.addNodes(addresses)
 
-	is.protocol.SendMessage(
+	go is.protocol.SendMessage(
 		NewAnnouncePeerResponse(msg.T, is.nodeID),
 		addr,
 	)
@@ -254,7 +253,7 @@ func (is *IndexingService) onFindNodeQuery(msg *Message, addr *net.UDPAddr) {
 		})
 	}
 
-	is.protocol.SendMessage(
+	go is.protocol.SendMessage(
 		NewFindNodeResponse(msg.T, is.nodeID, compactNodeInfos),
 		addr,
 	)
@@ -271,7 +270,7 @@ func (is *IndexingService) onGetPeersQuery(msg *Message, addr *net.UDPAddr) {
 		})
 	}
 
-	is.protocol.SendMessage(
+	go is.protocol.SendMessage(
 		NewGetPeersResponseWithValues(
 			msg.T,
 			is.nodeID,
