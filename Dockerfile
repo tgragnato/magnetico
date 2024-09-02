@@ -18,4 +18,9 @@ RUN apk add --no-cache libstdc++ libgcc libsodium libzmq czmq \
     && echo '/usr/bin/magnetico "$@" --web' >> /usr/bin/magneticow \
     && chmod +x /usr/bin/magneticow
 ENTRYPOINT ["/usr/bin/magnetico"]
-LABEL org.opencontainers.image.source=https://github.com/tgragnato/magnetico
+LABEL org.opencontainers.image.title="magnetico"
+LABEL org.opencontainers.image.description="Autonomous (self-hosted) BitTorrent DHT search engine"
+LABEL org.opencontainers.image.url="https://github.com/tgragnato/magnetico"
+LABEL org.opencontainers.image.source="https://github.com/tgragnato/magnetico"
+LABEL org.opencontainers.image.licenses="AGPL-3.0"
+LABEL io.containers.autoupdate=registry
