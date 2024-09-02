@@ -41,28 +41,25 @@ func TestBasicIndexingService(t *testing.T) {
 	tests := []struct {
 		name          string
 		laddr         string
-		interval      time.Duration
 		maxNeighbors  uint
 		eventHandlers IndexingServiceEventHandlers
 	}{
 		{
 			name:          "Loopback Random IPv4",
 			laddr:         net.JoinHostPort("127.0.0.1", strconv.Itoa(randomPort)),
-			interval:      500 * time.Millisecond,
 			maxNeighbors:  0,
 			eventHandlers: IndexingServiceEventHandlers{},
 		},
 		{
 			name:          "Loopback Random IPv6",
 			laddr:         net.JoinHostPort("::1", strconv.Itoa(randomPort)),
-			interval:      500 * time.Millisecond,
 			maxNeighbors:  0,
 			eventHandlers: IndexingServiceEventHandlers{},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			is := NewIndexingService(tt.laddr, tt.interval, tt.maxNeighbors, tt.eventHandlers, []string{"dht.tgragnato.it"}, []net.IPNet{})
+			is := NewIndexingService(tt.laddr, tt.maxNeighbors, tt.eventHandlers, []string{"dht.tgragnato.it"}, []net.IPNet{})
 			if is == nil {
 				t.Error("NewIndexingService() = nil, wanted != nil")
 			}

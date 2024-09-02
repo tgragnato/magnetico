@@ -34,10 +34,10 @@ type ProtocolEventHandlers struct {
 	OnSampleInfohashesResponse func(*Message, *net.UDPAddr)
 }
 
-func NewProtocol(laddr string, eventHandlers ProtocolEventHandlers) (p *Protocol) {
+func NewProtocol(laddr string, eventHandlers ProtocolEventHandlers, maxNeighbors uint) (p *Protocol) {
 	p = new(Protocol)
 	p.eventHandlers = eventHandlers
-	p.transport = NewTransport(laddr, p.onMessage)
+	p.transport = NewTransport(laddr, p.onMessage, maxNeighbors)
 	return
 }
 

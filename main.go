@@ -32,7 +32,6 @@ var opFlags struct {
 	DatabaseURL string
 
 	IndexerAddrs        []string
-	IndexerInterval     time.Duration
 	IndexerMaxNeighbors uint
 
 	LeechMaxN          int
@@ -92,7 +91,7 @@ func main() {
 		return
 	}
 
-	trawlingManager := dht.NewManager(opFlags.IndexerAddrs, opFlags.IndexerInterval, opFlags.IndexerMaxNeighbors, opFlags.BootstrappingNodes, opFlags.FilterNodesCIDRs)
+	trawlingManager := dht.NewManager(opFlags.IndexerAddrs, opFlags.IndexerMaxNeighbors, opFlags.BootstrappingNodes, opFlags.FilterNodesCIDRs)
 	metadataSink := metadata.NewSink(5*time.Second, opFlags.LeechMaxN, opFlags.FilterNodesCIDRs)
 
 	// The Event Loop
@@ -125,7 +124,6 @@ func parseFlags() error {
 		DatabaseURL string `long:"database" description:"URL of the database." default:"postgres://magnetico:magnetico@localhost:5432/magnetico?sslmode=disable"`
 
 		IndexerAddrs        []string `long:"indexer-addr" description:"Address(es) to be used by indexing DHT nodes." default:"0.0.0.0:0"`
-		IndexerInterval     uint     `long:"indexer-interval" description:"Indexing interval in integer seconds." default:"1"`
 		IndexerMaxNeighbors uint     `long:"indexer-max-neighbors" description:"Maximum number of neighbors of an indexer." default:"5000"`
 
 		LeechMaxN uint `long:"leech-max-n" description:"Maximum number of leeches." default:"1000"`
@@ -175,7 +173,6 @@ func parseFlags() error {
 			opFlags.IndexerAddrs = cmdF.IndexerAddrs
 		}
 
-		opFlags.IndexerInterval = time.Duration(cmdF.IndexerInterval) * time.Second
 		opFlags.IndexerMaxNeighbors = cmdF.IndexerMaxNeighbors
 
 		opFlags.LeechMaxN = int(cmdF.LeechMaxN)
