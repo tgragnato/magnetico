@@ -19,7 +19,7 @@ This allows anyone with a decent Internet connection to access the vast amount o
 
 ## Easy Run and Compilation
 
-The easiest way to run magnetico on amd64 platforms is to use the OCI image built within the CI pipeline:
+The easiest way to run magnetico is to use the OCI image built within the CI pipeline:
 - `docker pull ghcr.io/tgragnato/magnetico:latest`
 - `docker run --rm -it ghcr.io/tgragnato/magnetico:latest --help`
 - `docker run --rm -it -v <your_data_dir>:/data -p 8080:8080/tcp ghcr.io/tgragnato/magnetico:latest --database=sqlite3:///data/magnetico.sqlite3 --max-rps=1000 --addr=0.0.0.0:8080`
