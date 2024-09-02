@@ -39,6 +39,8 @@ func NewPipe2() (*Pipe2, *Pipe2) {
 }
 
 func TestPipe2(t *testing.T) {
+	t.Parallel()
+
 	a, b := NewPipe2()
 
 	err := testRws(a, b)
@@ -48,6 +50,8 @@ func TestPipe2(t *testing.T) {
 }
 
 func TestStream(t *testing.T) {
+	t.Parallel()
+
 	conn1, conn2 := NewPipe2()
 
 	a := NewStream(conn1)
@@ -130,4 +134,24 @@ func testRws(a io.Writer, b io.Reader) error {
 	}
 
 	return nil
+}
+
+func TestCryptoMethodString(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		method   CryptoMethod
+		expected string
+	}{
+		{PlainText, "PlainText"},
+		{RC4, "RC4"},
+		{CryptoMethod(3), "unknown"},
+	}
+
+	for _, c := range cases {
+		actual := c.method.String()
+		if actual != c.expected {
+			t.Errorf("CryptoMethod.String() returned %q, expected %q", actual, c.expected)
+		}
+	}
 }
