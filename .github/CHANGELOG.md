@@ -1,3 +1,15 @@
+## [1.61.2](https://github.com/tgragnato/magnetico/compare/v1.61.1...v1.61.2) (2024-09-03)
+
+
+### Bug Fixes
+
+* **oci:** add some recommended labels ([ff520d6](https://github.com/tgragnato/magnetico/commit/ff520d661c0ea06188e2618780b44443530d627c))
+
+
+### Performance Improvements
+
+* **dht:** adaptive crawling rate ([32b6db8](https://github.com/tgragnato/magnetico/commit/32b6db833165d27673b18afd25976aaae3283c09))
+
 ## [1.61.1](https://github.com/tgragnato/magnetico/compare/v1.61.0...v1.61.1) (2024-09-01)
 
 
