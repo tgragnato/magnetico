@@ -3,6 +3,7 @@ module github.com/tgragnato/magnetico
 go 1.22.6
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/bits-and-blooms/bloom/v3 v3.7.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/gorilla/mux v1.8.1
@@ -14,7 +15,6 @@ require (
 	golang.org/x/crypto v0.26.0
 	gopkg.in/patrickmn/go-cache.v2 v2.1.0
 	gopkg.in/zeromq/goczmq.v4 v4.1.0
-	github.com/DATA-DOG/go-sqlmock v1.5.2
 )
 
 require (
@@ -30,6 +30,6 @@ require (
 	github.com/stretchr/testify v1.9.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.24.0 // indirect
-	golang.org/x/text v0.17.0 // indirect
+	golang.org/x/text v0.18.0 // indirect
 	lukechampine.com/blake3 v1.3.0 // indirect
 )
