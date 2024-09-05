@@ -30,11 +30,6 @@ issues:
       linters:
         - gosec
 
-    - path: web/helpers.go
-      text: "no support for setting timeouts"
-      linters:
-        - gosec
-
     - path: dht/mainline/routingTable.go
       text: "integer overflow conversion uint -> int"
       linters:

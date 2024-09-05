@@ -232,7 +232,7 @@ func (db *sqlite3Database) QueryTorrents(
 	epoch int64,
 	orderBy OrderingCriteria,
 	ascending bool,
-	limit uint,
+	limit uint64,
 	lastOrderedValue *float64,
 	lastID *uint64,
 ) ([]TorrentMetadata, error) {

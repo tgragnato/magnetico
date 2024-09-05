@@ -401,7 +401,7 @@ func TestPostgresDatabase_QueryTorrents(t *testing.T) {
 	epoch := int64(1693526399)
 	orderBy := ByTotalSize
 	ascending := true
-	limit := uint(10)
+	limit := uint64(10)
 	lastOrderedValue := float64(100)
 	lastID := uint64(5)
 

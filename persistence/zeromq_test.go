@@ -67,7 +67,7 @@ func Test_zeromq_QueryTorrents(t *testing.T) {
 		int64(1234567890),
 		ByRelevance,
 		true,
-		uint(10),
+		uint64(10),
 		nil,
 		nil,
 	)
