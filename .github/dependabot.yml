@@ -11,7 +11,7 @@ updates:
       - "dependencies"
       - "go"
     commit-message:
-      prefix: "chore"
+      prefix: "build"
       include: "scope"
 
   - package-ecosystem: "github-actions"
@@ -22,5 +22,5 @@ updates:
       - "dependencies"
       - "github-actions"
     commit-message:
-      prefix: "chore"
+      prefix: "ci"
       include: "scope"
