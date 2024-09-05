@@ -12,7 +12,7 @@ require (
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/multiformats/go-multihash v0.2.3
-	golang.org/x/crypto v0.26.0
+	golang.org/x/crypto v0.27.0
 	gopkg.in/patrickmn/go-cache.v2 v2.1.0
 	gopkg.in/zeromq/goczmq.v4 v4.1.0
 )
