@@ -95,6 +95,14 @@ func feedHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte("<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>\n"))
-	w.Write(output)
+	_, err = w.Write([]byte("<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>\n"))
+	if err != nil {
+		http.Error(w, "writing XML "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	_, err = w.Write(output)
+	if err != nil {
+		http.Error(w, "writing XML "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
