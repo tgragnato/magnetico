@@ -40,6 +40,10 @@ func (t *T) HexString() string {
 	return fmt.Sprintf("%x", t[:])
 }
 
+func (t *T) IsZero() bool {
+	return *t == [Size]byte{}
+}
+
 func (t *T) FromHexString(s string) (err error) {
 	if len(s) != 2*Size {
 		err = fmt.Errorf("hash hex string has bad length: %d", len(s))
@@ -78,7 +82,7 @@ func (t T) MarshalText() (text []byte, err error) {
 func FromHexString(s string) (h T) {
 	err := h.FromHexString(s)
 	if err != nil {
-		panic(err)
+		return [Size]byte{}
 	}
 	return
 }

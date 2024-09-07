@@ -160,14 +160,8 @@ func TestFromHexString(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			defer func() {
-				if r := recover(); r == nil && test.expected == (T{}) {
-					t.Errorf("Expected a panic, but no panic occurred")
-				}
-			}()
-
 			h := FromHexString(test.input)
-			if test.expected != (T{}) && h != test.expected {
+			if h != test.expected {
 				t.Errorf("Unexpected result. Expected: %v, Got: %v", test.expected, h)
 			}
 		})
