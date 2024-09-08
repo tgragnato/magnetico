@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"encoding/json"
+	"net/url"
 	"testing"
 )
 
@@ -45,5 +46,52 @@ func TestNewStatistics(t *testing.T) {
 
 	if s.TotalSize == nil {
 		t.Error("TotalSize map is not initialized")
+	}
+}
+
+func TestMakeDatabase(t *testing.T) {
+	t.Parallel()
+
+	sqlite3URL := url.URL{
+		Scheme:   "sqlite3",
+		Path:     "/makedatabasesqlite3.db",
+		RawQuery: "cache=shared&mode=memory",
+	}
+	sqliteURL := url.URL{
+		Scheme:   "sqlite",
+		Path:     "/makedatabasesqlite.db",
+		RawQuery: "cache=shared&mode=memory",
+	}
+
+	tests := []struct {
+		rawURL       string
+		expectError  bool
+		expectedType databaseEngine
+	}{
+		{sqlite3URL.String(), false, Sqlite3},
+		{sqliteURL.String(), false, Sqlite3},
+		// Can't test Postgres without a running server
+		// Can't test CockroachDB without a running server
+		// Can't test ZeroMQ without attaching a zsock
+		{"invalidscheme://localhost", true, 0},
+	}
+
+	for _, tt := range tests {
+		db, err := MakeDatabase(tt.rawURL)
+		if tt.expectError {
+			if err == nil {
+				t.Errorf("Expected error for URL %s, but got none", tt.rawURL)
+			}
+			continue
+		}
+
+		if err != nil {
+			t.Errorf("Unexpected error for URL %s: %v", tt.rawURL, err)
+			continue
+		}
+
+		if db.Engine() != tt.expectedType {
+			t.Errorf("Unexpected database engine for URL %s. Expected: %v, Got: %v", tt.rawURL, tt.expectedType, db.Engine())
+		}
 	}
 }
