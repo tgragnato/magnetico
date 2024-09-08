@@ -259,3 +259,33 @@ func TestToShort(t *testing.T) {
 		})
 	}
 }
+
+func TestToMultihash(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		hash     T
+		expected string
+	}{
+		{
+			name:     "Empty hash",
+			hash:     T{},
+			expected: "QmNLei78zWmzUdbeRB3CiUfAizWUrbeeZh5K1rhAQKCh51",
+		},
+		{
+			name:     "Non-empty hash",
+			hash:     T{0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0},
+			expected: "QmPZiLSCWAZoDCtj5ivmabMfKv7tFP6zn64CS7kh5goaMd",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := ToMultihash(test.hash)
+			if result.B58String() != test.expected {
+				t.Errorf("Unexpected result. Expected: %s, Got: %s", test.expected, result.B58String())
+			}
+		})
+	}
+}
