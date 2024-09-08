@@ -63,40 +63,101 @@ func TestWriteToOnClosedConn(t *testing.T) {
 	}
 }
 
-func TestWriteMessages(t *testing.T) {
+func TestTransport_WriteMessages(t *testing.T) {
 	t.Parallel()
 
-	transport := NewTransport(
-		net.JoinHostPort("::1", strconv.Itoa(rand.Intn(64511)+1024)),
-		func(m *Message, u *net.UDPAddr) {},
-		1000,
-	)
-	transport.throttlingRate = 10
-	transport.Start()
-
 	tests := []struct {
-		name    string
-		msg     *Message
-		wantErr bool
+		name           string
+		throttlingRate int
+		msg            *Message
+		addr           *net.UDPAddr
+		wantErr        bool
 	}{
 		{
-			name:    "Nil message",
-			msg:     nil,
-			wantErr: false,
+			name:           "Nil message",
+			throttlingRate: 10,
+			msg:            nil,
+			addr:           &net.UDPAddr{IP: net.ParseIP("::1"), Port: 8080},
+			wantErr:        false,
 		},
 		{
-			name:    "Empty message",
-			msg:     nil,
-			wantErr: false,
+			name:           "Nil address",
+			throttlingRate: 10,
+			msg:            &Message{Q: "ping"},
+			addr:           nil,
+			wantErr:        false,
+		},
+		{
+			name:           "Valid message and address",
+			throttlingRate: 10,
+			msg:            &Message{Q: "ping"},
+			addr:           &net.UDPAddr{IP: net.ParseIP("::1"), Port: 8080},
+			wantErr:        false,
+		},
+		{
+			name:           "Throttle limit reached",
+			throttlingRate: 0,
+			msg:            &Message{Q: "ping"},
+			addr:           &net.UDPAddr{IP: net.ParseIP("::1"), Port: 8080},
+			wantErr:        false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := transport.WriteMessages(tt.msg, transport.laddr); (err != nil) != tt.wantErr {
+			transport := NewTransport(
+				net.JoinHostPort("::1", strconv.Itoa(rand.Intn(64511)+1024)),
+				func(m *Message, u *net.UDPAddr) {},
+				1000,
+			)
+			transport.throttlingRate = tt.throttlingRate
+			transport.Start()
+			defer transport.Terminate()
+
+			if err := transport.WriteMessages(tt.msg, tt.addr); (err != nil) != tt.wantErr {
 				t.Errorf("Transport.WriteMessages() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
+}
 
-	transport.Terminate()
+func TestTransportFull(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name                 string
+		queuedCommunications uint64
+		maxNeighbors         uint
+		want                 bool
+	}{
+		{
+			name:                 "Transport not full",
+			queuedCommunications: 5,
+			maxNeighbors:         10,
+			want:                 false,
+		},
+		{
+			name:                 "Transport full",
+			queuedCommunications: 10,
+			maxNeighbors:         10,
+			want:                 true,
+		},
+		{
+			name:                 "Transport over capacity",
+			queuedCommunications: 15,
+			maxNeighbors:         10,
+			want:                 true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			transport := &Transport{
+				queuedCommunications: tt.queuedCommunications,
+				maxNeighbors:         tt.maxNeighbors,
+			}
+			if got := transport.Full(); got != tt.want {
+				t.Errorf("Transport.Full() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
