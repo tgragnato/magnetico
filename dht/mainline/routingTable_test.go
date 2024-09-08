@@ -116,3 +116,88 @@ func Test_routingTable_dump(t *testing.T) {
 		}
 	})
 }
+func Test_routingTable_isAllowed(t *testing.T) {
+	t.Parallel()
+
+	t.Run("allowed global unicast port 80", func(t *testing.T) {
+		rt := newRoutingTable(1, nil)
+		node := net.UDPAddr{IP: net.IPv4(8, 8, 8, 8), Port: 80}
+		if !rt.isAllowed(node) {
+			t.Error("expected node to be allowed")
+		}
+	})
+
+	t.Run("allowed global unicast port 443", func(t *testing.T) {
+		rt := newRoutingTable(1, nil)
+		node := net.UDPAddr{IP: net.IPv4(8, 8, 8, 8), Port: 443}
+		if !rt.isAllowed(node) {
+			t.Error("expected node to be allowed")
+		}
+	})
+
+	t.Run("not allowed private IP", func(t *testing.T) {
+		rt := newRoutingTable(1, nil)
+		node := net.UDPAddr{IP: net.IPv4(192, 168, 0, 1), Port: 1234}
+		if rt.isAllowed(node) {
+			t.Error("expected node to be not allowed")
+		}
+	})
+
+	t.Run("not allowed loopback IP", func(t *testing.T) {
+		rt := newRoutingTable(1, nil)
+		node := net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 1234}
+		if rt.isAllowed(node) {
+			t.Error("expected node to be not allowed")
+		}
+	})
+
+	t.Run("not allowed port 0", func(t *testing.T) {
+		rt := newRoutingTable(1, nil)
+		node := net.UDPAddr{IP: net.IPv4(8, 8, 8, 8), Port: 0}
+		if rt.isAllowed(node) {
+			t.Error("expected node to be not allowed")
+		}
+	})
+
+	t.Run("not allowed port 1023", func(t *testing.T) {
+		rt := newRoutingTable(1, nil)
+		node := net.UDPAddr{IP: net.IPv4(8, 8, 8, 8), Port: 1023}
+		if rt.isAllowed(node) {
+			t.Error("expected node to be not allowed")
+		}
+	})
+
+	t.Run("allowed port 1024", func(t *testing.T) {
+		rt := newRoutingTable(1, nil)
+		node := net.UDPAddr{IP: net.IPv4(8, 8, 8, 8), Port: 1024}
+		if !rt.isAllowed(node) {
+			t.Error("expected node to be allowed")
+		}
+	})
+
+	t.Run("not allowed port 65536", func(t *testing.T) {
+		rt := newRoutingTable(1, nil)
+		node := net.UDPAddr{IP: net.IPv4(8, 8, 8, 8), Port: 65536}
+		if rt.isAllowed(node) {
+			t.Error("expected node to be not allowed")
+		}
+	})
+
+	t.Run("allowed with filter", func(t *testing.T) {
+		_, ipNet, _ := net.ParseCIDR("8.8.8.0/24")
+		rt := newRoutingTable(1, []net.IPNet{*ipNet})
+		node := net.UDPAddr{IP: net.IPv4(8, 8, 8, 8), Port: 1234}
+		if !rt.isAllowed(node) {
+			t.Error("expected node to be allowed")
+		}
+	})
+
+	t.Run("not allowed with filter", func(t *testing.T) {
+		_, ipNet, _ := net.ParseCIDR("8.8.8.0/24")
+		rt := newRoutingTable(1, []net.IPNet{*ipNet})
+		node := net.UDPAddr{IP: net.IPv4(9, 9, 9, 9), Port: 1234}
+		if rt.isAllowed(node) {
+			t.Error("expected node to be not allowed")
+		}
+	})
+}
