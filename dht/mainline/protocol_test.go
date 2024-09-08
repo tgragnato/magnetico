@@ -394,3 +394,222 @@ func TestVerifyToken_InvalidToken(t *testing.T) {
 		t.Error("VerifyToken returned true for an invalid token")
 	}
 }
+
+func TestOnMessage_PingQuery(t *testing.T) {
+	t.Parallel()
+
+	called := false
+	protocol := NewProtocol("0.0.0.0:0", ProtocolEventHandlers{
+		OnPingQuery: func(m *Message, a *net.UDPAddr) {
+			called = true
+		},
+	}, 1000)
+
+	protocol.onMessage(
+		NewPingQuery([]byte("abcdefghij0123456789")),
+		&net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 6881},
+	)
+
+	if !called {
+		t.Error("Expected OnPingQuery to be called")
+	}
+}
+
+func TestOnMessage_FindNodeQuery(t *testing.T) {
+	t.Parallel()
+
+	called := false
+	protocol := NewProtocol("0.0.0.0:0", ProtocolEventHandlers{
+		OnFindNodeQuery: func(m *Message, a *net.UDPAddr) {
+			called = true
+		},
+	}, 1000)
+
+	protocol.onMessage(
+		NewFindNodeQuery([]byte("abcdefghij0123456789"), []byte("mnopqrstuvwxyz123456")),
+		&net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 6881},
+	)
+
+	if !called {
+		t.Error("Expected OnFindNodeQuery to be called")
+	}
+}
+
+func TestOnMessage_GetPeersQuery(t *testing.T) {
+	t.Parallel()
+
+	called := false
+	protocol := NewProtocol("0.0.0.0:0", ProtocolEventHandlers{
+		OnGetPeersQuery: func(m *Message, a *net.UDPAddr) {
+			called = true
+		},
+	}, 1000)
+
+	protocol.onMessage(
+		NewGetPeersQuery([]byte("abcdefghij0123456789"), []byte("mnopqrstuvwxyz123456")),
+		&net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 6881},
+	)
+
+	if !called {
+		t.Error("Expected OnGetPeersQuery to be called")
+	}
+}
+
+func TestOnMessage_AnnouncePeerQuery(t *testing.T) {
+	t.Parallel()
+
+	called := false
+	protocol := NewProtocol("0.0.0.0:0", ProtocolEventHandlers{
+		OnAnnouncePeerQuery: func(m *Message, a *net.UDPAddr) {
+			called = true
+		},
+	}, 1000)
+
+	protocol.onMessage(
+		NewAnnouncePeerQuery(
+			[]byte("abcdefghij0123456789"),
+			false,
+			[]byte("mnopqrstuvwxyz123456"),
+			6881,
+			[]byte("token"),
+		),
+		&net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 6881},
+	)
+
+	if !called {
+		t.Error("Expected OnAnnouncePeerQuery to be called")
+	}
+}
+
+func TestOnMessage_SampleInfohashesQuery(t *testing.T) {
+	t.Parallel()
+
+	called := false
+	protocol := NewProtocol("0.0.0.0:0", ProtocolEventHandlers{
+		OnSampleInfohashesQuery: func(m *Message, a *net.UDPAddr) {
+			called = true
+		},
+	}, 1000)
+
+	protocol.onMessage(
+		NewSampleInfohashesQuery(
+			[]byte("abcdefghij0123456789"),
+			[]byte("aa"),
+			[]byte("mnopqrstuvwxyz123456"),
+		),
+		&net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 6881},
+	)
+
+	if !called {
+		t.Error("Expected OnSampleInfohashesQuery to be called")
+	}
+}
+
+func TestOnMessage_GetPeersResponse(t *testing.T) {
+	t.Parallel()
+
+	called := false
+	protocol := NewProtocol("0.0.0.0:0", ProtocolEventHandlers{
+		OnGetPeersResponse: func(m *Message, a *net.UDPAddr) {
+			called = true
+		},
+	}, 1000)
+
+	protocol.onMessage(
+		NewGetPeersResponseWithValues(
+			[]byte("aa"),
+			[]byte("abcdefghij0123456789"),
+			[]byte("token"),
+			[]CompactPeer{},
+		),
+		&net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 6881},
+	)
+
+	if !called {
+		t.Error("Expected OnGetPeersResponse to be called")
+	}
+}
+
+func TestOnMessage_FindNodeResponse(t *testing.T) {
+	t.Parallel()
+
+	called := false
+	protocol := NewProtocol("0.0.0.0:0", ProtocolEventHandlers{
+		OnFindNodeResponse: func(m *Message, a *net.UDPAddr) {
+			called = true
+		},
+	}, 1000)
+
+	protocol.onMessage(
+		NewFindNodeResponse(
+			[]byte("aa"),
+			[]byte("abcdefghij0123456789"),
+			[]CompactNodeInfo{
+				{
+					ID:   []byte("abcdefgihj0123456789"),
+					Addr: net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 6882},
+				},
+			},
+		),
+		&net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 6881},
+	)
+
+	if !called {
+		t.Error("Expected OnFindNodeResponse to be called")
+	}
+}
+
+func TestOnMessage_PingORAnnouncePeerResponse(t *testing.T) {
+	t.Parallel()
+
+	called := false
+	protocol := NewProtocol("0.0.0.0:0", ProtocolEventHandlers{
+		OnPingORAnnouncePeerResponse: func(m *Message, a *net.UDPAddr) {
+			called = true
+		},
+	}, 1000)
+
+	protocol.onMessage(
+		NewPingResponse([]byte("aa"), []byte("abcdefghij0123456789")),
+		&net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 6881},
+	)
+
+	if !called {
+		t.Error("Expected OnPingORAnnouncePeerResponse to be called")
+	}
+}
+
+func TestOnMessage_SampleInfohashesResponse(t *testing.T) {
+	t.Parallel()
+
+	called := false
+	protocol := NewProtocol("0.0.0.0:0", ProtocolEventHandlers{
+		OnSampleInfohashesResponse: func(m *Message, a *net.UDPAddr) {
+			called = true
+		},
+	}, 1000)
+
+	protocol.onMessage(
+		&Message{
+			Y: "r",
+			T: []byte("aa"),
+			R: ResponseValues{
+				ID:       []byte("abcdefghij0123456789"),
+				Interval: 10,
+				Nodes: []CompactNodeInfo{
+					{
+						ID:   []byte("abcdefghij0123456789"),
+						Addr: net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 6881},
+					},
+				},
+				Num:     1,
+				Samples: []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x01, 0x02, 0x03, 0x04, 0x05, 0x01, 0x02, 0x03, 0x04, 0x05, 0x01, 0x02, 0x03, 0x04, 0x05},
+			},
+		},
+		&net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 6881},
+	)
+
+	if !called {
+		t.Error("Expected OnSampleInfohashesResponse to be called")
+	}
+}
