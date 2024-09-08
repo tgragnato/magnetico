@@ -2,9 +2,12 @@ package web
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/tgragnato/magnetico/types/infohash"
 )
 
 func TestTorrent(t *testing.T) {
@@ -38,5 +41,61 @@ func TestTorrentsInfohashHandler(t *testing.T) {
 	contentType := res.Header.Get("Content-Type")
 	if contentType != "text/html; charset=utf-8" {
 		t.Errorf("expected Content-Type text/html; got %v", contentType)
+	}
+}
+
+func TestApiTorrent(t *testing.T) {
+	t.Parallel()
+
+	initDb()
+
+	infohashV1 := "1234567890123456789012345678901234567890"
+	req, err := http.NewRequest("GET", "/api/v0.1/torrents/"+infohashV1, nil)
+	if err != nil {
+		t.Fatalf("could not create request: %v", err)
+	}
+
+	ctx := context.WithValue(req.Context(), InfohashKey, infohash.FromHexString(infohashV1).Bytes())
+	req = req.WithContext(ctx)
+
+	rec := httptest.NewRecorder()
+	apiTorrent(rec, req)
+	res := rec.Result()
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusNotFound {
+		t.Errorf("expected status %v; got %v", http.StatusNotFound, res.StatusCode)
+	}
+
+	if rec.Body.String() != "Not found\n" {
+		t.Errorf("expected Not found in body; got %s", rec.Body.String())
+	}
+}
+
+func TestApiFileList(t *testing.T) {
+	t.Parallel()
+
+	initDb()
+
+	infohashV1 := "1234567890123456789012345678901234567890"
+	req, err := http.NewRequest("GET", "/api/v0.1/files/"+infohashV1, nil)
+	if err != nil {
+		t.Fatalf("could not create request: %v", err)
+	}
+
+	ctx := context.WithValue(req.Context(), InfohashKey, infohash.FromHexString(infohashV1).Bytes())
+	req = req.WithContext(ctx)
+
+	rec := httptest.NewRecorder()
+	apiFileList(rec, req)
+	res := rec.Result()
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusNotFound {
+		t.Errorf("expected status %v; got %v", http.StatusNotFound, res.StatusCode)
+	}
+
+	if rec.Body.String() != "Not found\n" {
+		t.Errorf("expected Not found in body; got %s", rec.Body.String())
 	}
 }

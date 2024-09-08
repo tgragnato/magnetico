@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"math"
 	"math/rand/v2"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -21,5 +24,28 @@ func TestHomepage(t *testing.T) {
 				t.Errorf("homepage render: %v", err)
 			}
 		})
+	}
+}
+
+func TestRootHandler(t *testing.T) {
+	t.Parallel()
+
+	initDb()
+
+	req, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		t.Fatalf("could not create request: %v", err)
+	}
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(rootHandler)
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	if !strings.Contains(rr.Body.String(), "0 torrents available") {
+		t.Error("handler returned unexpected body: did not contain 0 torrents available")
 	}
 }

@@ -4,8 +4,12 @@ import (
 	"encoding/hex"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"reflect"
+	"sync"
 	"testing"
+
+	"github.com/tgragnato/magnetico/persistence"
 )
 
 func TestInfohashMiddleware(t *testing.T) {
@@ -70,4 +74,22 @@ func TestInfohashMiddleware(t *testing.T) {
 			}
 		})
 	}
+}
+
+var initMux sync.Mutex
+
+func initDb() {
+	initMux.Lock()
+	defer initMux.Unlock()
+
+	if database != nil {
+		return
+	}
+
+	dbUrl := url.URL{
+		Scheme:   "sqlite3",
+		Path:     "/web.db",
+		RawQuery: "cache=shared&mode=memory",
+	}
+	database, _ = persistence.MakeDatabase(dbUrl.String())
 }

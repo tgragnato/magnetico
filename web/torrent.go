@@ -123,10 +123,10 @@ func apiFileList(w http.ResponseWriter, r *http.Request) {
 
 	files, err := database.GetFiles(infohash)
 	if err != nil {
-		http.Error(w, "couldn't get files: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Couldn't get files: "+err.Error(), http.StatusInternalServerError)
 		return
 	} else if files == nil {
-		http.Error(w, "not found", http.StatusNotFound)
+		http.Error(w, "Not found", http.StatusNotFound)
 		return
 	}
 

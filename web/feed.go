@@ -45,7 +45,7 @@ func feedHandler(w http.ResponseWriter, r *http.Request) {
 	if query == "" {
 		title = "Most recent torrents - magnetico"
 	} else {
-		title = "`" + query + "` - magnetico"
+		title = query + " - magnetico"
 	}
 
 	torrents, err := database.QueryTorrents(
@@ -89,7 +89,7 @@ func feedHandler(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	output, err := xml.MarshalIndent(feed, "", "  ")
+	output, err := xml.Marshal(feed)
 	if err != nil {
 		http.Error(w, "enconding XML "+err.Error(), http.StatusInternalServerError)
 		return
