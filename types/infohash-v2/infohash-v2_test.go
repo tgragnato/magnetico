@@ -3,6 +3,8 @@ package infohash_v2
 import (
 	"fmt"
 	"testing"
+
+	"github.com/tgragnato/magnetico/types/infohash"
 )
 
 func TestT_Format(t *testing.T) {
@@ -221,6 +223,36 @@ func TestIsZero(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result := test.hash.IsZero()
+			if result != test.expected {
+				t.Errorf("Unexpected result. Expected: %v, Got: %v", test.expected, result)
+			}
+		})
+	}
+}
+
+func TestToShort(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		hash     T
+		expected infohash.T
+	}{
+		{
+			name:     "Empty hash",
+			hash:     T{},
+			expected: infohash.T{},
+		},
+		{
+			name:     "Non-empty hash",
+			hash:     T{0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0},
+			expected: infohash.T{0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34, 0x56, 0x78},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := test.hash.ToShort()
 			if result != test.expected {
 				t.Errorf("Unexpected result. Expected: %v, Got: %v", test.expected, result)
 			}
