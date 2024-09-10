@@ -3,7 +3,7 @@ package metainfo
 import (
 	"testing"
 
-	"github.com/tgragnato/magnetico/bencode"
+	"tgragnato.it/magnetico/bencode"
 )
 
 func TestMarshalInfo(t *testing.T) {

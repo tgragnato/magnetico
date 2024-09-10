@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/tgragnato/magnetico/types/infohash"
+	"tgragnato.it/magnetico/types/infohash"
 )
 
 func TestTorrent(t *testing.T) {

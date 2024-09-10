@@ -10,7 +10,7 @@ import (
 	g "github.com/maragudk/gomponents"
 	c "github.com/maragudk/gomponents/components"
 	. "github.com/maragudk/gomponents/html"
-	"github.com/tgragnato/magnetico/persistence"
+	"tgragnato.it/magnetico/persistence"
 )
 
 func torrents() g.Node {

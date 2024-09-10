@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tgragnato/magnetico/bencode"
+	"tgragnato.it/magnetico/bencode"
 )
 
 func testFile(t *testing.T, filename string) {
@@ -213,8 +213,6 @@ func TestMetainfoWithStringURLList(t *testing.T) {
 	}
 }
 
-// https://github.com/tgragnato/magnetico/issues/247
-//
 // The decoder buffer wasn't cleared before starting the next dict item after
 // a syntax error on a field with the ignore_unmarshal_type_error tag.
 func TestStringCreationDate(t *testing.T) {
@@ -227,7 +225,6 @@ func TestStringCreationDate(t *testing.T) {
 	}
 }
 
-// See https://github.com/tgragnato/magnetico/issues/843.
 func TestUnmarshalEmptyStringNodes(t *testing.T) {
 	t.Parallel()
 

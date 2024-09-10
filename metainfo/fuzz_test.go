@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/tgragnato/magnetico/bencode"
+	"tgragnato.it/magnetico/bencode"
 )
 
 func Fuzz(f *testing.F) {

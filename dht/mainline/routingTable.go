@@ -4,7 +4,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/tgragnato/magnetico/stats"
+	"tgragnato.it/magnetico/stats"
 )
 
 type routingTable struct {

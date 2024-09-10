@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/tgragnato/magnetico/bencode"
+	"tgragnato.it/magnetico/bencode"
 )
 
 func TestDecoder(t *testing.T) {

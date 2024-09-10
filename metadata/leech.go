@@ -10,9 +10,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/tgragnato/magnetico/bencode"
-	"github.com/tgragnato/magnetico/metadata/btconn"
-	"github.com/tgragnato/magnetico/stats"
+	"tgragnato.it/magnetico/bencode"
+	"tgragnato.it/magnetico/metadata/btconn"
+	"tgragnato.it/magnetico/stats"
 )
 
 const MAX_METADATA_SIZE = 10 * 1024 * 1024

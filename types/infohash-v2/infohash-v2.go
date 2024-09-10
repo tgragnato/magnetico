@@ -8,7 +8,7 @@ import (
 
 	"github.com/multiformats/go-multihash"
 
-	"github.com/tgragnato/magnetico/types/infohash"
+	"tgragnato.it/magnetico/types/infohash"
 )
 
 const Size = sha256.Size

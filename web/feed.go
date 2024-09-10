@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/tgragnato/magnetico/persistence"
+	"tgragnato.it/magnetico/persistence"
 )
 
 type Feed struct {

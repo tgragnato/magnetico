@@ -472,8 +472,7 @@ func (d *Decoder) parseDict(v reflect.Value) error {
 func (d *Decoder) parseList(v reflect.Value) error {
 	switch v.Kind() {
 	default:
-		// If the list is a singleton of the expected type, use that value. See
-		// https://github.com/tgragnato/magnetico/issues/297.
+		// If the list is a singleton of the expected type, use that value.
 		l := reflect.New(reflect.SliceOf(v.Type()))
 		if err := d.parseList(l.Elem()); err != nil {
 			return err

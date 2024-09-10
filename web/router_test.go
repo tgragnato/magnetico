@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/tgragnato/magnetico/persistence"
+	"tgragnato.it/magnetico/persistence"
 )
 
 func TestInfohashMiddleware(t *testing.T) {

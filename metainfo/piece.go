@@ -1,6 +1,6 @@
 package metainfo
 
-import "github.com/tgragnato/magnetico/types/infohash"
+import "tgragnato.it/magnetico/types/infohash"
 
 type Piece struct {
 	Info  *Info

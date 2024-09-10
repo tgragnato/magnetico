@@ -4,8 +4,8 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/tgragnato/magnetico/types/infohash"
-	infohash_v2 "github.com/tgragnato/magnetico/types/infohash-v2"
+	"tgragnato.it/magnetico/types/infohash"
+	infohash_v2 "tgragnato.it/magnetico/types/infohash-v2"
 )
 
 func TestParseMagnetV2(t *testing.T) {

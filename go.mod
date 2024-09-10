@@ -1,4 +1,4 @@
-module github.com/tgragnato/magnetico
+module tgragnato.it/magnetico
 
 go 1.22.6
 

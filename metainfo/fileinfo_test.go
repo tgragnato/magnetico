@@ -3,7 +3,7 @@ package metainfo_test
 import (
 	"testing"
 
-	"github.com/tgragnato/magnetico/metainfo"
+	"tgragnato.it/magnetico/metainfo"
 )
 
 func TestFileInfo_DisplayPath(t *testing.T) {

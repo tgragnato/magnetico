@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/tgragnato/magnetico/types/infohash"
+	"tgragnato.it/magnetico/types/infohash"
 )
 
 func TestT_Format(t *testing.T) {

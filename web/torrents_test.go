@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tgragnato/magnetico/persistence"
+	"tgragnato.it/magnetico/persistence"
 )
 
 func TestTorrents(t *testing.T) {

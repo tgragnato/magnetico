@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/tgragnato/magnetico/bencode"
+	"tgragnato.it/magnetico/bencode"
 )
 
 const FileTreePropertiesKey = ""

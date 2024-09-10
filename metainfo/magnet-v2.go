@@ -10,8 +10,8 @@ import (
 
 	"github.com/multiformats/go-multihash"
 
-	"github.com/tgragnato/magnetico/types/infohash"
-	infohash_v2 "github.com/tgragnato/magnetico/types/infohash-v2"
+	"tgragnato.it/magnetico/types/infohash"
+	infohash_v2 "tgragnato.it/magnetico/types/infohash-v2"
 )
 
 // Magnet link components.

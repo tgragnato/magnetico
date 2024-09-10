@@ -7,7 +7,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/tgragnato/magnetico/stats"
+	"tgragnato.it/magnetico/stats"
 )
 
 type IndexingService struct {

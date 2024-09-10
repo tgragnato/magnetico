@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tgragnato/magnetico/dht/mainline"
+	"tgragnato.it/magnetico/dht/mainline"
 )
 
 const (

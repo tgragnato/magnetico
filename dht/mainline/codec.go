@@ -8,7 +8,7 @@ import (
 	"regexp"
 
 	"github.com/bits-and-blooms/bloom/v3"
-	"github.com/tgragnato/magnetico/bencode"
+	"tgragnato.it/magnetico/bencode"
 )
 
 type Message struct {

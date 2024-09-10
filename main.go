@@ -17,12 +17,12 @@ import (
 	"time"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/tgragnato/magnetico/dht"
-	"github.com/tgragnato/magnetico/dht/mainline"
-	"github.com/tgragnato/magnetico/metadata"
-	"github.com/tgragnato/magnetico/persistence"
-	"github.com/tgragnato/magnetico/stats"
-	"github.com/tgragnato/magnetico/web"
+	"tgragnato.it/magnetico/dht"
+	"tgragnato.it/magnetico/dht/mainline"
+	"tgragnato.it/magnetico/metadata"
+	"tgragnato.it/magnetico/persistence"
+	"tgragnato.it/magnetico/stats"
+	"tgragnato.it/magnetico/web"
 )
 
 var opFlags struct {

@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/tgragnato/magnetico/persistence"
-	"github.com/tgragnato/magnetico/types/infohash"
-	infohash_v2 "github.com/tgragnato/magnetico/types/infohash-v2"
+	"tgragnato.it/magnetico/persistence"
+	"tgragnato.it/magnetico/types/infohash"
+	infohash_v2 "tgragnato.it/magnetico/types/infohash-v2"
 )
 
 var (

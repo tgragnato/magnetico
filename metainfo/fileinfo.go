@@ -10,8 +10,7 @@ type FileInfo struct {
 	// the API.
 	Length int64    `bencode:"length"`
 	Path   []string `bencode:"path"` // BEP3
-	// Unofficial extension by BiglyBT? https://github.com/BiglySoftware/BiglyBT/issues/1274. Might
-	// be a safer bet when available: https://github.com/tgragnato/magnetico/pull/915.
+	// Unofficial extension by BiglyBT? https://github.com/BiglySoftware/BiglyBT/issues/1274.
 	PathUtf8 []string `bencode:"path.utf-8,omitempty"`
 
 	ExtendedFileAttrs
