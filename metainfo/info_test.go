@@ -1,7 +1,6 @@
 package metainfo
 
 import (
-	g "github.com/anacrolix/generics"
 	"testing"
 
 	"github.com/tgragnato/magnetico/bencode"
@@ -11,7 +10,7 @@ func TestMarshalInfo(t *testing.T) {
 	t.Parallel()
 
 	var info Info
-	g.MakeSliceWithLength(&info.Pieces, 0)
+	info.Pieces = make([]byte, 0)
 	b, err := bencode.Marshal(info)
 	if err != nil {
 		t.Errorf("Error marshaling info: %v", err)

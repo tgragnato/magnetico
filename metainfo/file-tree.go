@@ -1,6 +1,7 @@
 package metainfo
 
 import (
+	"errors"
 	"sort"
 
 	"github.com/tgragnato/magnetico/bencode"
@@ -53,7 +54,10 @@ func (ft *FileTree) MarshalBencode() (bytes []byte, err error) {
 			if key == FileTreePropertiesKey {
 				continue
 			}
-			sub := g.MapMustGet(ft.Dir, key)
+			sub, ok := ft.Dir[key]
+			if !ok {
+				return nil, errors.New("missing subfile")
+			}
 			subBytes, err := sub.MarshalBencode()
 			if err != nil {
 				return nil, err
