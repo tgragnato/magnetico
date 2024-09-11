@@ -5,7 +5,7 @@ go 1.22.6
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/bits-and-blooms/bloom/v3 v3.7.0
-	github.com/jackc/pgx/v5 v5.7.0
+	github.com/jackc/pgx/v5 v5.7.1
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/maragudk/gomponents v0.20.4
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
