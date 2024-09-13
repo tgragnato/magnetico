@@ -236,21 +236,21 @@ func TestToBigEndianNegative(t *testing.T) {
 		{"Test 1", 1, 1, false},
 		{"Test 2", 256, 1, false},
 		{"Test 3", 65536, 1, false},
-		{"Test 4", math.MaxUint64, 1, false},
+		{"Test 4", math.MaxUint, 1, false},
 
 		{"Test 5", 1, 2, false},
 		{"Test 6", 256, 2, false},
 		{"Test 7", 65536, 2, false},
-		{"Test 8", math.MaxUint64, 2, false},
+		{"Test 8", math.MaxUint, 2, false},
 
 		{"Test 9", 1, 4, false},
 		{"Test 10", 256, 4, false},
 		{"Test 11", 65536, 4, false},
-		{"Test 12", math.MaxUint64, 4, false},
+		{"Test 12", math.MaxUint, 4, false},
 
 		// Negative
-		{"Test 13", math.MaxUint64, 5, true},
-		{"Test 14", math.MaxUint64, -5, true},
+		{"Test 13", math.MaxUint, 5, true},
+		{"Test 14", math.MaxUint, -5, true},
 		{"Test 15", 1, 5, true},
 		{"Test 16", 2, 5, true},
 	}
