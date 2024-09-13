@@ -1,0 +1,60 @@
+name: Test Cross Compilation without CGo
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  cross:
+
+    name: Cross Compilation
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - { go-os: linux, go-arch: amd64 }
+          - { go-os: linux, go-arch: 386 }
+          - { go-os: linux, go-arch: arm64 }
+          - { go-os: linux, go-arch: arm }
+          - { go-os: linux, go-arch: loong64 }
+          - { go-os: linux, go-arch: mips }
+          - { go-os: linux, go-arch: mips64 }
+          - { go-os: linux, go-arch: mips64le }
+          - { go-os: linux, go-arch: mipsle }
+          - { go-os: linux, go-arch: ppc64 }
+          - { go-os: linux, go-arch: ppc64le }
+          - { go-os: linux, go-arch: riscv64 }
+          - { go-os: linux, go-arch: s390x }
+          - { go-os: openbsd, go-arch: amd64 }
+          - { go-os: openbsd, go-arch: 386 }
+          - { go-os: openbsd, go-arch: arm64 }
+          - { go-os: openbsd, go-arch: arm }
+          - { go-os: openbsd, go-arch: ppc64 }
+          - { go-os: openbsd, go-arch: riscv64 }
+          - { go-os: freebsd, go-arch: amd64 }
+          - { go-os: freebsd, go-arch: 386 }
+          - { go-os: freebsd, go-arch: arm64 }
+          - { go-os: freebsd, go-arch: arm }
+          - { go-os: freebsd, go-arch: riscv64 }
+          - { go-os: darwin, go-arch: amd64 }
+          - { go-os: darwin, go-arch: arm64 }
+
+    steps:
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Go 1.23
+      uses: actions/setup-go@v5
+      with:
+        go-version: 1.23
+
+    - name: Build
+      env:
+        CGO_ENABLED: 0
+        GOOS: ${{ matrix.go-os }}
+        GOARCH: ${{ matrix.go-arch }}
+      run: go build -v .
