@@ -340,3 +340,74 @@ func TestReadUmMessage(t *testing.T) {
 		})
 	}
 }
+
+func TestDoExHandshake(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name           string
+		input          []byte
+		expectedOutput []byte
+		expectedError  bool
+	}{
+		{
+			name:           "Valid handshake",
+			input:          append([]byte{0, 0, 0, 49}, []byte{20, 0, 'd', '1', ':', 'm', 'd', '1', '1', ':', 'u', 't', '_', 'm', 'e', 't', 'a', 'd', 'a', 't', 'a', 'i', '1', 'e', 'e', '1', '3', ':', 'm', 'e', 't', 'a', 'd', 'a', 't', 'a', '_', 's', 'i', 'z', 'e', 'i', '2', '2', '5', '2', '8', 'e', 'e'}...),
+			expectedOutput: []byte{0, 0, 0, 26, 20, 0, 100, 49, 58, 109, 100, 49, 49, 58, 117, 116, 95, 109, 101, 116, 97, 100, 97, 116, 97, 105, 49, 101, 101, 101},
+			expectedError:  false,
+		},
+		{
+			name:           "Invalid extension message ID",
+			input:          append([]byte{0, 0, 0, 50}, []byte{20, 1, 'd', '1', ':', 'm', 'd', '1', '1', ':', 'u', 't', '_', 'm', 'e', 't', 'a', 'd', 'a', 't', 'a', 'i', '1', 'e', 'e', 'e', '1', '3', ':', 'm', 'e', 't', 'a', 'd', 'a', 't', 'a', '_', 's', 'i', 'z', 'e', 'i', '2', '2', '5', '2', '8', 'e', 'e'}...),
+			expectedOutput: []byte{0, 0, 0, 26, 20, 0, 100, 49, 58, 109, 100, 49, 49, 58, 117, 116, 95, 109, 101, 116, 97, 100, 97, 116, 97, 105, 49, 101, 101, 101},
+			expectedError:  true,
+		},
+		{
+			name:           "Invalid metadata size",
+			input:          append([]byte{0, 0, 0, 45}, []byte{20, 0, 'd', '1', ':', 'm', 'd', '1', '1', ':', 'u', 't', '_', 'm', 'e', 't', 'a', 'd', 'a', 't', 'a', 'i', '1', 'e', 'e', '1', '3', ':', 'm', 'e', 't', 'a', 'd', 'a', 't', 'a', '_', 's', 'i', 'z', 'e', 'i', '0', 'e', 'e'}...),
+			expectedOutput: []byte{0, 0, 0, 26, 20, 0, 100, 49, 58, 109, 100, 49, 49, 58, 117, 116, 95, 109, 101, 116, 97, 100, 97, 116, 97, 105, 49, 101, 101, 101},
+			expectedError:  true,
+		},
+		{
+			name:           "Invalid ut_metadata",
+			input:          append([]byte{0, 0, 0, 50}, []byte{20, 0, 'd', '1', ':', 'm', 'd', '1', '1', ':', 'u', 't', '_', 'm', 'e', 't', 'a', 'd', 'a', 't', 'a', 'i', '0', 'e', 'e', 'e', '1', '3', ':', 'm', 'e', 't', 'a', 'd', 'a', 't', 'a', '_', 's', 'i', 'z', 'e', 'i', '2', '2', '5', '2', '8', 'e', 'e'}...),
+			expectedOutput: []byte{0, 0, 0, 26, 20, 0, 100, 49, 58, 109, 100, 49, 49, 58, 117, 116, 95, 109, 101, 116, 97, 100, 97, 116, 97, 105, 49, 101, 101, 101},
+			expectedError:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			peer1, peer2 := net.Pipe()
+			leech := &Leech{conn: peer1}
+			var wg sync.WaitGroup
+			wg.Add(2)
+
+			go func() {
+				defer wg.Done()
+				var buffer bytes.Buffer
+				if _, err := io.Copy(&buffer, peer2); err != nil {
+					t.Error(err)
+				}
+				if !reflect.DeepEqual(buffer.Bytes(), tt.expectedOutput) {
+					t.Errorf("Expected output: %v, got: %v", tt.expectedOutput, buffer.Bytes())
+				}
+			}()
+
+			go func() {
+				defer wg.Done()
+				if _, err := peer2.Write(tt.input); err != nil {
+					t.Error(err)
+				}
+			}()
+
+			err := leech.doExHandshake()
+			if (err != nil) != tt.expectedError {
+				t.Errorf("Expected error: %v, got: %v", tt.expectedError, err)
+			}
+			leech.closeConn()
+
+			wg.Wait()
+		})
+	}
+}
