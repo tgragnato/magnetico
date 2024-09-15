@@ -134,6 +134,10 @@ func (l *Leech) doExHandshake() error {
 func (l *Leech) requestAllPieces() error {
 	// Request all the pieces of metadata
 	nPieces := int(math.Ceil(float64(l.metadataSize) / math.Pow(2, 14)))
+	if nPieces == 0 {
+		return errors.New("metadataSize is zero")
+	}
+
 	for piece := 0; piece < nPieces; piece++ {
 		// __request_metadata_piece(piece)
 		// ...............................

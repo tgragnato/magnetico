@@ -2,6 +2,7 @@ package metadata
 
 import (
 	"bytes"
+	"encoding/binary"
 	"io"
 	"net"
 	"reflect"
@@ -107,4 +108,79 @@ func TestReadExactly(t *testing.T) {
 		t.Errorf("Unexpected error: %s", err.Error())
 	}
 	wg.Wait()
+}
+
+func TestRequestAllPieces(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name          string
+		metadataSize  uint
+		expectedCalls int
+		expectedError bool
+	}{
+		{
+			name:          "Single piece",
+			metadataSize:  16 * 1024,
+			expectedCalls: 1,
+			expectedError: false,
+		},
+		{
+			name:          "Multiple pieces",
+			metadataSize:  32 * 1024,
+			expectedCalls: 2,
+			expectedError: false,
+		},
+		{
+			name:          "Exact multiple pieces",
+			metadataSize:  48 * 1024,
+			expectedCalls: 3,
+			expectedError: false,
+		},
+		{
+			name:          "Zero size",
+			metadataSize:  0,
+			expectedCalls: 0,
+			expectedError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			peer1, peer2 := net.Pipe()
+			leech := &Leech{conn: peer1, metadataSize: tt.metadataSize}
+
+			var wg sync.WaitGroup
+			wg.Add(1)
+
+			go func() {
+				defer wg.Done()
+				buffer := new(bytes.Buffer)
+				_, err := io.Copy(buffer, peer2)
+				if err != nil {
+					t.Error(err)
+				}
+
+				// Check the number of requests sent
+				requests := 0
+				for buffer.Len() > 0 {
+					length := binary.BigEndian.Uint32(buffer.Next(4))
+					buffer.Next(int(length))
+					requests++
+				}
+
+				if requests != tt.expectedCalls {
+					t.Errorf("Expected %d requests, but got %d", tt.expectedCalls, requests)
+				}
+			}()
+
+			err := leech.requestAllPieces()
+			if (err != nil) != tt.expectedError {
+				t.Errorf("Expected error: %v, got: %v", tt.expectedError, err)
+			}
+
+			leech.closeConn()
+			wg.Wait()
+		})
+	}
 }
