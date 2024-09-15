@@ -128,7 +128,7 @@ func Marshal(v interface{}) ([]byte, error) {
 func MustMarshal(v interface{}) []byte {
 	b, err := Marshal(v)
 	if err != nil {
-		panic(fmt.Sprintf("expected nil; got %v", err))
+		return []byte{}
 	}
 	return b
 }
