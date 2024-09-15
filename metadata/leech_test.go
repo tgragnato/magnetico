@@ -220,7 +220,9 @@ func TestReadMessage(t *testing.T) {
 			leech := &Leech{conn: peer1}
 
 			go func() {
-				peer2.Write(tt.input)
+				if _, err := peer2.Write(tt.input); err != nil {
+					t.Error(err)
+				}
 				peer2.Close()
 			}()
 
@@ -270,7 +272,9 @@ func TestReadExMessage(t *testing.T) {
 			leech := &Leech{conn: peer1}
 
 			go func() {
-				peer2.Write(tt.input)
+				if _, err := peer2.Write(tt.input); err != nil {
+					t.Error(err)
+				}
 				peer2.Close()
 			}()
 
@@ -320,7 +324,9 @@ func TestReadUmMessage(t *testing.T) {
 			leech := &Leech{conn: peer1}
 
 			go func() {
-				peer2.Write(tt.input)
+				if _, err := peer2.Write(tt.input); err != nil {
+					t.Error(err)
+				}
 				peer2.Close()
 			}()
 
