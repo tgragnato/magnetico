@@ -17,8 +17,6 @@ import (
 func Dial(
 	addr net.Addr,
 	deadline time.Time,
-	enableEncryption,
-	forceEncryption bool,
 	ourExtensions [8]byte,
 	ih [20]byte,
 	ourID [20]byte) (
@@ -50,51 +48,18 @@ func Dial(
 		return
 	}
 
-	if enableEncryption {
-		sKey := make([]byte, 20)
-		copy(sKey, ih[:])
+	sKey := make([]byte, 20)
+	copy(sKey, ih[:])
 
-		provide := RC4
-		if !forceEncryption {
-			provide |= PlainText
-		}
+	provide := RC4
 
-		// Try encryption handshake
-		encConn := WrapConn(conn)
-		cipher, err = encConn.HandshakeOutgoing(sKey, provide, out.Bytes())
-		if err != nil {
-			if forceEncryption {
-				return
-			}
-
-			// Close current connection and try again without encryption
-			conn.Close()
-			conn, err = dialer.DialContext(context.Background(), addr.Network(), addr.String())
-			if err != nil {
-				return
-			}
-			defer func(conn net.Conn) {
-				if err != nil {
-					conn.Close()
-				}
-			}(conn)
-
-			// Send BT handshake
-			if err = conn.SetDeadline(deadline); err != nil {
-				return
-			}
-			if _, err = conn.Write(out.Bytes()); err != nil {
-				return
-			}
-		} else {
-			conn = encConn
-		}
+	// Try encryption handshake
+	encConn := WrapConn(conn)
+	cipher, err = encConn.HandshakeOutgoing(sKey, provide, out.Bytes())
+	if err != nil {
+		return
 	} else {
-		// Send BT handshake
-		_, err = conn.Write(out.Bytes())
-		if err != nil {
-			return
-		}
+		conn = encConn
 	}
 
 	// Read BT handshake

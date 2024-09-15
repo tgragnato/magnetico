@@ -23,8 +23,6 @@ type Stats struct {
 	addError uint64
 	// mseEncryption represents the number of times a peer connection has been obfuscated with mse.
 	mseEncryption uint64
-	// plaintext represents the number of times a peer connection has not been obfuscated with mse.
-	plaintext uint64
 	// extensions represents the number of times a peer connection has been negotiated with a given extension set.
 	extensions map[string]uint64
 
@@ -82,13 +80,9 @@ func (s *Stats) IncDBError(add bool) {
 // If the 'obfuscated' parameter is true, it increments the 'mseEncryption' counter.
 // If the 'obfuscated' parameter is false, it increments the 'plaintext' counter.
 // It also increments the counter for the given 'peerExtensions'.
-func (s *Stats) IncLeech(obfuscated bool, peerExtensions [8]byte) {
+func (s *Stats) IncLeech(peerExtensions [8]byte) {
 	s.Lock()
 	defer s.Unlock()
-	if obfuscated {
-		s.mseEncryption++
-	} else {
-		s.plaintext++
-	}
+	s.mseEncryption++
 	s.extensions[string(fmt.Sprintf("%v", peerExtensions))]++
 }

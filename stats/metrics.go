@@ -66,10 +66,9 @@ func (s *Stats) Flush() {
 		s.addError = 0
 	}
 
-	if s.mseEncryption != 0 && s.plaintext != 0 {
-		message += fmt.Sprintf("metainfo: the peer connection was obfuscated with mse %d%% of the time\n", s.mseEncryption*100/(s.plaintext+s.mseEncryption))
+	if s.mseEncryption != 0 {
+		message += fmt.Sprintf("metainfo: the peer connection was obfuscated with mse %d times\n", s.mseEncryption)
 		s.mseEncryption = 0
-		s.plaintext = 0
 	}
 
 	if len(s.extensions) != 0 {

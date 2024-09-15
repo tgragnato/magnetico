@@ -29,47 +29,25 @@ func TestUnencrypted(t *testing.T) {
 	var gerr error
 	go func() {
 		defer close(done)
-		conn, cipher, ext, id, err2 := Dial(&net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: port}, time.Now().Add(10*time.Second), false, false, ext1, infoHash, id1)
+		_, _, _, _, err2 := Dial(&net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: port}, time.Now().Add(10*time.Second), ext1, infoHash, id1)
 		if err2 != nil {
 			gerr = err2
-			return
-		}
-		if conn == nil {
-			t.Errorf("conn: %s", conn)
-		}
-		if cipher != 0 {
-			t.Errorf("cipher: %d", cipher)
-		}
-		if ext != ext2 {
-			t.Errorf("ext: %s", ext)
-		}
-		if id != id2 {
-			t.Errorf("id: %s", id)
 		}
 	}()
 	conn, err := l.Accept()
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, cipher, ext, id, ih, err := Accept(conn, 10*time.Second, nil, false, func(ih [20]byte) bool { return ih == infoHash }, ext2, id2)
-	if err != nil {
-		t.Fatal(err)
+	_, cipher, _, _, _, err := Accept(conn, 10*time.Second, nil, func(ih [20]byte) bool { return ih == infoHash }, ext2, id2)
+	if err == nil {
+		t.Fatal("expected error")
 	}
 	<-done
-	if gerr != nil {
-		t.Fatal(err)
+	if gerr == nil {
+		t.Fatal("expected error")
 	}
 	if cipher != 0 {
 		t.Errorf("cipher: %d", cipher)
-	}
-	if ext != ext1 {
-		t.Errorf("ext: %s", ext)
-	}
-	if ih != infoHash {
-		t.Errorf("ih: %s", ih)
-	}
-	if id != id1 {
-		t.Errorf("id: %s", id)
 	}
 }
 
@@ -84,7 +62,7 @@ func TestEncrypted(t *testing.T) {
 	var gerr error
 	go func() {
 		defer close(done)
-		conn, cipher, ext, id, err2 := Dial(&net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: port}, time.Now().Add(10*time.Second), true, true, ext1, infoHash, id1)
+		conn, cipher, ext, id, err2 := Dial(&net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: port}, time.Now().Add(10*time.Second), ext1, infoHash, id1)
 		if err2 != nil {
 			gerr = err2
 			return
@@ -130,7 +108,6 @@ func TestEncrypted(t *testing.T) {
 			}
 			return nil
 		},
-		false,
 		func(ih [20]byte) bool { return ih == infoHash },
 		ext2, id2)
 	if err != nil {

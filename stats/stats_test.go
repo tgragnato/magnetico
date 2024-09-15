@@ -75,19 +75,11 @@ func TestStats_IncDBError_Check(t *testing.T) {
 func TestStats_IncLeech(t *testing.T) {
 	t.Parallel()
 
-	stats.IncLeech(true, [8]byte{1, 2, 3, 4, 5, 6, 7, 8})
+	stats.IncLeech([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	if stats.mseEncryption != 1 {
 		t.Errorf("Expected mseEncryption count to be 1, but got %d", stats.mseEncryption)
 	}
 	if stats.extensions["[1 2 3 4 5 6 7 8]"] != 1 {
 		t.Errorf("Expected extensions count to be 1, but got %d", stats.extensions["[1 2 3 4 5 6 7 8]"])
-	}
-
-	stats.IncLeech(false, [8]byte{1, 2, 3, 4, 5, 6, 7, 8})
-	if stats.plaintext != 1 {
-		t.Errorf("Expected plaintext count to be 1, but got %d", stats.plaintext)
-	}
-	if stats.extensions["[1 2 3 4 5 6 7 8]"] != 2 {
-		t.Errorf("Expected extensions count to be 2, but got %d", stats.extensions["[1 2 3 4 5 6 7 8]"])
 	}
 }

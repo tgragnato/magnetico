@@ -32,7 +32,6 @@ func TestFlush(t *testing.T) {
 	stats.checkError = 2
 	stats.addError = 1
 	stats.mseEncryption = 10
-	stats.plaintext = 20
 	stats.extensions = map[string]uint64{
 		"ext1": 10,
 		"ext2": 5,
@@ -70,9 +69,6 @@ func TestFlush(t *testing.T) {
 	}
 	if stats.mseEncryption != 0 {
 		t.Error("mseEncryption was not reset")
-	}
-	if stats.plaintext != 0 {
-		t.Error("plaintext was not reset")
 	}
 	if len(stats.extensions) != 0 {
 		t.Error("Expected len(extensions) == 0, but it's not empty")

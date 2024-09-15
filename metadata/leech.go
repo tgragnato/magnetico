@@ -224,11 +224,9 @@ func (l *Leech) readUmMessage() ([]byte, error) {
 }
 
 func (l *Leech) Do(deadline time.Time) {
-	conn, cipher, peerExtensions, _, err := btconn.Dial(
+	conn, _, peerExtensions, _, err := btconn.Dial(
 		l.peerAddr,
 		deadline,
-		true,
-		false,
 		[8]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x01},
 		l.infoHash,
 		l.clientID,
@@ -240,7 +238,7 @@ func (l *Leech) Do(deadline time.Time) {
 
 	l.conn = conn
 	defer l.closeConn()
-	go stats.GetInstance().IncLeech(cipher != 0, peerExtensions)
+	go stats.GetInstance().IncLeech(peerExtensions)
 
 	err = l.doExHandshake()
 	if err != nil {

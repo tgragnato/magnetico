@@ -17,20 +17,13 @@ func Accept(
 	conn net.Conn,
 	handshakeTimeout time.Duration,
 	getSKey func(sKeyHash [20]byte) (sKey []byte),
-	forceEncryption bool,
 	hasInfoHash func([20]byte) bool,
 	ourExtensions [8]byte, ourID [20]byte) (
 	encConn net.Conn, cipher CryptoMethod, peerExtensions [8]byte, peerID [20]byte, infoHash [20]byte, err error) {
 
-	if forceEncryption && getSKey == nil {
-		panic("forceEncryption && getSKey == nil")
-	}
-
 	if err = conn.SetDeadline(time.Now().Add(handshakeTimeout)); err != nil {
 		return
 	}
-
-	isEncrypted := false
 
 	// Try to do unencrypted handshake first.
 	// If protocol string is not valid, try to do encrypted handshake.
@@ -49,9 +42,10 @@ func Accept(
 			func(provided CryptoMethod) (selected CryptoMethod) {
 				if provided&RC4 != 0 {
 					selected = RC4
-					isEncrypted = true
-				} else if (provided&PlainText != 0) && !forceEncryption {
+				} else if provided&PlainText != 0 {
 					selected = PlainText
+					err = errors.New("encryption required but not used")
+					return
 				}
 				cipher = selected
 				return
@@ -63,11 +57,6 @@ func Accept(
 		peerExtensions, infoHash, err = readHandshake1(conn)
 	}
 	if err != nil {
-		return
-	}
-
-	if forceEncryption && !isEncrypted {
-		err = errors.New("encryption required but not used")
 		return
 	}
 
