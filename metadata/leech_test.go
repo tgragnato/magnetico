@@ -284,3 +284,53 @@ func TestReadExMessage(t *testing.T) {
 		})
 	}
 }
+
+func TestReadUmMessage(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name          string
+		input         []byte
+		expected      []byte
+		expectedError bool
+	}{
+		{
+			name:          "Valid ut_metadata message",
+			input:         append([]byte{0, 0, 0, 7}, []byte{20, 1, 'h', 'e', 'l', 'l', 'o'}...),
+			expected:      []byte{20, 1, 'h', 'e', 'l', 'l', 'o'},
+			expectedError: false,
+		},
+		{
+			name:          "Non-ut_metadata extension message",
+			input:         append([]byte{0, 0, 0, 7}, []byte{20, 2, 'h', 'e', 'l', 'l', 'o'}...),
+			expected:      nil,
+			expectedError: true,
+		},
+		{
+			name:          "Incomplete ut_metadata message",
+			input:         []byte{0, 0, 0, 7, 20, 1, 'h'},
+			expected:      nil,
+			expectedError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			peer1, peer2 := net.Pipe()
+			leech := &Leech{conn: peer1}
+
+			go func() {
+				peer2.Write(tt.input)
+				peer2.Close()
+			}()
+
+			result, err := leech.readUmMessage()
+			if (err != nil) != tt.expectedError {
+				t.Errorf("Expected error: %v, got: %v", tt.expectedError, err)
+			}
+			if !reflect.DeepEqual(result, tt.expected) {
+				t.Errorf("Expected: %v, got: %v", tt.expected, result)
+			}
+		})
+	}
+}
