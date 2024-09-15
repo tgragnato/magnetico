@@ -142,7 +142,7 @@ func (l *Leech) requestAllPieces() error {
 			Piece:   piece,
 		})
 		if err != nil { // ASSERT
-			panic(errors.New("marshal extDict " + err.Error()))
+			return errors.New("marshal extDict " + err.Error())
 		}
 
 		err = l.writeAll([]byte(fmt.Sprintf(
