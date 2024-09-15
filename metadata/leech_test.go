@@ -184,3 +184,53 @@ func TestRequestAllPieces(t *testing.T) {
 		})
 	}
 }
+
+func TestReadMessage(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name          string
+		input         []byte
+		expected      []byte
+		expectedError bool
+	}{
+		{
+			name:          "Valid message",
+			input:         append([]byte{0, 0, 0, 5}, []byte("hello")...),
+			expected:      []byte("hello"),
+			expectedError: false,
+		},
+		{
+			name:          "Message too long",
+			input:         append([]byte{0xff, 0xff, 0xff, 0xff}, []byte("hello")...),
+			expected:      nil,
+			expectedError: true,
+		},
+		{
+			name:          "Incomplete message",
+			input:         []byte{0, 0, 0, 5, 'h', 'e'},
+			expected:      nil,
+			expectedError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			peer1, peer2 := net.Pipe()
+			leech := &Leech{conn: peer1}
+
+			go func() {
+				peer2.Write(tt.input)
+				peer2.Close()
+			}()
+
+			result, err := leech.readMessage()
+			if (err != nil) != tt.expectedError {
+				t.Errorf("Expected error: %v, got: %v", tt.expectedError, err)
+			}
+			if !reflect.DeepEqual(result, tt.expected) {
+				t.Errorf("Expected: %v, got: %v", tt.expected, result)
+			}
+		})
+	}
+}
