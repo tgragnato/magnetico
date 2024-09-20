@@ -132,6 +132,9 @@ func (is *IndexingService) onFindNodeResponse(response *Message, addr *net.UDPAd
 	for _, node := range response.R.Nodes {
 		neighbors = append(neighbors, node.Addr)
 	}
+	for _, node := range response.R.Nodes6 {
+		neighbors = append(neighbors, node.Addr)
+	}
 
 	if len(neighbors) > 0 {
 		go is.nodes.addNodes(neighbors)
@@ -196,6 +199,9 @@ func (is *IndexingService) onSampleInfohashesResponse(msg *Message, addr *net.UD
 	for _, node := range msg.R.Nodes {
 		neighbors = append(neighbors, node.Addr)
 	}
+	for _, node := range msg.R.Nodes6 {
+		neighbors = append(neighbors, node.Addr)
+	}
 	if len(neighbors) > 0 {
 		go is.nodes.addNodes(neighbors)
 	}
@@ -246,7 +252,7 @@ func (is *IndexingService) onAnnouncePeerQuery(msg *Message, addr *net.UDPAddr) 
 
 func (is *IndexingService) onFindNodeQuery(msg *Message, addr *net.UDPAddr) {
 	compactNodeInfos := []CompactNodeInfo{}
-	for _, node := range is.nodes.dump() {
+	for _, node := range is.nodes.dump(addr.IP.To4() != nil) {
 		compactNodeInfos = append(compactNodeInfos, CompactNodeInfo{
 			ID:   randomNodeID(),
 			Addr: node,
@@ -263,7 +269,7 @@ func (is *IndexingService) onFindNodeQuery(msg *Message, addr *net.UDPAddr) {
 
 func (is *IndexingService) onGetPeersQuery(msg *Message, addr *net.UDPAddr) {
 	compactPeers := []CompactPeer{}
-	for _, node := range is.nodes.dump() {
+	for _, node := range is.nodes.dump(addr.IP.To4() != nil) {
 		compactPeers = append(compactPeers, CompactPeer{
 			IP:   node.IP,
 			Port: node.Port,

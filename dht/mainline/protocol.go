@@ -142,7 +142,7 @@ func (p *Protocol) onMessage(msg *Message, addr *net.UDPAddr) {
 			if p.eventHandlers.OnGetPeersResponse != nil {
 				p.eventHandlers.OnGetPeersResponse(msg, addr)
 			}
-		} else if len(msg.R.Nodes) != 0 { // The message should be a find_node response.
+		} else if len(msg.R.Nodes) != 0 || len(msg.R.Nodes6) != 0 { // The message should be a find_node response.
 			if !validateFindNodeResponseMessage(msg) {
 				return
 			}
@@ -258,12 +258,24 @@ func NewPingResponse(t []byte, id []byte) *Message {
 }
 
 func NewFindNodeResponse(t []byte, id []byte, nodes []CompactNodeInfo) *Message {
+	// Assumes that all nodes are IPv4 or all are IPv6.
+	if len(nodes) > 0 && nodes[0].Addr.IP.To4() != nil {
+		return &Message{
+			Y: "r",
+			T: t,
+			R: ResponseValues{
+				ID:    id,
+				Nodes: nodes,
+			},
+		}
+	}
+
 	return &Message{
 		Y: "r",
 		T: t,
 		R: ResponseValues{
-			ID:    id,
-			Nodes: nodes,
+			ID:     id,
+			Nodes6: nodes,
 		},
 	}
 }
@@ -357,19 +369,19 @@ func validatePingORannouncePeerResponseMessage(msg *Message) bool {
 
 func validateFindNodeResponseMessage(msg *Message) bool {
 	return len(msg.R.ID) == 20 &&
-		len(msg.R.Nodes) >= 0
+		(len(msg.R.Nodes) >= 0 || len(msg.R.Nodes6) >= 0)
 }
 
 func validateGetPeersResponseMessage(msg *Message) bool {
 	return len(msg.R.ID) == 20 &&
 		len(msg.R.Token) > 0 &&
-		(len(msg.R.Values) > 0 || len(msg.R.Nodes) >= 0)
+		(len(msg.R.Values) > 0 || len(msg.R.Nodes) >= 0 || len(msg.R.Nodes6) >= 0)
 }
 
 func validateSampleInfohashesResponseMessage(msg *Message) bool {
 	return len(msg.R.ID) == 20 &&
 		msg.R.Interval >= 0 &&
-		len(msg.R.Nodes) >= 0 &&
+		(len(msg.R.Nodes) >= 0 || len(msg.R.Nodes6) >= 0) &&
 		msg.R.Num >= 0 &&
 		len(msg.R.Samples)%20 == 0
 }

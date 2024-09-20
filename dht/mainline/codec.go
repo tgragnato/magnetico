@@ -64,8 +64,10 @@ type QueryArguments struct {
 type ResponseValues struct {
 	// ID of the querying node
 	ID []byte `bencode:"id"`
-	// K closest nodes to the requested target
+	// K closest ipv4 nodes to the requested target
 	Nodes CompactNodeInfos `bencode:"nodes,omitempty"`
+	// K closest ipv6 nodes to the requested target
+	Nodes6 CompactNodeInfos `bencode:"nodes6,omitempty"`
 	// Token for future announce_peer
 	Token []byte `bencode:"token,omitempty"`
 	// Torrent peers

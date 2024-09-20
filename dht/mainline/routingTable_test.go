@@ -77,7 +77,7 @@ func Test_routingTable_dump(t *testing.T) {
 
 	t.Run("empty", func(t *testing.T) {
 		rt := newRoutingTable(1, nil)
-		nodes := rt.dump()
+		nodes := rt.dump(true)
 		if len(nodes) != 0 {
 			t.Error("expected empty node list")
 		}
@@ -89,7 +89,7 @@ func Test_routingTable_dump(t *testing.T) {
 			{IP: net.IPv4(1, 1, 1, 1), Port: 1234},
 			{IP: net.IPv4(2, 2, 2, 2), Port: 5678},
 		})
-		nodes := rt.dump()
+		nodes := rt.dump(true)
 		if len(nodes) != 2 {
 			t.Error("expected 2 nodes")
 		}
@@ -110,7 +110,7 @@ func Test_routingTable_dump(t *testing.T) {
 			{IP: net.IPv4(10, 10, 10, 10), Port: 7890},
 			{IP: net.IPv4(11, 11, 11, 11), Port: 1234},
 		})
-		nodes := rt.dump()
+		nodes := rt.dump(true)
 		if len(nodes) != 10 {
 			t.Error("expected 10 nodes")
 		}

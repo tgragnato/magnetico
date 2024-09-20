@@ -90,12 +90,15 @@ func (rt *routingTable) isEmpty() bool {
 	return len(rt.nodes) == 0
 }
 
-func (rt *routingTable) dump() (nodes []net.UDPAddr) {
+func (rt *routingTable) dump(ipv4 bool) (nodes []net.UDPAddr) {
 	rt.RLock()
 	defer rt.RUnlock()
 
-	for i := 0; i < 10 && i < len(rt.nodes); i++ {
-		nodes = append(nodes, rt.nodes[i])
+	for i := 0; i < 100 && i < len(rt.nodes); i++ {
+		if ipv4 && rt.nodes[i].IP.To4() != nil ||
+			!ipv4 && rt.nodes[i].IP.To4() == nil {
+			nodes = append(nodes, rt.nodes[i])
+		}
 	}
 	return
 }
