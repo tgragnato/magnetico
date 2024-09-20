@@ -7,7 +7,7 @@ require (
 	github.com/bits-and-blooms/bloom/v3 v3.7.0
 	github.com/jackc/pgx/v5 v5.7.1
 	github.com/jessevdk/go-flags v1.6.1
-	github.com/maragudk/gomponents v0.20.4
+	github.com/maragudk/gomponents v0.20.5
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/multiformats/go-multihash v0.2.3
 	golang.org/x/crypto v0.27.0
