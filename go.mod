@@ -8,7 +8,7 @@ require (
 	github.com/jackc/pgx/v5 v5.7.1
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/maragudk/gomponents v0.20.5
-	github.com/mattn/go-sqlite3 v2.0.3+incompatible
+	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/multiformats/go-multihash v0.2.3
 	github.com/prometheus/client_golang v1.20.4
 	golang.org/x/crypto v0.27.0
