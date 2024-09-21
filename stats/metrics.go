@@ -1,11 +1,12 @@
 package stats
 
 import (
-	"fmt"
-	"log"
-	"sort"
+	"net/http"
 	"sync"
-	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var (
@@ -13,80 +14,71 @@ var (
 	once     sync.Once
 )
 
+const namespace = "magnetico"
+
 // GetStats returns a singleton instance of Stats
 func GetInstance() *Stats {
 	once.Do(func() {
-		instance = &Stats{extensions: map[string]uint64{}}
-		go func() {
-			for range time.NewTicker(time.Minute).C {
-				instance.Flush()
-			}
-		}()
+		instance = &Stats{
+			bootstrap: prometheus.NewCounter(prometheus.CounterOpts{
+				Namespace: namespace,
+				Name:      "bootstrap",
+				Help:      "Number of times the bootstrap process has been triggered",
+			}),
+			writeError: prometheus.NewCounter(prometheus.CounterOpts{
+				Namespace: namespace,
+				Name:      "write_error",
+				Help:      "Number of times there was an error writing a message to the UDP socket",
+			}),
+			readError: prometheus.NewCounter(prometheus.CounterOpts{
+				Namespace: namespace,
+				Name:      "read_error",
+				Help:      "Number of times there was an error reading a message from the UDP socket",
+			}),
+			rtClearing: prometheus.NewCounter(prometheus.CounterOpts{
+				Namespace: namespace,
+				Name:      "rt_clearing",
+				Help:      "Number of times the routing table has been cleared",
+			}),
+			nonUTF8: prometheus.NewCounter(prometheus.CounterOpts{
+				Namespace: namespace,
+				Name:      "non_utf8",
+				Help:      "Number of times a torrent has been ignored due to its name not being UTF-8 compliant",
+			}),
+			checkError: prometheus.NewCounter(prometheus.CounterOpts{
+				Namespace: namespace,
+				Name:      "check_error",
+				Help:      "Number of times there was an error checking whether a torrent exists",
+			}),
+			addError: prometheus.NewCounter(prometheus.CounterOpts{
+				Namespace: namespace,
+				Name:      "add_error",
+				Help:      "Number of times there was an error adding a torrent to the database",
+			}),
+			mseEncryption: prometheus.NewCounter(prometheus.CounterOpts{
+				Namespace: namespace,
+				Name:      "mse_encryption",
+				Help:      "Number of times a peer connection has been obfuscated with MSE",
+			}),
+			extensions: map[string]prometheus.Counter{},
+		}
 	})
 	return instance
 }
 
-func (s *Stats) Flush() {
-	s.Lock()
-	defer s.Unlock()
-	message := "\n --- \n"
+// Create a new registry for Prometheus using the Go and Process collectors
+func MakePrometheusHandler() http.HandlerFunc {
 
-	if s.bootstrap != 0 {
-		message += fmt.Sprintf("dht: the routing table was bootstrapped %d times\n", s.bootstrap)
-		s.bootstrap = 0
-	}
+	registry := prometheus.NewRegistry()
 
-	if s.rtClearing != 0 {
-		message += fmt.Sprintf("dht: the routing table was cleared %d times\n", s.rtClearing)
-		s.rtClearing = 0
-	}
+	registry.MustRegister(
+		collectors.NewGoCollector(),
+		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{
+			Namespace:    namespace,
+			ReportErrors: false,
+		}),
+		GetInstance(),
+	)
 
-	if s.writeError != 0 {
-		message += fmt.Sprintf("dht: %d errors occurred while writing a message to the UDP socket\n", s.writeError)
-		s.writeError = 0
-	}
-
-	if s.readError != 0 {
-		message += fmt.Sprintf("dht: %d errors occurred while reading a message from the UDP socket\n", s.readError)
-		s.readError = 0
-	}
-
-	if s.nonUTF8 != 0 {
-		message += fmt.Sprintf("persistence: %d torrents were ignored because their names were not UTF-8 compliant\n", s.nonUTF8)
-		s.nonUTF8 = 0
-	}
-
-	if s.checkError != 0 {
-		message += fmt.Sprintf("persistence: %d errors occurred while checking whether a torrent exists\n", s.checkError)
-		s.checkError = 0
-	}
-
-	if s.addError != 0 {
-		message += fmt.Sprintf("persistence: %d errors occurred while adding a torrent to the database\n", s.addError)
-		s.addError = 0
-	}
-
-	if s.mseEncryption != 0 {
-		message += fmt.Sprintf("metainfo: the peer connection was obfuscated with mse %d times\n", s.mseEncryption)
-		s.mseEncryption = 0
-	}
-
-	if len(s.extensions) != 0 {
-		// Sort extensions by value
-		sortedExtensions := make([]string, 0, len(s.extensions))
-		for ext := range s.extensions {
-			sortedExtensions = append(sortedExtensions, ext)
-		}
-		sort.Slice(sortedExtensions, func(i, j int) bool {
-			return s.extensions[sortedExtensions[i]] > s.extensions[sortedExtensions[j]]
-		})
-
-		// Add sorted extensions to the message and clear the map
-		for _, ext := range sortedExtensions {
-			message += fmt.Sprintf("metainfo: the extension set %s was encountered %d times\n", ext, s.extensions[ext])
-			delete(s.extensions, ext)
-		}
-	}
-
-	log.Print(message + "\n --- \n")
+	return promhttp.HandlerFor(registry, promhttp.HandlerOpts{}).ServeHTTP
 }

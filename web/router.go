@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"tgragnato.it/magnetico/persistence"
+	"tgragnato.it/magnetico/stats"
 	"tgragnato.it/magnetico/types/infohash"
 	infohash_v2 "tgragnato.it/magnetico/types/infohash-v2"
 )
@@ -51,6 +52,8 @@ func makeRouter() *http.ServeMux {
 	router.HandleFunc("/static/", BasicAuth(
 		http.StripPrefix("/", http.FileServer(staticFS)).ServeHTTP,
 	))
+
+	router.HandleFunc("/metrics", BasicAuth(stats.MakePrometheusHandler()))
 
 	router.HandleFunc("/api/v0.1/statistics", BasicAuth(apiStatistics))
 	router.HandleFunc("/api/v0.1/torrents", BasicAuth(apiTorrents))

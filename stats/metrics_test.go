@@ -1,8 +1,8 @@
 package stats
 
 import (
-	"bytes"
-	"log"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -20,57 +20,31 @@ func TestGetInstance(t *testing.T) {
 	}
 }
 
-func TestFlush(t *testing.T) {
+func TestMakePrometheusHandler(t *testing.T) {
 	t.Parallel()
 
-	stats := &Stats{extensions: map[string]uint64{}}
-	stats.bootstrap = 3
-	stats.rtClearing = 2
-	stats.writeError = 1
-	stats.readError = 4
-	stats.nonUTF8 = 5
-	stats.checkError = 2
-	stats.addError = 1
-	stats.mseEncryption = 10
-	stats.extensions = map[string]uint64{
-		"ext1": 10,
-		"ext2": 5,
-		"ext3": 3,
+	handler := MakePrometheusHandler()
+	if handler == nil {
+		t.Error("Expected MakePrometheusHandler to return a valid http.HandlerFunc")
 	}
 
-	var buf bytes.Buffer
-	log.SetOutput(&buf)
-
-	stats.Flush()
-	if len(buf.String()) == 0 {
-		t.Error("Expected log message, but got an empty buffer")
+	req, err := http.NewRequest("GET", "/metrics", nil)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
 	}
 
-	if stats.bootstrap != 0 {
-		t.Error("bootstrap was not reset")
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("Handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
-	if stats.rtClearing != 0 {
-		t.Error("rtClearing was not reset")
+
+	if contentType := rr.Header().Get("Content-Type"); contentType != "text/plain; version=0.0.4; charset=utf-8; escaping=values" {
+		t.Errorf("Handler returned wrong content type: got %v want %v", contentType, "text/plain; version=0.0.4; charset=utf-8; escaping=values")
 	}
-	if stats.writeError != 0 {
-		t.Error("writeError was not reset")
-	}
-	if stats.readError != 0 {
-		t.Error("readError was not reset")
-	}
-	if stats.nonUTF8 != 0 {
-		t.Error("nonUTF8 was not reset")
-	}
-	if stats.checkError != 0 {
-		t.Error("checkError was not reset")
-	}
-	if stats.addError != 0 {
-		t.Error("addError was not reset")
-	}
-	if stats.mseEncryption != 0 {
-		t.Error("mseEncryption was not reset")
-	}
-	if len(stats.extensions) != 0 {
-		t.Error("Expected len(extensions) == 0, but it's not empty")
+
+	if body := rr.Body.String(); body == "" {
+		t.Error("Expected handler to return a non-empty body")
 	}
 }
