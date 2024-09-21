@@ -4,24 +4,14 @@
 package persistence
 
 import (
-	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"net/url"
-	"time"
-
-	"gopkg.in/patrickmn/go-cache.v2"
 )
 
-type zeromq struct {
-	cache *cache.Cache
-}
+type zeromq struct{}
 
 func makeZeroMQ(url_ *url.URL) (Database, error) {
-	instance := &zeromq{
-		cache: cache.New(5*time.Minute, 10*time.Minute),
-	}
-	return instance, nil
+	return &zeromq{}, nil
 }
 
 func (instance *zeromq) Engine() databaseEngine {
@@ -29,21 +19,11 @@ func (instance *zeromq) Engine() databaseEngine {
 }
 
 func (instance *zeromq) DoesTorrentExist(infoHash []byte) (bool, error) {
-	_, found := instance.cache.Get(string(infoHash))
-	return found, nil
+	return false, nil
 }
 
 func (instance *zeromq) AddNewTorrent(infoHash []byte, name string, files []File) error {
-	data, err := json.Marshal(SimpleTorrentSummary{
-		InfoHash: hex.EncodeToString(infoHash),
-		Name:     name,
-		Files:    files,
-	})
-	if err != nil {
-		return errors.New("Failed to encode metadata " + err.Error())
-	}
-	instance.cache.Set(string(infoHash), data, cache.DefaultExpiration)
-	return nil
+	return errors.New("add not supported")
 }
 
 func (instance *zeromq) Close() error {

@@ -12,7 +12,6 @@ require (
 	github.com/multiformats/go-multihash v0.2.3
 	github.com/prometheus/client_golang v1.20.4
 	golang.org/x/crypto v0.27.0
-	gopkg.in/patrickmn/go-cache.v2 v2.1.0
 	gopkg.in/zeromq/goczmq.v4 v4.1.0
 )
 

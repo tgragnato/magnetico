@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"gopkg.in/patrickmn/go-cache.v2"
 	zmq "gopkg.in/zeromq/goczmq.v4"
 )
 
@@ -16,7 +15,7 @@ func Test_zeromq_DoesTorrentExist(t *testing.T) {
 
 	instance := &zeromq{
 		context: zmq.NewSock(zmq.Pub),
-		cache:   cache.New(time.Minute, time.Minute),
+		cache:   map[string]time.Time{},
 	}
 
 	infoHash := []byte("exampleInfoHash")
@@ -43,7 +42,7 @@ func Test_zeromq_GetNumberOfTorrents(t *testing.T) {
 
 	instance := &zeromq{
 		context: &zmq.Sock{},
-		cache:   &cache.Cache{},
+		cache:   map[string]time.Time{},
 	}
 	got, err := instance.GetNumberOfTorrents()
 	if err != nil {
@@ -59,7 +58,7 @@ func Test_zeromq_QueryTorrents(t *testing.T) {
 
 	instance := &zeromq{
 		context: &zmq.Sock{},
-		cache:   &cache.Cache{},
+		cache:   map[string]time.Time{},
 	}
 
 	got, err := instance.QueryTorrents(
@@ -84,7 +83,7 @@ func Test_zeromq_GetTorrent(t *testing.T) {
 
 	instance := &zeromq{
 		context: &zmq.Sock{},
-		cache:   &cache.Cache{},
+		cache:   map[string]time.Time{},
 	}
 	got, err := instance.GetTorrent([]byte("infoHash"))
 	if err == nil {
@@ -100,7 +99,7 @@ func Test_zeromq_GetFiles(t *testing.T) {
 
 	instance := &zeromq{
 		context: &zmq.Sock{},
-		cache:   &cache.Cache{},
+		cache:   map[string]time.Time{},
 	}
 	got, err := instance.GetFiles([]byte("infoHash"))
 	if err == nil {
@@ -116,7 +115,7 @@ func Test_zeromq_GetStatistics(t *testing.T) {
 
 	instance := &zeromq{
 		context: &zmq.Sock{},
-		cache:   &cache.Cache{},
+		cache:   map[string]time.Time{},
 	}
 	got, err := instance.GetStatistics("", 0)
 	if err == nil {
@@ -133,5 +132,32 @@ func Test_zeromq_Engine(t *testing.T) {
 	instance := &zeromq{}
 	if got := instance.Engine(); got != ZeroMQ {
 		t.Errorf("zeromq.Engine() = %v, want %v", got, ZeroMQ)
+	}
+}
+
+func Test_zeromq_cleanup(t *testing.T) {
+	t.Parallel()
+
+	instance := &zeromq{
+		context: &zmq.Sock{},
+		cache:   map[string]time.Time{},
+	}
+
+	// Add expired torrent to cache
+	expiredInfoHash := "expiredInfoHash"
+	instance.cache[expiredInfoHash] = time.Now().Add(-1 * time.Minute)
+
+	// Add valid torrent to cache
+	validInfoHash := "validInfoHash"
+	instance.cache[validInfoHash] = time.Now().Add(10 * time.Minute)
+
+	instance.cleanup()
+
+	if _, found := instance.cache[expiredInfoHash]; found {
+		t.Errorf("zeromq.cleanup() did not remove expired torrent")
+	}
+
+	if _, found := instance.cache[validInfoHash]; !found {
+		t.Errorf("zeromq.cleanup() removed valid torrent")
 	}
 }

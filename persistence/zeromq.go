@@ -8,27 +8,45 @@ import (
 	"encoding/json"
 	"errors"
 	"net/url"
+	"sync"
 	"time"
 
-	"gopkg.in/patrickmn/go-cache.v2"
 	zmq "gopkg.in/zeromq/goczmq.v4"
 )
 
 type zeromq struct {
 	context *zmq.Sock
-	cache   *cache.Cache
+	cache   map[string]time.Time
+	sync.Mutex
 }
 
 func makeZeroMQ(url_ *url.URL) (Database, error) {
 	url_.Scheme = "tcp"
-	instance := new(zeromq)
 	context, err := zmq.NewPub(url_.String())
 	if err != nil {
 		return nil, err
 	}
-	instance.context = context
-	instance.cache = cache.New(5*time.Minute, 10*time.Minute)
+	instance := &zeromq{
+		context: context,
+		cache:   map[string]time.Time{},
+	}
+	go func() {
+		for range time.NewTicker(10 * time.Minute).C {
+			go instance.cleanup()
+		}
+	}()
 	return instance, nil
+}
+
+func (instance *zeromq) cleanup() {
+	instance.Lock()
+	defer instance.Unlock()
+
+	for key, value := range instance.cache {
+		if time.Now().After(value) {
+			delete(instance.cache, key)
+		}
+	}
 }
 
 func (instance *zeromq) Engine() databaseEngine {
@@ -36,7 +54,9 @@ func (instance *zeromq) Engine() databaseEngine {
 }
 
 func (instance *zeromq) DoesTorrentExist(infoHash []byte) (bool, error) {
-	_, found := instance.cache.Get(string(infoHash))
+	instance.Lock()
+	defer instance.Unlock()
+	_, found := instance.cache[string(infoHash)]
 	return found, nil
 }
 
@@ -47,14 +67,18 @@ func (instance *zeromq) AddNewTorrent(infoHash []byte, name string, files []File
 		Files:    files,
 	})
 	if err != nil {
-		return errors.New("Failed to encode metadata " + err.Error())
+		return errors.New("failed to encode metadata " + err.Error())
 	}
-	err = instance.context.SendMessage([][]byte{data})
-	if err != nil {
-		return errors.New("Failed to transmit " + err.Error())
+
+	instance.Lock()
+	defer instance.Unlock()
+
+	if _, found := instance.cache[string(infoHash)]; found {
+		return errors.New("torrent already exists")
 	}
-	instance.cache.Set(string(infoHash), data, cache.DefaultExpiration)
-	return nil
+	instance.cache[string(infoHash)] = time.Now().Add(10 * time.Minute)
+
+	return instance.context.SendMessage([][]byte{data})
 }
 
 func (instance *zeromq) Close() error {
