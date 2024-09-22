@@ -276,6 +276,14 @@ func TestNewGetPeersResponseWithValues(t *testing.T) {
 	}
 }
 
+func TestNewSampleInfohashesResponse(t *testing.T) {
+	t.Parallel()
+	msg := NewSampleInfohashesResponse([]byte("bb"), []byte("abcdefghij0123456789"), []byte("mnopqrstuvwxyz123456mnopqrstuvwxyz123456"))
+	if !validateSampleInfohashesResponseMessage(msg) {
+		t.Error("validateSampleInfohashesResponseMessage() returned an invalid message!")
+	}
+}
+
 func TestNewAnnouncePeerQuery(t *testing.T) {
 	t.Parallel()
 	if !validateAnnouncePeerQueryMessage(NewAnnouncePeerQuery([]byte("qwertyuopasdfghjklzx"), false, []byte("xzlkjhgfdsapouytrewq"), 6881, []byte("token"))) {

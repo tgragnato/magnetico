@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	mrand "math/rand"
 	"net"
+	"reflect"
 	"time"
 
 	"tgragnato.it/magnetico/stats"
@@ -177,10 +178,13 @@ func (is *IndexingService) onGetPeersResponse(msg *Message, addr *net.UDPAddr) {
 }
 
 func (is *IndexingService) onSampleInfohashesResponse(msg *Message, addr *net.UDPAddr) {
+	info_hashes := [][20]byte{}
+
 	// request samples
 	for i := 0; i < len(msg.R.Samples)/20; i++ {
 		var infoHash [20]byte
 		copy(infoHash[:], msg.R.Samples[i:(i+1)*20])
+		info_hashes = append(info_hashes, infoHash)
 
 		msg := NewGetPeersQuery(is.nodeID, infoHash[:])
 		t := toBigEndianBytes(is.counter)
@@ -191,6 +195,8 @@ func (is *IndexingService) onSampleInfohashesResponse(msg *Message, addr *net.UD
 		is.getPeersRequests[t] = infoHash
 		is.counter++
 	}
+
+	go is.nodes.addHashes(info_hashes)
 
 	neighbors := []net.UDPAddr{}
 	if msg.R.Num > len(msg.R.Samples)/20 && time.Duration(msg.R.Interval) <= time.Minute {
@@ -298,7 +304,24 @@ func (is *IndexingService) onSampleInfohashesQuery(msg *Message, addr *net.UDPAd
 		addr,
 	)
 
-	// TODO: implement NewSampleInfohashesResponse
+	hash_stream := []byte{}
+	for _, info_hash := range is.nodes.getHashes() {
+		if !reflect.DeepEqual(info_hash, [20]byte{}) {
+			hash_stream = append(hash_stream, info_hash[:]...)
+		}
+	}
+	if len(hash_stream) == 0 {
+		return
+	}
+
+	go is.protocol.SendMessage(
+		NewSampleInfohashesResponse(
+			msg.T,
+			is.nodeID,
+			hash_stream,
+		),
+		addr,
+	)
 }
 
 // toBigEndianBytes Convert UInt16 To BigEndianBytes

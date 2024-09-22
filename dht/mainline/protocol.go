@@ -304,6 +304,19 @@ func NewGetPeersResponseWithNodes(t []byte, id []byte, token []byte, nodes []Com
 	}
 }
 
+func NewSampleInfohashesResponse(t []byte, id []byte, info_hashes []byte) *Message {
+	return &Message{
+		Y: "r",
+		T: t,
+		R: ResponseValues{
+			ID:       id,
+			Interval: 30,
+			Num:      len(info_hashes) / 20,
+			Samples:  info_hashes,
+		},
+	}
+}
+
 func NewAnnouncePeerResponse(t []byte, id []byte) *Message {
 	// Because they are indistinguishable.
 	return NewPingResponse(t, id)

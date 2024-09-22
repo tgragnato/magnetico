@@ -667,26 +667,20 @@ func TestOnGetPeersQuery(t *testing.T) {
 			10,
 			[]net.IPNet{*cidr},
 		),
-	}
-	response := &Message{
-		R: ResponseValues{
-			Nodes: []CompactNodeInfo{
-				{Addr: net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 6881}},
-			},
-		},
+		protocol: NewProtocol("0.0.0.0:0", ProtocolEventHandlers{}, 1000),
 	}
 	addr := &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 6881}
 
-	is.onFindNodeResponse(response, addr)
+	is.onGetPeersQuery(NewGetPeersQuery(randomNodeID(), randomNodeID()), addr)
 	time.Sleep(time.Second)
 
 	gotNodes := is.nodes.getNodes()
 	if len(gotNodes) != 1 {
-		t.Errorf("onFindNodeResponse() got %d nodes, want 1 node", len(gotNodes))
+		t.Errorf("onGetPeersQuery() got %d nodes, want 1 node", len(gotNodes))
 	}
 	for _, gotNode := range gotNodes {
 		if gotNode.IP.String() != addr.IP.String() || gotNode.Port != addr.Port {
-			t.Errorf("onFindNodeResponse() got node %v, want node %v", gotNode, addr)
+			t.Errorf("onGetPeersQuery() got node %v, want node %v", gotNode, addr)
 		}
 	}
 }

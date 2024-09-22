@@ -12,6 +12,7 @@ type routingTable struct {
 	nodes        []net.UDPAddr
 	maxNeighbors uint
 	filterNodes  []net.IPNet
+	info_hashes  [10][20]byte
 }
 
 func newRoutingTable(maxNeighbors uint, filterNodes []net.IPNet) *routingTable {
@@ -19,6 +20,7 @@ func newRoutingTable(maxNeighbors uint, filterNodes []net.IPNet) *routingTable {
 		nodes:        make([]net.UDPAddr, 0, maxNeighbors*maxNeighbors),
 		maxNeighbors: maxNeighbors,
 		filterNodes:  filterNodes,
+		info_hashes:  [10][20]byte{},
 	}
 }
 
@@ -101,4 +103,20 @@ func (rt *routingTable) dump(ipv4 bool) (nodes []net.UDPAddr) {
 		}
 	}
 	return
+}
+
+func (rt *routingTable) addHashes(info_hashes [][20]byte) {
+	rt.Lock()
+	defer rt.Unlock()
+
+	for i := 0; i < len(info_hashes) && i < 10; i++ {
+		rt.info_hashes[i] = info_hashes[i]
+	}
+}
+
+func (rt *routingTable) getHashes() [10][20]byte {
+	rt.RLock()
+	defer rt.RUnlock()
+
+	return rt.info_hashes
 }

@@ -201,3 +201,123 @@ func Test_routingTable_isAllowed(t *testing.T) {
 		}
 	})
 }
+
+func Test_routingTable_addHashes(t *testing.T) {
+	t.Parallel()
+
+	t.Run("add less than 10 hashes", func(t *testing.T) {
+		rt := newRoutingTable(1, nil)
+		hashes := [][20]byte{
+			{0x01}, {0x02}, {0x03},
+		}
+		rt.addHashes(hashes)
+		storedHashes := rt.getHashes()
+		for i, hash := range hashes {
+			if storedHashes[i] != hash {
+				t.Errorf("expected hash %v, got %v", hash, storedHashes[i])
+			}
+		}
+	})
+
+	t.Run("add exactly 10 hashes", func(t *testing.T) {
+		rt := newRoutingTable(1, nil)
+		hashes := [][20]byte{
+			{0x01}, {0x02}, {0x03}, {0x04}, {0x05},
+			{0x06}, {0x07}, {0x08}, {0x09}, {0x0A},
+		}
+		rt.addHashes(hashes)
+		storedHashes := rt.getHashes()
+		for i, hash := range hashes {
+			if storedHashes[i] != hash {
+				t.Errorf("expected hash %v, got %v", hash, storedHashes[i])
+			}
+		}
+	})
+
+	t.Run("add more than 10 hashes", func(t *testing.T) {
+		rt := newRoutingTable(1, nil)
+		hashes := [][20]byte{
+			{0x01}, {0x02}, {0x03}, {0x04}, {0x05},
+			{0x06}, {0x07}, {0x08}, {0x09}, {0x0A},
+			{0x0B}, {0x0C},
+		}
+		rt.addHashes(hashes)
+		storedHashes := rt.getHashes()
+		for i := 0; i < 10; i++ {
+			if storedHashes[i] != hashes[i] {
+				t.Errorf("expected hash %v, got %v", hashes[i], storedHashes[i])
+			}
+		}
+	})
+
+	t.Run("add empty hashes", func(t *testing.T) {
+		rt := newRoutingTable(1, nil)
+		hashes := [][20]byte{}
+		rt.addHashes(hashes)
+		storedHashes := rt.getHashes()
+		for _, hash := range storedHashes {
+			if hash != [20]byte{} {
+				t.Errorf("expected empty hash, got %v", hash)
+			}
+		}
+	})
+}
+
+func Test_routingTable_getHashes(t *testing.T) {
+	t.Parallel()
+
+	t.Run("get empty hashes", func(t *testing.T) {
+		rt := newRoutingTable(1, nil)
+		hashes := rt.getHashes()
+		for _, hash := range hashes {
+			if hash != [20]byte{} {
+				t.Errorf("expected empty hash, got %v", hash)
+			}
+		}
+	})
+
+	t.Run("get added hashes", func(t *testing.T) {
+		rt := newRoutingTable(1, nil)
+		expectedHashes := [][20]byte{
+			{0x01}, {0x02}, {0x03},
+		}
+		rt.addHashes(expectedHashes)
+		hashes := rt.getHashes()
+		for i, hash := range expectedHashes {
+			if hashes[i] != hash {
+				t.Errorf("expected hash %v, got %v", hash, hashes[i])
+			}
+		}
+	})
+
+	t.Run("get exactly 10 hashes", func(t *testing.T) {
+		rt := newRoutingTable(1, nil)
+		expectedHashes := [][20]byte{
+			{0x01}, {0x02}, {0x03}, {0x04}, {0x05},
+			{0x06}, {0x07}, {0x08}, {0x09}, {0x0A},
+		}
+		rt.addHashes(expectedHashes)
+		hashes := rt.getHashes()
+		for i, hash := range expectedHashes {
+			if hashes[i] != hash {
+				t.Errorf("expected hash %v, got %v", hash, hashes[i])
+			}
+		}
+	})
+
+	t.Run("get more than 10 hashes", func(t *testing.T) {
+		rt := newRoutingTable(1, nil)
+		expectedHashes := [][20]byte{
+			{0x01}, {0x02}, {0x03}, {0x04}, {0x05},
+			{0x06}, {0x07}, {0x08}, {0x09}, {0x0A},
+			{0x0B}, {0x0C},
+		}
+		rt.addHashes(expectedHashes)
+		hashes := rt.getHashes()
+		for i := 0; i < 10; i++ {
+			if hashes[i] != expectedHashes[i] {
+				t.Errorf("expected hash %v, got %v", expectedHashes[i], hashes[i])
+			}
+		}
+	})
+}
