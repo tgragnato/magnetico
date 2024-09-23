@@ -40,8 +40,9 @@ func TestMakePrometheusHandler(t *testing.T) {
 		t.Errorf("Handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
-	if contentType := rr.Header().Get("Content-Type"); contentType != "text/plain; version=0.0.4; charset=utf-8; escaping=values" {
-		t.Errorf("Handler returned wrong content type: got %v want %v", contentType, "text/plain; version=0.0.4; charset=utf-8; escaping=values")
+	wanted := "text/plain; version=0.0.4; charset=utf-8; escaping=underscores"
+	if contentType := rr.Header().Get("Content-Type"); contentType != wanted {
+		t.Errorf("Handler returned wrong content type: got %v want %v", contentType, wanted)
 	}
 
 	if body := rr.Body.String(); body == "" {
