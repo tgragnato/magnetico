@@ -1,3 +1,29 @@
+## [1.62.0](https://github.com/tgragnato/magnetico/compare/v1.61.2...v1.62.0) (2024-09-23)
+
+
+### Features
+
+* **dht:** implement NewSampleInfohashesResponse and onSampleInfohashesQuery ([6d69021](https://github.com/tgragnato/magnetico/commit/6d69021c26526a04855e7d35c0dfcc138172b02e))
+* **dht:** introduce support for the ipv6 krpc protocol ([66fc7b0](https://github.com/tgragnato/magnetico/commit/66fc7b098eb3e09021df84dd0dc0e680f4554f73))
+* **metainfo:** support for serializing v2 torrent file ([a8c2460](https://github.com/tgragnato/magnetico/commit/a8c2460727c2aeb01b16783342651d3606c10794))
+* **stats:** add prometheus exporter for application metrics ([fc12657](https://github.com/tgragnato/magnetico/commit/fc126578bce118aba0ee1b19565984973a85ec28))
+
+
+### Bug Fixes
+
+* **bencode:** return empty value instead of panic ([52e9999](https://github.com/tgragnato/magnetico/commit/52e999914ad5115ad71d55e846796d8ec1bc22d3))
+* **metadata:** avoid panic - return an error ([67946af](https://github.com/tgragnato/magnetico/commit/67946af3a01220aae560294e3454eda93d547ec9))
+* **metadata:** report error when metadata size is zero ([e0fa28c](https://github.com/tgragnato/magnetico/commit/e0fa28c5f682b67a71c762f78e48d9f1d109e564))
+* **metainfo:** empty Info marshalling test ([d1b3b3a](https://github.com/tgragnato/magnetico/commit/d1b3b3aa4dadecc84684446d370cebaab702d312))
+* **metainfo:** stdlib integration ([535dc08](https://github.com/tgragnato/magnetico/commit/535dc08b6f81ccb070a2dfb056496d84e8a2cbbb))
+* **persistence:** change signature to match the interface ([df4e1ee](https://github.com/tgragnato/magnetico/commit/df4e1eeac5053fdbc8e3920b2d033e0cbdd8a5c9))
+* **persistence:** workaround for error with sqlite ≥ 3.34 ([f30db28](https://github.com/tgragnato/magnetico/commit/f30db28e0d11b76fd591c9868415a808fe1bdb38))
+
+
+### Performance Improvements
+
+* **metadata:** force mse - avoid throttling ([7c84ab4](https://github.com/tgragnato/magnetico/commit/7c84ab45eea6a91f77472f330f703dd727ed4968))
+
 ## [1.61.2](https://github.com/tgragnato/magnetico/compare/v1.61.1...v1.61.2) (2024-09-03)
 
 
