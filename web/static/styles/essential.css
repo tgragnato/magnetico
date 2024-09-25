@@ -1,45 +1,9 @@
-@font-face {
-    font-family: 'Noto Sans';
-    src: url('../fonts/NotoSansUI/Regular.ttf');
-    font-weight: normal;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: 'Noto Sans';
-    src: url('../fonts/NotoSansUI/Bold.ttf');
-    font-weight: bold;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: 'Noto Sans';
-    src: url('../fonts/NotoSansUI/Italic.ttf');
-    font-weight: normal;
-    font-style: italic;
-}
-
-@font-face {
-    font-family: 'Noto Sans';
-    src: url('../fonts/NotoSansUI/BoldItalic.ttf');
-    font-weight: bold;
-    font-style: italic;
-}
-
-@font-face {
-    font-family: 'Noto Mono';
-    src: url('../fonts/NotoMono/Regular.ttf');
-    font-weight: normal;
-    font-style: monospace;
-}
-
-
 html {
-    font-family: 'Noto Sans', sans-serif;
+    font-family: 'Helvetica Neue', sans-serif;
 }
 
 pre {
-    font-family: 'Noto Mono';
+    font-family: 'Menlo', monospace;
     line-height: 1.2em;
 }
 

@@ -80,6 +80,5 @@ tt {
 }
 
 @font-face {
-    font-family: 'PxPlus-IBM-VGA8';
-    src: URL('/static/fonts/PxPlus_IBM_VGA8/pxplus_ibm_vga8-webfont.woff') format('woff');
+    font-family: 'Monaco', 'IBM Plex Mono', monospace;
 }
