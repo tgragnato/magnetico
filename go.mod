@@ -11,7 +11,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/multiformats/go-multihash v0.2.3
 	github.com/prometheus/client_golang v1.20.4
-	golang.org/x/crypto v0.27.0
+	golang.org/x/crypto v0.28.0
 	gopkg.in/zeromq/goczmq.v4 v4.1.0
 )
 
@@ -33,7 +33,7 @@ require (
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.25.0 // indirect
+	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/text v0.19.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	lukechampine.com/blake3 v1.3.0 // indirect
