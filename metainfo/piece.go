@@ -27,7 +27,7 @@ func (p Piece) Length() int64 {
 		})
 		ret := min(lastFileEnd-int64(p.index)*pieceLength, pieceLength)
 		if ret <= 0 {
-			panic(ret)
+			return 0
 		}
 		return ret
 	}
@@ -45,11 +45,11 @@ func (p Piece) V1Length() int64 {
 		lastFile := files[len(files)-1]
 		length := lastFile.TorrentOffset + lastFile.Length - int64(i)*p.Info.PieceLength
 		if length <= 0 || length > p.Info.PieceLength {
-			panic(length)
+			return 0
 		}
 		return length
 	default:
-		panic(i)
+		return 0
 	}
 }
 
