@@ -139,16 +139,7 @@ func (d *Decoder) throwSyntaxError(offset int64, err error) {
 func (d *Decoder) readInt() error {
 	// start := d.Offset - 1
 	d.readUntil('e')
-	if err := d.checkBufferedInt(); err != nil {
-		return err
-	}
-	// if d.buf.Len() == 0 {
-	// 	panic(&SyntaxError{
-	// 		Offset: start,
-	// 		What:   errors.New("empty integer value"),
-	// 	})
-	// }
-	return nil
+	return d.checkBufferedInt()
 }
 
 // called when 'i' was consumed, for the integer type in v.
@@ -323,13 +314,6 @@ func getDictField(dict reflect.Type, key reflect.Value) (_ dictField, err error)
 			panic(key)
 		}
 		return getStructFieldForKey(dict, key.String()), nil
-		// if sf.r.PkgPath != "" {
-		//	panic(&UnmarshalFieldError{
-		//		Key:   key,
-		//		Type:  dict.Type(),
-		//		Field: sf.r,
-		//	})
-		// }
 	default:
 		err = fmt.Errorf("can't assign bencode dict items into a %v", k)
 		return
