@@ -113,7 +113,7 @@ func parseEncodedV1Infohash(encoded string) (ih infohash.T, err error) {
 		return
 	}
 	if n != 20 {
-		panic(n)
+		return infohash.T{}, errors.New("decoded xt length != 20")
 	}
 	return
 }

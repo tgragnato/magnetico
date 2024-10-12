@@ -141,7 +141,7 @@ func parseV2Infohash(encoded string) (ih infohash_v2.T, err error) {
 	}
 	n := copy(ih[:], mh.Digest)
 	if n != infohash_v2.Size {
-		panic(n)
+		return infohash_v2.T{}, errors.New("decoded xt length != 32")
 	}
 	return
 }
