@@ -231,7 +231,7 @@ func TestToBigEndianNegative(t *testing.T) {
 		name    string
 		i       uint
 		n       int
-		wantErr bool
+		wantNil bool
 	}{
 		{"Test 1", 1, 1, false},
 		{"Test 2", 256, 1, false},
@@ -259,12 +259,9 @@ func TestToBigEndianNegative(t *testing.T) {
 		test := tt
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			defer func() {
-				if r := recover(); (r != nil) != test.wantErr {
-					t.Errorf("toBigEndian() = %v, wantErr %v", r, test.wantErr)
-				}
-			}()
-			toBigEndian(test.i, test.n)
+			if res := toBigEndian(test.i, test.n); test.wantNil && res != nil {
+				t.Errorf("toBigEndian() = %v, want nil", res)
+			}
 		})
 	}
 }

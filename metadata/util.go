@@ -6,7 +6,6 @@ import (
 	"crypto/sha1"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	mrand "math/rand"
 	"time"
 
@@ -144,6 +143,11 @@ func randomDigit() byte {
 }
 
 func toBigEndian(i uint, n int) []byte {
+	if n < 0 {
+		// n must be positive
+		return nil
+	}
+
 	b := make([]byte, n)
 	switch n {
 	case 1:
@@ -156,11 +160,13 @@ func toBigEndian(i uint, n int) []byte {
 		binary.BigEndian.PutUint32(b, uint32(i))
 
 	default:
-		panic("n must be 1, 2, or 4!")
+		// n must be 1, 2, or 4
+		return nil
 	}
 
 	if len(b) != n {
-		panic(fmt.Sprintf("postcondition failed: len(b) != n in intToBigEndian (i %d, n %d, len b %d, b %s)", i, n, len(b), b))
+		// postcondition failed: len(b) != n in intToBigEndian (i, n)
+		return nil
 	}
 
 	return b
