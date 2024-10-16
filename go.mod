@@ -10,7 +10,7 @@ require (
 	github.com/maragudk/gomponents v0.22.0
 	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/multiformats/go-multihash v0.2.3
-	github.com/prometheus/client_golang v1.20.4
+	github.com/prometheus/client_golang v1.20.5
 	golang.org/x/crypto v0.28.0
 	gopkg.in/zeromq/goczmq.v4 v4.1.0
 )
