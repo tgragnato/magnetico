@@ -419,7 +419,7 @@ func TestPostgresDatabase_QueryTorrents(t *testing.T) {
 				0
 			FROM torrents
 			WHERE
-				name LIKE CONCAT\('%',\$1::text,'%'\) AND
+				name ILIKE CONCAT\('%',\$1::text,'%'\) AND
 				discovered_on <= \$2 AND
 				total_size > \$3 AND
 				id > \$4
@@ -479,7 +479,7 @@ func TestPostgresDatabase_QueryTorrents(t *testing.T) {
 				0
 			FROM torrents
 			WHERE
-				name LIKE CONCAT\('%',\$1::text,'%'\) AND
+				name ILIKE CONCAT\('%',\$1::text,'%'\) AND
 				discovered_on <= \$2 AND
 				total_size > \$3 AND
 				id > \$4

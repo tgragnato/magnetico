@@ -195,7 +195,7 @@ func (db *postgresDatabase) QueryTorrents(
 			0
 		FROM torrents
 		WHERE
-			name LIKE CONCAT('%',$1::text,'%') AND
+			name ILIKE CONCAT('%',$1::text,'%') AND
 			discovered_on <= $2 AND
 			{{.OrderOn}} {{GTEorLTE .Ascending}} $3 AND
 			id {{GTEorLTE .Ascending}} $4
