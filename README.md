@@ -23,7 +23,7 @@ This allows anyone with a decent Internet connection to access the vast amount o
 The easiest way to run magnetico is to use the OCI image built within the CI pipeline:
 - `docker pull ghcr.io/tgragnato/magnetico:latest`
 - `docker run --rm -it ghcr.io/tgragnato/magnetico:latest --help`
-- `docker run --rm -it -v <your_data_dir>:/data -p 8080:8080/tcp ghcr.io/tgragnato/magnetico:latest --database=sqlite3:///data/magnetico.sqlite3`
+- `docker run --rm -it -v <your_data_dir>:/data -p 8080:8080/tcp ghcr.io/tgragnato/magnetico:latest --addr=0.0.0.0:8080 --database=sqlite3:///data/magnetico.sqlite3`
 - visit `http://localhost:8080`
 
 To compile using the standard Golang toolchain:
@@ -46,7 +46,7 @@ After setting it up, you should create a user, set a password, create a database
 - `\c magnetico`
 - `CREATE EXTENSION pg_trgm;`
 - `docker run --rm -it ghcr.io/tgragnato/magnetico:latest --help`
-- `docker run --rm -it -p 8080:8080/tcp ghcr.io/tgragnato/magnetico:latest --database=postgres://magnetico:magnetico@localhost:5432/magnetico?sslmode=disable`
+- `docker run --rm -it -p 8080:8080/tcp ghcr.io/tgragnato/magnetico:latest --addr=0.0.0.0:8080 --database=postgres://magnetico:magnetico@localhost:5432/magnetico?sslmode=disable`
 - visit `http://localhost:8080`
 
 ### CockroachDB
@@ -57,7 +57,7 @@ It currently does not support the `pg_trgm` extension, which provides functions 
 - create a user and it's database
 - download the TLS certificate of your cluster
 - `docker run --rm -it ghcr.io/tgragnato/magnetico:latest --help`
-- `docker run --rm -it -v <your_cert_dir>:/data -p 8080:8080/tcp ghcr.io/tgragnato/magnetico:latest --database=cockroach://magneticouser:magneticopass@mycluster.crdb.io:26257/magnetico?sslmode=verify-full&sslrootcert=/data/cc-ca.crt`
+- `docker run --rm -it -v <your_cert_dir>:/data -p 8080:8080/tcp ghcr.io/tgragnato/magnetico:latest --addr=0.0.0.0:8080 --database=cockroach://magneticouser:magneticopass@mycluster.crdb.io:26257/magnetico?sslmode=verify-full&sslrootcert=/data/cc-ca.crt`
 - visit `http://localhost:8080`
 
 ### ZeroMQ
