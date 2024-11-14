@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strconv"
 
-	g "github.com/maragudk/gomponents"
-	c "github.com/maragudk/gomponents/components"
-	. "github.com/maragudk/gomponents/html"
+	g "maragu.dev/gomponents"
+	c "maragu.dev/gomponents/components"
+	. "maragu.dev/gomponents/html"
 )
 
 func statistics() g.Node {

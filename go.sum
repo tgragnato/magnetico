@@ -31,8 +31,6 @@ github.com/klauspost/cpuid/v2 v2.2.9 h1:66ze0taIn2H33fBvCkXuv9BmCwDfafmiIVpKV9kK
 github.com/klauspost/cpuid/v2 v2.2.9/go.mod h1:rqkxqrZ1EhYM9G+hXH7YdowN5R5RGN6NK4QwQ3WMXF8=
 github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0SNc=
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
-github.com/maragudk/gomponents v0.22.0 h1:0gNrSDC1nM6w0Vxj5wgGXqV8frDH9UVPE+dEyy4ApPQ=
-github.com/maragudk/gomponents v0.22.0/go.mod h1:nHkNnZL6ODgMBeJhrZjkMHVvNdoYsfmpKB2/hjdQ0Hg=
 github.com/mattn/go-sqlite3 v1.14.24 h1:tpSp2G2KyMnnQu99ngJ47EIkWVmliIizyZBfPrBWDRM=
 github.com/mattn/go-sqlite3 v1.14.24/go.mod h1:Uh1q+B4BYcTPb+yiD3kU8Ct7aC0hY9fxUwlHK0RXw+Y=
 github.com/minio/sha256-simd v1.0.1 h1:6kaan5IFmwTNynnKKpDHe6FWHohJOHhCPchzK49dzMM=
@@ -82,3 +80,5 @@ gopkg.in/zeromq/goczmq.v4 v4.1.0 h1:CE+FE81mGVs2aSlnbfLuS1oAwdcVywyMM2AC1g33imI=
 gopkg.in/zeromq/goczmq.v4 v4.1.0/go.mod h1:h4IlfePEYMpFdywGr5gAwKhBBj+hiBl/nF4VoSE4k+0=
 lukechampine.com/blake3 v1.3.0 h1:sJ3XhFINmHSrYCgl958hscfIa3bw8x4DqMP3u1YvoYE=
 lukechampine.com/blake3 v1.3.0/go.mod h1:0OFRp7fBtAylGVCO40o87sbupkyIGgbpv1+M1k1LM6k=
+maragu.dev/gomponents v1.0.0 h1:eeLScjq4PqP1l+r5z/GC+xXZhLHXa6RWUWGW7gSfLh4=
+maragu.dev/gomponents v1.0.0/go.mod h1:oEDahza2gZoXDoDHhw8jBNgH+3UR5ni7Ur648HORydM=
