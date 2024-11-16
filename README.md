@@ -68,6 +68,14 @@ The integration is designed in the persistence layer as a ZMQ PUB firehose, and 
 - `docker run --rm -it ghcr.io/tgragnato/magnetico:latest --help`
 - `docker run --rm -it ghcr.io/tgragnato/magnetico:latest -d --database=zeromq://localhost:5555`
 
+### RabbitMQ
+
+RabbitMQ is an open-source message broker that facilitates communication between distributed systems by queuing and routing messages. It supports multiple messaging protocols and ensures reliable message delivery for scalable applications.
+The integration is designed in the persistence layer following the Publish/Subscribe model, and operates over a durable queue named `magnetico` routed through an exchange.
+
+- `docker run --rm -it ghcr.io/tgragnato/magnetico:latest --help`
+- `docker run --rm -it ghcr.io/tgragnato/magnetico:latest -d --database=amqp://localhost:5672`
+
 ## Features
 
 Easy installation & minimal requirements:
