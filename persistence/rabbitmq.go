@@ -1,86 +1,78 @@
 package persistence
 
 import (
-	"context"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"log"
 	"net/url"
+	"sync"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type rabbitMQ struct {
-	// todo: This is just a simple use now, you need to be able to customize it later.
-	conn     *amqp.Connection
-	ch       *amqp.Channel
-	exchange string
-	key      string
+	url       string
+	conn      *amqp.Connection
+	ch        *amqp.Channel
+	dataQueue *amqp.Queue
 
-	dataQueue amqp.Queue
-
-	ReconnectDelay time.Duration //todo: In the future, the reconnection interval of the rabbitmq queue will be controlled here.
-
-	globalCtx        context.Context
-	globalCtxCanFunc context.CancelFunc
+	cache map[string]time.Time
+	sync.Mutex
 }
 
 func makeRabbitMQ(url_ *url.URL) (Database, error) {
-	var err error
-	// url_.Scheme = "amqp"
-	rmq := new(rabbitMQ)
-	rmq.globalCtx, rmq.globalCtxCanFunc = context.WithCancel(context.Background())
-	publishCtx, publishCtxCanFunc := context.WithTimeout(rmq.globalCtx, 5*time.Second)
-	defer publishCtxCanFunc()
+	r := new(rabbitMQ)
+	r.url = url_.String()
+	if err := r.connect(); err != nil {
+		return nil, err
+	}
 
-	rmq.conn, err = amqp.Dial(url_.String())
+	r.cache = map[string]time.Time{}
+	go func() {
+		for range time.NewTicker(10 * time.Minute).C {
+			go r.cleanup()
+		}
+	}()
+
+	return r, nil
+}
+
+func (r *rabbitMQ) cleanup() {
+	r.Lock()
+	defer r.Unlock()
+
+	for key, value := range r.cache {
+		if time.Now().After(value) {
+			delete(r.cache, key)
+		}
+	}
+}
+
+func (r *rabbitMQ) connect() (err error) {
+	r.conn, err = amqp.Dial(r.url)
 	if err != nil {
-		return nil, err
+		return
 	}
-	rmq.ch, err = rmq.conn.Channel()
+	r.ch, err = r.conn.Channel()
 	if err != nil {
-		return nil, err
+		return
 	}
-
-	statusNotifyQueue, err := rmq.ch.QueueDeclare(
-		"hello",
-		false,
-		false,
-		false,
-		false,
-		nil,
-	)
-
+	err = r.ch.Confirm(false)
 	if err != nil {
-		return nil, err
+		return
 	}
 
-	if err = rmq.ch.PublishWithContext(publishCtx,
-		"",
-		statusNotifyQueue.Name,
-		false,
-		false,
-		amqp.Publishing(amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        []byte("Hello"),
-		})); err != nil {
-		return nil, err
-	}
-
-	rmq.dataQueue, err = rmq.ch.QueueDeclare(
-		"magnet_data",
+	r.dataQueue = new(amqp.Queue)
+	*r.dataQueue, err = r.ch.QueueDeclare(
+		"magnetico",
 		true,
 		false,
 		false,
 		false,
-		nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return rmq, nil
+		amqp.Table{},
+	)
+	return
 }
 
 func (r *rabbitMQ) Engine() databaseEngine {
@@ -88,11 +80,13 @@ func (r *rabbitMQ) Engine() databaseEngine {
 }
 
 func (r *rabbitMQ) DoesTorrentExist(infoHash []byte) (bool, error) {
-	return false, nil
+	r.Lock()
+	defer r.Unlock()
+	_, found := r.cache[string(infoHash)]
+	return found, nil
 }
 
 func (r *rabbitMQ) AddNewTorrent(infoHash []byte, name string, files []File) error {
-
 	data, err := json.Marshal(SimpleTorrentSummary{
 		InfoHash: hex.EncodeToString(infoHash),
 		Name:     name,
@@ -102,40 +96,40 @@ func (r *rabbitMQ) AddNewTorrent(infoHash []byte, name string, files []File) err
 		return errors.New("failed to encode metadata " + err.Error())
 	}
 
-	dataSize := len(data)
-	if dataSize > 4708106 {
-		return errors.New("encode data exceeds maximum 4708106")
+	if r.ch.IsClosed() {
+		if err := r.connect(); err != nil {
+			return err
+		}
 	}
 
-	publishCtx, canCtx := context.WithTimeout(r.globalCtx, 5*time.Second)
-	defer canCtx()
+	r.Lock()
+	defer r.Unlock()
 
-	if err = r.ch.PublishWithContext(publishCtx,
+	if _, found := r.cache[string(infoHash)]; found {
+		return errors.New("torrent already exists")
+	}
+
+	err = r.ch.Publish(
 		"",
 		r.dataQueue.Name,
 		false,
 		false,
 		amqp.Publishing(amqp.Publishing{
 			Body: data,
-		})); err != nil {
-		return err
+		}),
+	)
+	if err == nil {
+		r.cache[string(infoHash)] = time.Now().Add(10 * time.Minute)
 	}
 
-	return nil
+	return err
 }
 
 func (r *rabbitMQ) Close() error {
-	var err error
-	err = r.ch.Close()
-	if err != nil {
+	if err := r.ch.Close(); err != nil {
 		return err
 	}
-	err = r.conn.Close()
-	if err != nil {
-		return err
-	}
-	log.Println("successfully closed rabbitmq")
-	return nil
+	return r.conn.Close()
 }
 
 func (r *rabbitMQ) GetNumberOfTorrents() (uint, error) {

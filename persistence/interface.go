@@ -118,7 +118,7 @@ func MakeDatabase(rawURL string) (Database, error) {
 	case "zeromq", "zmq":
 		return makeZeroMQ(url_)
 
-	case "amqp":
+	case "amqp", "amqps":
 		return makeRabbitMQ(url_)
 
 	default:
