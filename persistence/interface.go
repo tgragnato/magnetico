@@ -61,6 +61,7 @@ const (
 	Postgres
 	ZeroMQ
 	RabbitMQ
+	Bitmagnet
 )
 
 type Statistics struct {
@@ -120,6 +121,9 @@ func MakeDatabase(rawURL string) (Database, error) {
 
 	case "amqp", "amqps":
 		return makeRabbitMQ(url_)
+
+	case "bitmagnet", "bitmagnets":
+		return makeBitmagnet(url_)
 
 	default:
 		return nil, fmt.Errorf("unknown URI scheme: `%s`", url_.Scheme)
