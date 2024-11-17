@@ -96,14 +96,14 @@ func (r *rabbitMQ) AddNewTorrent(infoHash []byte, name string, files []File) err
 		return errors.New("failed to encode metadata " + err.Error())
 	}
 
-	if r.ch.IsClosed() {
+	r.Lock()
+	defer r.Unlock()
+
+	if r.ch.IsClosed() || r.conn.IsClosed() {
 		if err := r.connect(); err != nil {
 			return err
 		}
 	}
-
-	r.Lock()
-	defer r.Unlock()
 
 	if _, found := r.cache[string(infoHash)]; found {
 		return errors.New("torrent already exists")
