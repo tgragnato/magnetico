@@ -129,7 +129,7 @@ func parseFlags() error {
 		LeechMaxN uint `long:"leech-max-n" description:"Maximum number of leeches." default:"1000"`
 		MaxRPS    uint `long:"max-rps" description:"Maximum requests per second." default:"500"`
 
-		BootstrappingNodes []string `long:"bootstrap-node" description:"Host(s) to be used for bootstrapping." default:"dht.tgragnato.it"`
+		BootstrappingNodes []string `long:"bootstrap-node" description:"Host(s) to be used for bootstrapping." default:"dht.tgragnato.it:80" default:"dht.tgragnato.it:443" default:"dht.tgragnato.it:1337" default:"dht.tgragnato.it:6969" default:"dht.tgragnato.it:6881" default:"dht.tgragnato.it:25401"`
 		FilterNodesCIDRs   []string `long:"filter-nodes-cidrs" description:"List of CIDRs on which Magnetico can operate. Empty is open mode." default:""`
 
 		Addr string `short:"a" long:"addr"        description:"Address (host:port) to serve on" default:"[::1]:8080"`
@@ -197,7 +197,7 @@ func parseFlags() error {
 				log.Fatalf("Error while parsing CIDR %s: %s\n", cidr, err.Error())
 			}
 		}
-		if len(opFlags.FilterNodesCIDRs) != 0 && reflect.DeepEqual(cmdF.BootstrappingNodes, []string{"dht.tgragnato.it"}) {
+		if len(opFlags.FilterNodesCIDRs) != 0 && reflect.DeepEqual(cmdF.BootstrappingNodes, []string{"dht.tgragnato.it:80", "dht.tgragnato.it:443", "dht.tgragnato.it:1337", "dht.tgragnato.it:6969", "dht.tgragnato.it:6881", "dht.tgragnato.it:25401"}) {
 			log.Fatalln("You should specify your own internal bootstrapping nodes in filter mode.")
 		}
 	}
