@@ -19,9 +19,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/spf13/viper"
-
 	"github.com/jessevdk/go-flags"
+	"github.com/spf13/viper"
 	"tgragnato.it/magnetico/dht"
 	"tgragnato.it/magnetico/dht/mainline"
 	"tgragnato.it/magnetico/metadata"
