@@ -6,6 +6,7 @@ import (
 	mrand "math/rand"
 	"net"
 	"reflect"
+	"strconv"
 	"time"
 
 	"tgragnato.it/magnetico/stats"
@@ -96,27 +97,33 @@ func (is *IndexingService) index() {
 }
 
 func (is *IndexingService) bootstrap() {
-	bootstrappingPorts := []int{80, 443, 1337, 6969, 6881, 25401}
-	bootstrappingIPs := make([]net.IP, 0)
-	for _, dnsName := range is.bootstrapNodes {
+	for _, node := range is.bootstrapNodes {
+		dnsName, portStr, err := net.SplitHostPort(node)
+		if err != nil {
+			continue
+		}
+		port, err := strconv.Atoi(portStr)
+		if err != nil {
+			continue
+		}
+		bootstrappingIPs := []net.IP{}
 		if ipAddrs, err := net.LookupIP(dnsName); err == nil {
 			bootstrappingIPs = append(bootstrappingIPs, ipAddrs...)
 		}
-	}
-	if len(bootstrappingIPs) == 0 {
-		return
-	}
 
-	go stats.GetInstance().IncBootstrap()
+		if len(bootstrappingIPs) == 0 || port == 0 {
+			continue
+		}
 
-	for _, ip := range bootstrappingIPs {
-		for _, port := range bootstrappingPorts {
+		for _, ip := range bootstrappingIPs {
 			go is.protocol.SendMessage(
 				NewFindNodeQuery(is.nodeID, randomNodeID()),
 				&net.UDPAddr{IP: ip, Port: port},
 			)
 		}
 	}
+
+	go stats.GetInstance().IncBootstrap()
 }
 
 func (is *IndexingService) findNeighbors() {
