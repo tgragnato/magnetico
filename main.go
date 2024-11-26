@@ -71,7 +71,7 @@ func main() {
 		opFlags.FilterNodesIpNets,
 	)
 	metadataSink := metadata.NewSink(
-		5*time.Second,
+		time.Duration(opFlags.LeechDeadline)*time.Second,
 		int(opFlags.LeechMaxN),
 		opFlags.FilterNodesIpNets,
 	)

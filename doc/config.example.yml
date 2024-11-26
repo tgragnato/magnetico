@@ -2,6 +2,7 @@ databaseURL: "postgres://magnetico:magnetico@localhost:5432/magnetico?sslmode=di
 indexerAddrs:
   - "0.0.0.0:0"
 indexerMaxNeighbors: 5000
+leechDeadline: 5
 leechMaxN: 1000
 maxRPS: 500
 bootstrappingNodes:
