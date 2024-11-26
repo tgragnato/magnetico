@@ -34,3 +34,8 @@ issues:
       text: "integer overflow conversion uint -> int"
       linters:
         - gosec
+
+    - path: main.go
+      text: "integer overflow conversion uint -> int"
+      linters:
+        - gosec
