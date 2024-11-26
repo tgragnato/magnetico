@@ -3,12 +3,10 @@ package opflags
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"regexp"
-	"strconv"
 )
 
 func (o *OpFlags) LoadCred() error {
@@ -18,7 +16,7 @@ func (o *OpFlags) LoadCred() error {
 
 	file, err := os.Open(o.Cred)
 	if err != nil {
-		return err
+		return fmt.Errorf("error while opening file: %s", err.Error())
 	}
 
 	reader := bufio.NewReader(file)
@@ -28,7 +26,7 @@ func (o *OpFlags) LoadCred() error {
 			if err == io.EOF {
 				break
 			}
-			return errors.New("Error while reading line " + strconv.Itoa(lineno) + " " + err.Error())
+			return fmt.Errorf("error while reading line %d: %s", lineno, err.Error())
 		}
 
 		line = line[:len(line)-1] // strip '\n'
