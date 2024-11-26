@@ -1,0 +1,18 @@
+databaseURL: "postgres://magnetico:magnetico@localhost:5432/magnetico?sslmode=disable"
+indexerAddrs:
+  - "0.0.0.0:0"
+indexerMaxNeighbors: 5000
+leechMaxN: 1000
+maxRPS: 500
+bootstrappingNodes:
+  - "dht.tgragnato.it:80"
+  - "dht.tgragnato.it:443"
+  - "dht.tgragnato.it:1337"
+  - "dht.tgragnato.it:6969"
+  - "dht.tgragnato.it:6881"
+  - "dht.tgragnato.it:25401"
+filterNodesCIDRs: []
+addr: "[::1]:8080"
+cred: ""
+runDaemon: false
+runWeb: false
