@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"tgragnato.it/magnetico/persistence"
@@ -42,6 +43,14 @@ func feedHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	count := uint64(20)
+	if len(r.URL.Query()["count"]) == 1 {
+		i, err := strconv.Atoi(r.URL.Query()["count"][0])
+		if err == nil && i > 0 {
+			count = uint64(i)
+		}
+	}
+
 	if query == "" {
 		title = "Most recent torrents - magnetico"
 	} else {
@@ -53,7 +62,7 @@ func feedHandler(w http.ResponseWriter, r *http.Request) {
 		time.Now().Unix(),
 		persistence.ByDiscoveredOn,
 		true,
-		20,
+		count,
 		nil,
 		nil,
 	)
