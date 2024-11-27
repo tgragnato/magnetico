@@ -190,10 +190,10 @@ func (db *postgresDatabase) QueryTorrents(
 			0
 		FROM torrents
 		WHERE
-			name ILIKE CONCAT('%',$1::text,'%') AND
+			($1::text = '' OR name ILIKE CONCAT('%',$1::text,'%')) AND
 			discovered_on <= $2 AND
-			{{.OrderOn}} {{GTEorLTE .Ascending}} $3 AND
-			id {{GTEorLTE .Ascending}} $4
+			($3 = 0 OR {{.OrderOn}} {{GTEorLTE .Ascending}} $3) AND
+			($4 = 0 OR id {{GTEorLTE .Ascending}} $4)
 		ORDER BY {{.OrderOn}} {{AscOrDesc .Ascending}}, id {{AscOrDesc .Ascending}}
 		LIMIT $5;
 	`
