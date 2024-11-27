@@ -61,7 +61,7 @@ func feedHandler(w http.ResponseWriter, r *http.Request) {
 		query,
 		time.Now().Unix(),
 		persistence.ByDiscoveredOn,
-		true,
+		false,
 		count,
 		nil,
 		nil,
