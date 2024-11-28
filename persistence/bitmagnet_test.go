@@ -3,6 +3,7 @@ package persistence
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"sync"
 	"testing"
 	"time"
@@ -230,5 +231,74 @@ func Test_bitmagnet_DoesTorrentExist(t *testing.T) {
 	}
 	if !exists {
 		t.Fatalf("expected torrent to exist")
+	}
+}
+
+func Test_makeBitmagnet(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		urlStr     string
+		wantErr    bool
+		wantDebug  bool
+		wantSource string
+		wantUrl    string
+	}{
+		{
+			name:       "valid URL with debug and source",
+			urlStr:     "bitmagnet://example.com?debug=true&source=testsource",
+			wantErr:    false,
+			wantDebug:  true,
+			wantSource: "testsource",
+			wantUrl:    "http://example.com",
+		},
+		{
+			name:       "valid URL without debug and source",
+			urlStr:     "bitmagnet://example.com",
+			wantErr:    false,
+			wantDebug:  false,
+			wantSource: "magnetico",
+			wantUrl:    "http://example.com",
+		},
+		{
+			name:       "invalid URL",
+			urlStr:     "://example.com",
+			wantErr:    true,
+			wantDebug:  false,
+			wantSource: "",
+			wantUrl:    "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			url_, err := url.Parse(tt.urlStr)
+			if err != nil {
+				if !tt.wantErr {
+					t.Fatalf("url.Parse() error = %v, wantErr %v", err, tt.wantErr)
+				}
+				return
+			}
+
+			got, err := makeBitmagnet(url_)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("makeBitmagnet() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if err != nil {
+				return
+			}
+
+			b := got.(*bitmagnet)
+			if b.debug != tt.wantDebug {
+				t.Errorf("bitmagnet.debug = %v, want %v", b.debug, tt.wantDebug)
+			}
+			if b.sourceName != tt.wantSource {
+				t.Errorf("bitmagnet.sourceName = %v, want %v", b.sourceName, tt.wantSource)
+			}
+			if b.url != tt.wantUrl {
+				t.Errorf("bitmagnet.url = %v, want %v", b.url, tt.wantUrl)
+			}
+		})
 	}
 }
