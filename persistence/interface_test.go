@@ -62,6 +62,16 @@ func TestMakeDatabase(t *testing.T) {
 		Path:     "/makedatabasesqlite.db",
 		RawQuery: "cache=shared&mode=memory",
 	}
+	bitmagnetURL := url.URL{
+		Scheme:  "bitmagnet",
+		Path:    "tgragnato.it/import",
+		RawPath: "debug=true&source=testsource",
+	}
+	bitmagnetsURL := url.URL{
+		Scheme:  "bitmagnets",
+		Path:    "tgragnato.it/import",
+		RawPath: "debug=true&source=testsource",
+	}
 
 	tests := []struct {
 		rawURL       string
@@ -73,6 +83,9 @@ func TestMakeDatabase(t *testing.T) {
 		// Can't test Postgres without a running server
 		// Can't test CockroachDB without a running server
 		// Can't test ZeroMQ without attaching a zsock
+		// Can't test RabbitMQ without attaching a rconn
+		{bitmagnetURL.String(), false, Bitmagnet},
+		{bitmagnetsURL.String(), false, Bitmagnet},
 		{"invalidscheme://localhost", true, 0},
 	}
 
