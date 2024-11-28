@@ -18,11 +18,6 @@ func (o *OpFlags) Parse() (err error) {
 		return err
 	}
 
-	if !o.RunDaemon && !o.RunWeb {
-		o.RunDaemon = true
-		o.RunWeb = true
-	}
-
 	return o.check()
 }
 

@@ -32,6 +32,11 @@ type OpFlags struct {
 }
 
 func (o *OpFlags) check() error {
+	if !o.RunDaemon && !o.RunWeb {
+		o.RunDaemon = true
+		o.RunWeb = true
+	}
+
 	if o.RunWeb {
 		o.Credentials = make(map[string][]byte)
 		if err := o.LoadCred(); err != nil {

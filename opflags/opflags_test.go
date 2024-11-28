@@ -92,6 +92,7 @@ func TestCheck(t *testing.T) {
 			opFlags: OpFlags{
 				RunDaemon:        true,
 				FilterNodesCIDRs: []string{"invalid-cidr"},
+				IndexerAddrs:     []string{"0.0.0.0:0"},
 			},
 			expectError: true,
 		},
@@ -110,8 +111,28 @@ func TestCheck(t *testing.T) {
 				RunDaemon:          true,
 				FilterNodesCIDRs:   []string{"192.168.1.0/24"},
 				BootstrappingNodes: []string{"dht.tgragnato.it:80", "dht.tgragnato.it:443", "dht.tgragnato.it:1337", "dht.tgragnato.it:6969", "dht.tgragnato.it:6881", "dht.tgragnato.it:25401"},
+				IndexerAddrs:       []string{"0.0.0.0:0"},
 			},
 			expectError: true,
+		},
+		{
+			name: "RunDaemonWithCustomBootstrappingNodesInFilterMode",
+			opFlags: OpFlags{
+				RunDaemon:          true,
+				FilterNodesCIDRs:   []string{"", "192.168.1.0/24"},
+				BootstrappingNodes: []string{"", "www.tgragnato.it:443"},
+				IndexerAddrs:       []string{"0.0.0.0:0"},
+			},
+			expectError: false,
+		},
+		{
+			name: "RunWithBothDaemonAndWebStopped",
+			opFlags: OpFlags{
+				RunDaemon:    false,
+				RunWeb:       false,
+				IndexerAddrs: []string{"0.0.0.0:0"},
+			},
+			expectError: false,
 		},
 	}
 
