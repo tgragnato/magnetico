@@ -6,9 +6,16 @@ on:
 jobs:
 
   build:
-
     name: Build Executables
     runs-on: ubuntu-latest
+
+    permissions:
+      actions: read
+      contents: read
+      packages: read
+      security-events: read
+      pull-requests: read
+
     strategy:
       matrix:
         include:
@@ -34,7 +41,7 @@ jobs:
           go-version: ${{ matrix.go-version }}
         
       - name: Build binary
-        run: go build .
+        run: go build -o magnetico-${{ matrix.go-os }}-${{ matrix.go-arch }} .
         env:
           CGO_ENABLED: 0
           GOOS: ${{ matrix.go-os }}
@@ -44,14 +51,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: magnetico-${{ matrix.go-os }}-${{ matrix.go-arch }}
-          path: magnetico
+          path: magnetico-${{ matrix.go-os }}-${{ matrix.go-arch }}
 
   release:
-
     name: Release
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 1440
+
     permissions:
         actions: read
         contents: write
@@ -112,7 +119,7 @@ jobs:
       - name: Download workflow artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: magnetico-*
+          pattern: magnetico-*-*
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -121,4 +128,4 @@ jobs:
           tag_name: ${{ steps.changelog.outputs.tag }}
           body: ${{ steps.changelog.outputs.clean_changelog }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          files: magnetico/magnetico-*
+          files: magnetico-*-*/magnetico-*-*
