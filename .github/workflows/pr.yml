@@ -1,0 +1,51 @@
+name: Pull Requests
+
+on: [pull_request]
+
+jobs:
+
+  commit-lint:
+    name: Commits linter
+    runs-on: ubuntu-latest
+
+    permissions:
+      actions: read
+      contents: read
+      packages: read
+      security-events: read
+      pull-requests: read
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: ${{ github.event.pull_request.commits }}
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Commits linter
+        uses: bugbundle/commits@v1.1.0
+        id: commits
+
+      - name: Preview the version
+        run: echo ${{ steps.commits.outputs.major }}.${{ steps.commits.outputs.minor }}.${{ steps.commits.outputs.patch }}
+
+  auto-approve:
+    name: Auto Approve
+    runs-on: ubuntu-latest
+
+    if: ${{ github.actor == 'dependabot[bot]' }}
+
+    permissions:
+      actions: read
+      contents: read
+      packages: read
+      security-events: read
+      pull-requests: write
+
+    steps:
+      - uses: "fastify/github-action-merge-dependabot@v3"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          approve-only: true
+          use-github-auto-merge: false
