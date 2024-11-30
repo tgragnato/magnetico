@@ -1,3 +1,44 @@
+## [2.0.0](https://github.com/tgragnato/magnetico/compare/v1.62.0...v2.0.0) (2024-11-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* review the logic related to the operational flags
+* introduce the ability to use a configuration file
+* allow user supplied ports for bootstrap nodes
+
+### Features
+
+* allow user supplied ports for bootstrap nodes ([774ed20](https://github.com/tgragnato/magnetico/commit/774ed206dd7c473a4004083b697f1e4c011b4f88))
+* introduce the ability to use a configuration file ([6eb27c2](https://github.com/tgragnato/magnetico/commit/6eb27c2a17f8ff3db92b2e40cc413a4d779c63ea))
+* **opflags:** add a flag for the deadline of leeches ([9709b18](https://github.com/tgragnato/magnetico/commit/9709b1863381fe0bf440cd4bb16eda99bf40db01))
+* **persistence:** add rabbitmq amqp basic support ([24925ba](https://github.com/tgragnato/magnetico/commit/24925ba2f5896fffcef183067fa709733b998457))
+* **persistence:** add support for the bitmagnet import api ([0a4579d](https://github.com/tgragnato/magnetico/commit/0a4579d496ce27f06e17c4d276d28bf8ddcf74f8))
+* **persistence:** perform pattern matching without case sensitivity ([b27c8b1](https://github.com/tgragnato/magnetico/commit/b27c8b130aef60a134ef99d033d6e6222ff26dbf))
+* **web:** add count parameter to rss feed ([8e7d2cf](https://github.com/tgragnato/magnetico/commit/8e7d2cfdb277aaff814df99e46b13859be72ac65))
+
+
+### Bug Fixes
+
+* **gci:** file is not `gci`-ed with --skip-generated -s standard -s default ([b746785](https://github.com/tgragnato/magnetico/commit/b746785568e1a40e348f78aff559ba87ca7bc840))
+* **metadata:** avoid panic - return nil ([e3676f8](https://github.com/tgragnato/magnetico/commit/e3676f801bc6d37d94ae903a293e0c829a6fbf57))
+* **metadata:** make V1Length avoid panic and return 0 ([586e548](https://github.com/tgragnato/magnetico/commit/586e54891525744eee4322ae96274e6352b42b2d))
+* **metainfo:** return an error when the decoded length is wrong ([3f5f14d](https://github.com/tgragnato/magnetico/commit/3f5f14d1c626e9b74b8df4ff2a5fb8cf4be7a4f9))
+* **opflags:** exit gracefully if invoked with the help flag ([ef502d6](https://github.com/tgragnato/magnetico/commit/ef502d6aea6127e2da0ddad6313c0404d6e96de5))
+* **opflags:** restore the logic that sets both daemon and web to “on” if neither parameter is specified ([e130092](https://github.com/tgragnato/magnetico/commit/e130092009f6a9dc6672aa4431960ffb7eb75553))
+* **persistence:** handle parameters passed to postgres with zero values ([dbd4032](https://github.com/tgragnato/magnetico/commit/dbd403245044e529de25f7fda6b03471fa05a29d))
+* **web:** the rss feed should list the most common torrents ([4ebae27](https://github.com/tgragnato/magnetico/commit/4ebae270c766662694d8afb8334cc3b14ed6a0aa))
+
+
+### Performance Improvements
+
+* **persistence:** remove postgres parameters inherited from the sqlite implementation ([e8ab03b](https://github.com/tgragnato/magnetico/commit/e8ab03b302c3168fe220a433d789fd0e4692ae7e))
+
+
+### Code Refactoring
+
+* review the logic related to the operational flags ([0f02c84](https://github.com/tgragnato/magnetico/commit/0f02c8446b2e3199e7cdfe13fa9bb3690b3e3bad))
+
 ## [1.62.0](https://github.com/tgragnato/magnetico/compare/v1.61.2...v1.62.0) (2024-09-23)
 
 
