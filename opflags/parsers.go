@@ -8,8 +8,12 @@ import (
 )
 
 func (o *OpFlags) Parse() (err error) {
-	_, err = flags.Parse(o)
+	parser := flags.NewParser(o, flags.Default)
+	_, err = parser.Parse()
 	if err != nil {
+		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
+			os.Exit(0)
+		}
 		return err
 	}
 
