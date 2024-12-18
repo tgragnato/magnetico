@@ -90,6 +90,10 @@ func (instance *zeromq) GetNumberOfTorrents() (uint, error) {
 	return 0, nil
 }
 
+func (instance *zeromq) GetNumberOfQueryTorrents(query string, epoch int64) (uint64, error) {
+	return 0, nil
+}
+
 func (instance *zeromq) QueryTorrents(
 	query string,
 	epoch int64,

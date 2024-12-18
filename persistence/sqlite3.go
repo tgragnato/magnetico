@@ -228,6 +228,36 @@ func (db *sqlite3Database) GetNumberOfTorrents() (uint, error) {
 	}
 }
 
+func (db *sqlite3Database) GetNumberOfQueryTorrents(query string, epoch int64) (uint64, error) {
+	var querySkeleton = `SELECT COUNT(*)
+	FROM torrents
+	WHERE
+    	LOWER(name) LIKE '%' || LOWER($1) || '%' AND
+    	discovered_on <= $2;
+	`
+	rows, err := db.conn.Query(querySkeleton, query, epoch)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		return 0, fmt.Errorf("no rows returned from `SELECT COUNT(*) FROM torrents WHERE LOWER(name) LIKE '%%' || LOWER($1) || '%%' AND discovered_on <= $2;`")
+	}
+
+	var n *uint
+	if err = rows.Scan(&n); err != nil {
+		return 0, err
+	}
+
+	// If the database is empty (i.e. 0 entries in 'torrents') then the query will return nil.
+	if n == nil {
+		return 0, nil
+	} else {
+		return uint64(*n), nil
+	}
+}
+
 func (db *sqlite3Database) QueryTorrents(
 	query string,
 	epoch int64,

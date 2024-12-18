@@ -73,6 +73,69 @@ func Test_sqlite3Database_GetNumberOfTorrents(t *testing.T) {
 	}
 }
 
+func TestSqlite3Database_GetNumberOfQueryTorrents(t *testing.T) {
+	t.Parallel()
+	db := newDb(t)
+
+	// The database is empty, so the number of torrents for any query should be 0.
+	tests := []struct {
+		name    string
+		query   string
+		epoch   int64
+		want    uint64
+		wantErr bool
+	}{
+		{
+			name:    "Test Empty Query",
+			query:   "",
+			epoch:   0,
+			want:    0,
+			wantErr: false,
+		},
+		{
+			name:    "Test Simple Query",
+			query:   "test",
+			epoch:   0,
+			want:    0,
+			wantErr: false,
+		},
+		{
+			name:    "Test Query with Special Characters",
+			query:   "test!@#$%^&*()",
+			epoch:   0,
+			want:    0,
+			wantErr: false,
+		},
+		{
+			name:    "Test Query with Future Epoch",
+			query:   "test",
+			epoch:   32503680000, // January 1, 3000
+			want:    0,
+			wantErr: false,
+		},
+		{
+			name:    "Test Query with Past Epoch",
+			query:   "test",
+			epoch:   1000000000, // September 9, 2001
+			want:    0,
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := db.GetNumberOfQueryTorrents(tt.query, tt.epoch)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("sqlite3Database.GetNumberOfQueryTorrents() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("sqlite3Database.GetNumberOfQueryTorrents() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func Test_sqlite3Database_AddNewTorrent(t *testing.T) {
 	t.Parallel()
 	db := newDb(t)

@@ -57,6 +57,7 @@ func makeRouter() *http.ServeMux {
 
 	router.HandleFunc("/api/v0.1/statistics", BasicAuth(apiStatistics))
 	router.HandleFunc("/api/v0.1/torrents", BasicAuth(apiTorrents))
+	router.HandleFunc("/api/v0.1/torrentstotal", BasicAuth(apiTorrentsTotal))
 	router.HandleFunc("/api/v0.1/torrents/{infohash}", BasicAuth(infohashMiddleware(apiTorrent)))
 	router.HandleFunc("/api/v0.1/torrents/{infohash}/filelist", BasicAuth(infohashMiddleware(apiFileList)))
 

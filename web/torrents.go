@@ -198,6 +198,51 @@ func apiTorrents(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func apiTorrentsTotal(w http.ResponseWriter, r *http.Request) {
+	// @lastOrderedValue AND @lastID are either both supplied or neither of them should be supplied
+	// at all; and if that is NOT the case, then return an error.
+	if q := r.URL.Query(); !((q.Get("lastOrderedValue") != "" && q.Get("lastID") != "") ||
+		(q.Get("lastOrderedValue") == "" && q.Get("lastID") == "")) {
+		http.Error(w, "`lastOrderedValue`, `lastID` must be supplied altogether, if supplied.", http.StatusBadRequest)
+		return
+	}
+
+	var tq struct {
+		Epoch int64  `schema:"epoch"`
+		Query string `schema:"query"`
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "error while parsing the URL: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if r.Form.Has("epoch") {
+		tq.Epoch, err = strconv.ParseInt(r.Form.Get("epoch"), 10, 64)
+		if err != nil {
+			http.Error(w, "error while parsing the URL: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+	} else {
+		http.Error(w, "lack required parameters while parsing the URL: `epoch`", http.StatusBadRequest)
+		return
+	}
+
+	tq.Query = r.Form.Get("query")
+
+	torrentsTotal, err := database.GetNumberOfQueryTorrents(tq.Query, tq.Epoch)
+	if err != nil {
+		http.Error(w, "GetNumberOfQueryTorrents: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set(ContentType, ContentTypeJson)
+	if err = json.NewEncoder(w).Encode(torrentsTotal); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+
 func parseOrderBy(s string) (persistence.OrderingCriteria, error) {
 	switch s {
 	case "RELEVANCE":
