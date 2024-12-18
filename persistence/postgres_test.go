@@ -155,6 +155,79 @@ func TestPostgresDatabase_GetNumberOfTorrents(t *testing.T) {
 	}
 }
 
+func TestPostgresDatabase_GetNumberOfQueryTorrents(t *testing.T) {
+	t.Parallel()
+
+	conn, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("An error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer conn.Close()
+
+	pgDb := &postgresDatabase{conn: conn}
+
+	query := "test-query"
+	epoch := int64(1609459200) // 2021-01-01 00:00:00 UTC
+
+	rows := sqlmock.NewRows([]string{"count"}).AddRow(int64(10))
+	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM torrents WHERE name ILIKE CONCAT\('%',\$1::text,'%'\) AND discovered_on <= \$2;`).
+		WithArgs(query, epoch).
+		WillReturnRows(rows)
+
+	result, err := pgDb.GetNumberOfQueryTorrents(query, epoch)
+
+	if err != nil {
+		t.Errorf("Expected no error, but got %v", err)
+	}
+
+	if result != uint(10) {
+		t.Errorf("Expected result to be 10, but got %d", result)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There were unmet expectations: %s", err)
+	}
+
+	rows = sqlmock.NewRows([]string{"count"})
+	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM torrents WHERE name ILIKE CONCAT\('%',\$1::text,'%'\) AND discovered_on <= \$2;`).
+		WithArgs(query, epoch).
+		WillReturnRows(rows)
+
+	result, err = pgDb.GetNumberOfQueryTorrents(query, epoch)
+
+	if err == nil {
+		t.Error("Expected an error, but got none")
+	}
+
+	if result != uint(0) {
+		t.Errorf("Expected result to be 0, but got %d", result)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There were unmet expectations: %s", err)
+	}
+
+	rows = sqlmock.NewRows([]string{"count"}).AddRow(nil)
+	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM torrents WHERE name ILIKE CONCAT\('%',\$1::text,'%'\) AND discovered_on <= \$2;`).
+		WithArgs(query, epoch).
+		WillReturnRows(rows)
+
+	result, err = pgDb.GetNumberOfQueryTorrents(query, epoch)
+
+	if err != nil {
+		t.Errorf("Expected no error, but got %v", err)
+	}
+
+	if result != uint(0) {
+		t.Errorf("Expected result to be 0, but got %d", result)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There were unmet expectations: %s", err)
+	}
+
+}
+
 func TestPostgresDatabase_Close(t *testing.T) {
 	t.Parallel()
 
