@@ -167,7 +167,7 @@ func (db *postgresDatabase) GetNumberOfTorrents() (uint, error) {
 	}
 }
 
-func (db *postgresDatabase) GetNumberOfQueryTorrents(query string, epoch int64) (uint, error) {
+func (db *postgresDatabase) GetNumberOfQueryTorrents(query string, epoch int64) (uint64, error) {
 
 	var querySkeleton = `SELECT COUNT(*)
 		FROM torrents
@@ -192,10 +192,10 @@ func (db *postgresDatabase) GetNumberOfQueryTorrents(query string, epoch int64) 
 	}
 
 	// If the database is empty (i.e. 0 entries in 'torrents') then the query will return nil.
-	if n == nil {
+	if n == nil || *n < 0 {
 		return 0, nil
 	} else {
-		return uint(*n), nil
+		return uint64(*n), nil
 	}
 }
 

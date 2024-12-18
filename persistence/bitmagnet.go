@@ -125,7 +125,7 @@ func (b *bitmagnet) GetNumberOfTorrents() (uint, error) {
 	return 0, nil
 }
 
-func (b *bitmagnet) GetNumberOfQueryTorrents(query string, epoch int64) (uint, error) {
+func (b *bitmagnet) GetNumberOfQueryTorrents(query string, epoch int64) (uint64, error) {
 	return 0, nil
 }
 

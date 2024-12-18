@@ -18,7 +18,7 @@ type Database interface {
 	// approximation.
 	GetNumberOfTorrents() (uint, error)
 	// GetNumberOfQueryTorrents returns the total number of data records in a fuzzy query.
-	GetNumberOfQueryTorrents(query string, epoch int64) (uint, error)
+	GetNumberOfQueryTorrents(query string, epoch int64) (uint64, error)
 	// QueryTorrents returns @pageSize amount of torrents,
 	// * that are discovered before @discoveredOnBefore
 	// * that match the @query if it's not empty, else all torrents

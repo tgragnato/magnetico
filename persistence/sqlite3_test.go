@@ -82,7 +82,7 @@ func TestSqlite3Database_GetNumberOfQueryTorrents(t *testing.T) {
 		name    string
 		query   string
 		epoch   int64
-		want    uint
+		want    uint64
 		wantErr bool
 	}{
 		{

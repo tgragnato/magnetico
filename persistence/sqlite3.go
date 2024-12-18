@@ -228,7 +228,7 @@ func (db *sqlite3Database) GetNumberOfTorrents() (uint, error) {
 	}
 }
 
-func (db *sqlite3Database) GetNumberOfQueryTorrents(query string, epoch int64) (uint, error) {
+func (db *sqlite3Database) GetNumberOfQueryTorrents(query string, epoch int64) (uint64, error) {
 	var querySkeleton = `SELECT COUNT(*)
 	FROM torrents
 	WHERE
@@ -254,7 +254,7 @@ func (db *sqlite3Database) GetNumberOfQueryTorrents(query string, epoch int64) (
 	if n == nil {
 		return 0, nil
 	} else {
-		return *n, nil
+		return uint64(*n), nil
 	}
 }
 

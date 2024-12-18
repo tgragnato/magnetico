@@ -136,7 +136,7 @@ func (r *rabbitMQ) GetNumberOfTorrents() (uint, error) {
 	return 0, nil
 }
 
-func (r *rabbitMQ) GetNumberOfQueryTorrents(query string, epoch int64) (uint, error) {
+func (r *rabbitMQ) GetNumberOfQueryTorrents(query string, epoch int64) (uint64, error) {
 	return 0, nil
 }
 

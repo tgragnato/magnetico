@@ -180,7 +180,7 @@ func TestPostgresDatabase_GetNumberOfQueryTorrents(t *testing.T) {
 		t.Errorf("Expected no error, but got %v", err)
 	}
 
-	if result != uint(10) {
+	if result != uint64(10) {
 		t.Errorf("Expected result to be 10, but got %d", result)
 	}
 
@@ -199,7 +199,7 @@ func TestPostgresDatabase_GetNumberOfQueryTorrents(t *testing.T) {
 		t.Error("Expected an error, but got none")
 	}
 
-	if result != uint(0) {
+	if result != uint64(0) {
 		t.Errorf("Expected result to be 0, but got %d", result)
 	}
 
@@ -218,7 +218,7 @@ func TestPostgresDatabase_GetNumberOfQueryTorrents(t *testing.T) {
 		t.Errorf("Expected no error, but got %v", err)
 	}
 
-	if result != uint(0) {
+	if result != uint64(0) {
 		t.Errorf("Expected result to be 0, but got %d", result)
 	}
 
