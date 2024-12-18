@@ -167,6 +167,38 @@ func (db *postgresDatabase) GetNumberOfTorrents() (uint, error) {
 	}
 }
 
+func (db *postgresDatabase) GetNumberOfQueryTorrents(query string, epoch int64) (uint, error) {
+
+	var querySkeleton = `SELECT COUNT(*)
+		FROM torrents
+		WHERE
+    		name ILIKE CONCAT('%',$1::text,'%') AND
+			discovered_on <= $2;
+	`
+
+	rows, err := db.conn.Query(querySkeleton, query, epoch)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		return 0, errors.New("no rows returned from `SELECT COUNT(*) FROM torrents WHERE name ILIKE CONCAT('%%',$1::text,'%%') AND discovered_on <= $2;`")
+	}
+
+	var n *int64
+	if err = rows.Scan(&n); err != nil {
+		return 0, err
+	}
+
+	// If the database is empty (i.e. 0 entries in 'torrents') then the query will return nil.
+	if n == nil {
+		return 0, nil
+	} else {
+		return uint(*n), nil
+	}
+}
+
 func (db *postgresDatabase) QueryTorrents(
 	query string,
 	epoch int64,
