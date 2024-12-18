@@ -73,6 +73,12 @@ func Test_sqlite3Database_GetNumberOfTorrents(t *testing.T) {
 	}
 }
 
+func TestSqlite3Database_GetNumberOfQueryTorrents(t *testing.T) {
+	t.Parallel()
+	//todo implement me
+	t.Fatal("todo implement me!")
+}
+
 func Test_sqlite3Database_AddNewTorrent(t *testing.T) {
 	t.Parallel()
 	db := newDb(t)
