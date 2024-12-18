@@ -154,3 +154,77 @@ func TestParseOrderBy(t *testing.T) {
 		})
 	}
 }
+
+func TestApiTorrentsTotal(t *testing.T) {
+	t.Parallel()
+
+	initDb()
+
+	tests := []struct {
+		name           string
+		queryParams    string
+		expectedStatus int
+		expectedError  string
+	}{
+		{
+			name:           "missing required epoch parameter",
+			queryParams:    "",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "lack required parameters while parsing the URL: `epoch`",
+		},
+		{
+			name:           "invalid epoch parameter",
+			queryParams:    "epoch=abc",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "error while parsing the URL: strconv.ParseInt: parsing \"abc\": invalid syntax",
+		},
+		{
+			name:           "valid request with epoch",
+			queryParams:    "epoch=1234567890",
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "invalid request with only lastOrderedValue",
+			queryParams:    "epoch=1234567890&lastOrderedValue=123.45",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "`lastOrderedValue`, `lastID` must be supplied altogether, if supplied.",
+		},
+		{
+			name:           "invalid request with only lastID",
+			queryParams:    "epoch=1234567890&lastID=123",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "`lastOrderedValue`, `lastID` must be supplied altogether, if supplied.",
+		},
+		{
+			name:           "valid request with both lastOrderedValue and lastID",
+			queryParams:    "epoch=1234567890&lastOrderedValue=123.45&lastID=123",
+			expectedStatus: http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, err := http.NewRequest("GET", "/api/torrents/total?"+tt.queryParams, nil)
+			if err != nil {
+				t.Fatalf("could not create request: %v", err)
+			}
+
+			rec := httptest.NewRecorder()
+			handler := http.HandlerFunc(apiTorrentsTotal)
+			handler.ServeHTTP(rec, req)
+
+			res := rec.Result()
+			defer res.Body.Close()
+
+			if res.StatusCode != tt.expectedStatus {
+				t.Errorf("expected status %v; got %v", tt.expectedStatus, res.StatusCode)
+			}
+
+			if tt.expectedError != "" {
+				if !strings.Contains(rec.Body.String(), tt.expectedError) {
+					t.Errorf("expected error %q; got %q", tt.expectedError, rec.Body.String())
+				}
+			}
+		})
+	}
+}
