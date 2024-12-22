@@ -71,7 +71,6 @@ function load() {
         from: fromString(n, unit),
         n   : n,
     });
-    console.log("reqURL", reqURL);
 
     let req = new XMLHttpRequest();
     req.onreadystatechange = function() {
@@ -92,7 +91,6 @@ function load() {
 
 function fromString(n, unit) {
     const from = new Date(Date.now() - n * unit2seconds(unit) * 1000);
-    console.log("frommmm", unit, unit2seconds(unit), from);
 
     let str = "" + from.getUTCFullYear();
     if (unit === "years")
