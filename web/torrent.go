@@ -33,7 +33,7 @@ func torrent() g.Node {
 					ID("title"),
 					H2(g.Text("{{ name }}")),
 					A(
-						Href("magnet:?xt=urn:btih:{{ infoHash }}&amp;dn={{ name }}"),
+						Href("magnet:?xt=urn:btih:{{ infoHash }}&dn={{ name }}"),
 						Img(
 							Src("/static/assets/magnet.gif"),
 							Alt("Magnet link"),
