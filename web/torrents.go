@@ -198,7 +198,7 @@ func apiTorrents(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func apiTorrentsTotal(w http.ResponseWriter, r *http.Request) {
+func apiTorrentsCountByKeyword(w http.ResponseWriter, r *http.Request) {
 	// @lastOrderedValue AND @lastID are either both supplied or neither of them should be supplied
 	// at all; and if that is NOT the case, then return an error.
 	if q := r.URL.Query(); !((q.Get("lastOrderedValue") != "" && q.Get("lastID") != "") ||
@@ -237,8 +237,10 @@ func apiTorrentsTotal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	countTorrentsByKeyword := map[string]uint64{"countTorrentsByKeyword": torrentsTotal}
+
 	w.Header().Set(ContentType, ContentTypeJson)
-	if err = json.NewEncoder(w).Encode(torrentsTotal); err != nil {
+	if err = json.NewEncoder(w).Encode(countTorrentsByKeyword); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
