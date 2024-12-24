@@ -155,7 +155,7 @@ func TestParseOrderBy(t *testing.T) {
 	}
 }
 
-func TestApiTorrentsTotal(t *testing.T) {
+func TestApiTorrentsCountByKeyword(t *testing.T) {
 	t.Parallel()
 
 	initDb()
@@ -204,13 +204,13 @@ func TestApiTorrentsTotal(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req, err := http.NewRequest("GET", "/api/torrents/total?"+tt.queryParams, nil)
+			req, err := http.NewRequest("GET", "/api/torrents/search/count?"+tt.queryParams, nil)
 			if err != nil {
 				t.Fatalf("could not create request: %v", err)
 			}
 
 			rec := httptest.NewRecorder()
-			handler := http.HandlerFunc(apiTorrentsTotal)
+			handler := http.HandlerFunc(apiTorrentsCountByKeyword)
 			handler.ServeHTTP(rec, req)
 
 			res := rec.Result()
