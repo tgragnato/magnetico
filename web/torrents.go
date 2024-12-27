@@ -242,6 +242,7 @@ func apiTorrentsTotal(w http.ResponseWriter, r *http.Request) {
 		tq.NewLogic, err = strconv.ParseBool(r.Form.Get("newLogic"))
 		if err != nil {
 			http.Error(w, "error while parsing the URL: "+err.Error(), http.StatusBadRequest)
+			return
 		}
 	}
 
