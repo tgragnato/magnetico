@@ -246,3 +246,49 @@ func TestApiTorrentsTotal(t *testing.T) {
 		})
 	}
 }
+
+func TestParseQueryCountType(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name           string
+		input          string
+		expectedOutput persistence.CountQueryTorrentsType
+		expectedError  string
+	}{
+		{
+			name:           "Valid byKeyword",
+			input:          "byKeyword",
+			expectedOutput: persistence.CountQueryTorrentsByKeyword,
+			expectedError:  "",
+		},
+		{
+			name:           "Valid byAll",
+			input:          "byAll",
+			expectedOutput: persistence.CountQueryTorrentsByAll,
+			expectedError:  "",
+		},
+		{
+			name:           "Invalid queryType",
+			input:          "invalidType",
+			expectedOutput: persistence.CountQueryTorrentsByKeyword,
+			expectedError:  "unknown queryType string: invalidType",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			output, err := parseQueryCountType(tt.input)
+
+			if err != nil && err.Error() != tt.expectedError {
+				t.Errorf("expected error %v, got %v", tt.expectedError, err.Error())
+			} else if err == nil && tt.expectedError != "" {
+				t.Errorf("expected error %v, got nil", tt.expectedError)
+			}
+
+			if output != tt.expectedOutput {
+				t.Errorf("expected output %v, got %v", tt.expectedOutput, output)
+			}
+		})
+	}
+}
