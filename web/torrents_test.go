@@ -180,7 +180,7 @@ func TestApiTorrentsTotal(t *testing.T) {
 		},
 		{
 			name:           "valid request with epoch",
-			queryParams:    "epoch=1234567890",
+			queryParams:    "epoch=1234567890&query=testQuery",
 			expectedStatus: http.StatusOK,
 		},
 		{
@@ -200,11 +200,29 @@ func TestApiTorrentsTotal(t *testing.T) {
 			queryParams:    "epoch=1234567890&lastOrderedValue=123.45&lastID=123",
 			expectedStatus: http.StatusOK,
 		},
+		{
+			name:           "valid request with newLogic=true",
+			queryParams:    "epoch=1234567890&newLogic=true&queryType=byKeyword",
+			expectedStatus: http.StatusOK,
+			expectedError:  `{"queryType":"byKeyword","data":12345}`,
+		},
+		{
+			name:           "invalid queryType",
+			queryParams:    "epoch=1234567890&newLogic=true&queryType=invalidType",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "error while parsing the URL: unknown queryType string: invalidType",
+		},
+		{
+			name:           "invalid newLogic parameter",
+			queryParams:    "epoch=1234567890&newLogic=bool",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "error while parsing the URL: strconv.ParseBool: parsing \"bool\": invalid syntax",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req, err := http.NewRequest("GET", "/api/torrents/total?"+tt.queryParams, nil)
+			req, err := http.NewRequest("GET", "/api/torrentstotal?"+tt.queryParams, nil)
 			if err != nil {
 				t.Fatalf("could not create request: %v", err)
 			}
