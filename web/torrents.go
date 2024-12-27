@@ -210,6 +210,15 @@ func apiTorrentsTotal(w http.ResponseWriter, r *http.Request) {
 	var tq struct {
 		Epoch int64  `schema:"epoch"`
 		Query string `schema:"query"`
+		// Controls compatibility. If this parameter is not provided or is set to false, the old logic is executed.
+		// If set to true, the new logic is enabled.
+		// The old logic returns a single number, while the new logic returns a map[string]any JSON object.
+		NewLogic bool `schema:"newLogic"`
+		// Due to potential ambiguity in the function name apiTorrentsTotal, the QueryType parameter was introduced.
+		// To use this parameter, `NewLogic=true` is required. This parameter specifies the type of query we are performing.
+		// For example, `byAll` indicates querying the total count from the database,
+		// while `byKeyword` indicates querying the total count that matches the given query.
+		QueryType string `schema:"queryType"`
 	}
 
 	err := r.ParseForm()
@@ -229,16 +238,55 @@ func apiTorrentsTotal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tq.Query = r.Form.Get("query")
+	if r.Form.Has("newLogic") {
+		tq.NewLogic, err = strconv.ParseBool(r.Form.Get("newLogic"))
+		if err != nil {
+			http.Error(w, "error while parsing the URL: "+err.Error(), http.StatusBadRequest)
+		}
+	}
 
-	torrentsTotal, err := database.GetNumberOfQueryTorrents(tq.Query, tq.Epoch)
-	if err != nil {
-		http.Error(w, "GetNumberOfQueryTorrents: "+err.Error(), http.StatusInternalServerError)
+	tq.Query = r.Form.Get("query")
+	tq.QueryType = r.Form.Get("queryType")
+
+	w.Header().Set(ContentType, ContentTypeJson)
+
+	if !tq.NewLogic {
+
+		torrentsTotal, err := database.GetNumberOfQueryTorrents(tq.Query, tq.Epoch)
+		if err != nil {
+			http.Error(w, "GetNumberOfQueryTorrents: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if err = json.NewEncoder(w).Encode(torrentsTotal); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 
-	w.Header().Set(ContentType, ContentTypeJson)
-	if err = json.NewEncoder(w).Encode(torrentsTotal); err != nil {
+	queryCountType, err := parseQueryCountType(tq.QueryType)
+	if err != nil {
+		http.Error(w, "error while parsing the URL: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var results map[string]any
+
+	switch queryCountType {
+	case persistence.CountQueryTorrentsByKeyword:
+		total, err := database.GetNumberOfQueryTorrents(tq.Query, tq.Epoch)
+		if err != nil {
+			http.Error(w, "GetNumberOfQueryTorrents: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		results = map[string]any{"queryType": "byKeyword", "data": total}
+
+	default:
+		http.Error(w, "no suitable queryType query was matched", http.StatusBadRequest)
+		return
+	}
+
+	if err = json.NewEncoder(w).Encode(results); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
@@ -268,5 +316,16 @@ func parseOrderBy(s string) (persistence.OrderingCriteria, error) {
 
 	default:
 		return persistence.ByDiscoveredOn, fmt.Errorf("unknown orderBy string: %s", s)
+	}
+}
+
+func parseQueryCountType(s string) (persistence.CountQueryTorrentsType, error) {
+	switch s {
+	case "byKeyword":
+		return persistence.CountQueryTorrentsByKeyword, nil
+	case "byAll":
+		return persistence.CountQueryTorrentsByAll, nil
+	default:
+		return persistence.CountQueryTorrentsByKeyword, fmt.Errorf("unknown queryType string: %s", s)
 	}
 }
