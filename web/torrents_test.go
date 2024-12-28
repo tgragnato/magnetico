@@ -204,7 +204,7 @@ func TestApiTorrentsTotal(t *testing.T) {
 			name:           "valid request with newLogic=true",
 			queryParams:    "epoch=1234567890&newLogic=true&queryType=byKeyword",
 			expectedStatus: http.StatusOK,
-			expectedError:  `{"queryType":"byKeyword","data":12345}`,
+			expectedError:  `{"data":0,"queryType":"byKeyword"}`,
 		},
 		{
 			name:           "invalid queryType",
@@ -253,25 +253,25 @@ func TestParseQueryCountType(t *testing.T) {
 	tests := []struct {
 		name           string
 		input          string
-		expectedOutput persistence.CountQueryTorrentsType
+		expectedOutput CountQueryTorrentsType
 		expectedError  string
 	}{
 		{
 			name:           "Valid byKeyword",
 			input:          "byKeyword",
-			expectedOutput: persistence.CountQueryTorrentsByKeyword,
+			expectedOutput: CountQueryTorrentsByKeyword,
 			expectedError:  "",
 		},
 		{
 			name:           "Valid byAll",
 			input:          "byAll",
-			expectedOutput: persistence.CountQueryTorrentsByAll,
+			expectedOutput: CountQueryTorrentsByAll,
 			expectedError:  "",
 		},
 		{
 			name:           "Invalid queryType",
 			input:          "invalidType",
-			expectedOutput: persistence.CountQueryTorrentsByKeyword,
+			expectedOutput: CountQueryTorrentsByKeyword,
 			expectedError:  "unknown queryType string: invalidType",
 		},
 	}

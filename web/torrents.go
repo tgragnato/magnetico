@@ -274,7 +274,7 @@ func apiTorrentsTotal(w http.ResponseWriter, r *http.Request) {
 	var results map[string]any
 
 	switch queryCountType {
-	case persistence.CountQueryTorrentsByKeyword:
+	case CountQueryTorrentsByKeyword:
 		total, err := database.GetNumberOfQueryTorrents(tq.Query, tq.Epoch)
 		if err != nil {
 			http.Error(w, "GetNumberOfQueryTorrents: "+err.Error(), http.StatusInternalServerError)
@@ -320,13 +320,20 @@ func parseOrderBy(s string) (persistence.OrderingCriteria, error) {
 	}
 }
 
-func parseQueryCountType(s string) (persistence.CountQueryTorrentsType, error) {
+type CountQueryTorrentsType uint8
+
+const (
+	CountQueryTorrentsByAll CountQueryTorrentsType = iota
+	CountQueryTorrentsByKeyword
+)
+
+func parseQueryCountType(s string) (CountQueryTorrentsType, error) {
 	switch s {
 	case "byKeyword":
-		return persistence.CountQueryTorrentsByKeyword, nil
+		return CountQueryTorrentsByKeyword, nil
 	case "byAll":
-		return persistence.CountQueryTorrentsByAll, nil
+		return CountQueryTorrentsByAll, nil
 	default:
-		return persistence.CountQueryTorrentsByKeyword, fmt.Errorf("unknown queryType string: %s", s)
+		return CountQueryTorrentsByKeyword, fmt.Errorf("unknown queryType string: %s", s)
 	}
 }

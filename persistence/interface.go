@@ -54,13 +54,6 @@ const (
 	ByUpdatedOn
 )
 
-type CountQueryTorrentsType uint8
-
-const (
-	CountQueryTorrentsByAll CountQueryTorrentsType = iota
-	CountQueryTorrentsByKeyword
-)
-
 // TODO: search `swtich (orderBy)` and see if all cases are covered all the time
 
 type databaseEngine uint8
