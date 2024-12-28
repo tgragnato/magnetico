@@ -180,7 +180,7 @@ func TestApiTorrentsTotal(t *testing.T) {
 		},
 		{
 			name:           "valid request with epoch",
-			queryParams:    "epoch=1234567890",
+			queryParams:    "epoch=1234567890&query=testQuery",
 			expectedStatus: http.StatusOK,
 		},
 		{
@@ -200,11 +200,29 @@ func TestApiTorrentsTotal(t *testing.T) {
 			queryParams:    "epoch=1234567890&lastOrderedValue=123.45&lastID=123",
 			expectedStatus: http.StatusOK,
 		},
+		{
+			name:           "valid request with newLogic=true",
+			queryParams:    "epoch=1234567890&newLogic=true&queryType=byKeyword",
+			expectedStatus: http.StatusOK,
+			expectedError:  `{"data":0,"queryType":"byKeyword"}`,
+		},
+		{
+			name:           "invalid queryType",
+			queryParams:    "epoch=1234567890&newLogic=true&queryType=invalidType",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "error while parsing the URL: unknown queryType string: invalidType",
+		},
+		{
+			name:           "invalid newLogic parameter",
+			queryParams:    "epoch=1234567890&newLogic=bool",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "error while parsing the URL: strconv.ParseBool: parsing \"bool\": invalid syntax",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req, err := http.NewRequest("GET", "/api/torrents/total?"+tt.queryParams, nil)
+			req, err := http.NewRequest("GET", "/api/torrentstotal?"+tt.queryParams, nil)
 			if err != nil {
 				t.Fatalf("could not create request: %v", err)
 			}
@@ -224,6 +242,52 @@ func TestApiTorrentsTotal(t *testing.T) {
 				if !strings.Contains(rec.Body.String(), tt.expectedError) {
 					t.Errorf("expected error %q; got %q", tt.expectedError, rec.Body.String())
 				}
+			}
+		})
+	}
+}
+
+func TestParseQueryCountType(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name           string
+		input          string
+		expectedOutput CountQueryTorrentsType
+		expectedError  string
+	}{
+		{
+			name:           "Valid byKeyword",
+			input:          "byKeyword",
+			expectedOutput: CountQueryTorrentsByKeyword,
+			expectedError:  "",
+		},
+		{
+			name:           "Valid byAll",
+			input:          "byAll",
+			expectedOutput: CountQueryTorrentsByAll,
+			expectedError:  "",
+		},
+		{
+			name:           "Invalid queryType",
+			input:          "invalidType",
+			expectedOutput: CountQueryTorrentsByKeyword,
+			expectedError:  "unknown queryType string: invalidType",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			output, err := parseQueryCountType(tt.input)
+
+			if err != nil && err.Error() != tt.expectedError {
+				t.Errorf("expected error %v, got %v", tt.expectedError, err.Error())
+			} else if err == nil && tt.expectedError != "" {
+				t.Errorf("expected error %v, got nil", tt.expectedError)
+			}
+
+			if output != tt.expectedOutput {
+				t.Errorf("expected output %v, got %v", tt.expectedOutput, output)
 			}
 		})
 	}
