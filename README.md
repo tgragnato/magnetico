@@ -44,7 +44,7 @@ After setting it up, you should create a user, set a password, create a database
 - `CREATE USER magnetico WITH PASSWORD 'magnetico';`
 - `CREATE DATABASE magnetico OWNER magnetico;`
 - `\c magnetico`
-- `CREATE EXTENSION pg_trgm;`
+- `CREATE EXTENSION IF NOT EXISTS pg_trgm;`
 - `docker run --rm -it ghcr.io/tgragnato/magnetico:latest --help`
 - `docker run --rm -it -p 8080:8080/tcp ghcr.io/tgragnato/magnetico:latest --addr=0.0.0.0:8080 --database=postgres://magnetico:magnetico@localhost:5432/magnetico?sslmode=disable`
 - visit `http://localhost:8080`
