@@ -39,3 +39,8 @@ issues:
       text: "integer overflow conversion uint -> int"
       linters:
         - gosec
+    
+    - path: persistence/postgres.go
+      text: "G115: integer overflow conversion int64 -> uint"
+      linters:
+        - gosec
