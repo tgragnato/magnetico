@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/sha1"
+	"fmt"
 	mrand "math/rand"
 	"reflect"
 	"testing"
@@ -102,6 +103,116 @@ func TestDoesTorrentExist(t *testing.T) {
 	}
 }
 
+func TestPostgresDatabase_GetExactCount(t *testing.T) {
+	t.Parallel()
+
+	conn, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+
+	db := &postgresDatabase{conn: conn}
+
+	// Test case 1: Valid row returned
+	rows := sqlmock.NewRows([]string{"exact_count"}).AddRow(int64(10))
+	mock.ExpectQuery("SELECT id::BIGINT AS exact_count FROM torrents ORDER BY id DESC LIMIT 1;").
+		WillReturnRows(rows)
+
+	count, err := db.getExactCount()
+	if err != nil {
+		t.Error(err)
+	}
+	if count != 10 {
+		t.Errorf("Expected count to be 10, but got %d", count)
+	}
+
+	// Test case 2: No rows returned
+	rows = sqlmock.NewRows([]string{"exact_count"})
+	mock.ExpectQuery("SELECT id::BIGINT AS exact_count FROM torrents ORDER BY id DESC LIMIT 1;").
+		WillReturnRows(rows)
+
+	count, err = db.getExactCount()
+	if err == nil {
+		t.Error("Expected error for no rows, but got nil")
+	}
+	if count != 0 {
+		t.Errorf("Expected count to be 0, but got %d", count)
+	}
+
+	// Test case 3: Null value returned
+	rows = sqlmock.NewRows([]string{"exact_count"}).AddRow(nil)
+	mock.ExpectQuery("SELECT id::BIGINT AS exact_count FROM torrents ORDER BY id DESC LIMIT 1;").
+		WillReturnRows(rows)
+
+	count, err = db.getExactCount()
+	if err != nil {
+		t.Error(err)
+	}
+	if count != 0 {
+		t.Errorf("Expected count to be 0 for null value, but got %d", count)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestPostgresDatabase_GetFuzzyCount(t *testing.T) {
+	t.Parallel()
+
+	conn, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+
+	db := &postgresDatabase{conn: conn}
+
+	// Test case 1: Valid row returned
+	rows := sqlmock.NewRows([]string{"estimate_count"}).AddRow(int64(10))
+	mock.ExpectQuery("SELECT reltuples::BIGINT AS estimate_count FROM pg_class WHERE relname='torrents';").
+		WillReturnRows(rows)
+
+	count, err := db.getFuzzyCount()
+	if err != nil {
+		t.Error(err)
+	}
+	if count != 10 {
+		t.Errorf("Expected count to be 10, but got %d", count)
+	}
+
+	// Test case 2: No rows returned
+	rows = sqlmock.NewRows([]string{"estimate_count"})
+	mock.ExpectQuery("SELECT reltuples::BIGINT AS estimate_count FROM pg_class WHERE relname='torrents';").
+		WillReturnRows(rows)
+
+	count, err = db.getFuzzyCount()
+	if err == nil {
+		t.Error("Expected error for no rows, but got nil")
+	}
+	if count != 0 {
+		t.Errorf("Expected count to be 0, but got %d", count)
+	}
+
+	// Test case 3: Null value returned
+	rows = sqlmock.NewRows([]string{"estimate_count"}).AddRow(nil)
+	mock.ExpectQuery("SELECT reltuples::BIGINT AS estimate_count FROM pg_class WHERE relname='torrents';").
+		WillReturnRows(rows)
+
+	count, err = db.getFuzzyCount()
+	if err != nil {
+		t.Error(err)
+	}
+	if count != 0 {
+		t.Errorf("Expected count to be 0 for null value, but got %d", count)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Error(err)
+	}
+}
+
 func TestPostgresDatabase_GetNumberOfTorrents(t *testing.T) {
 	t.Parallel()
 
@@ -111,10 +222,13 @@ func TestPostgresDatabase_GetNumberOfTorrents(t *testing.T) {
 	}
 	defer conn.Close()
 
-	rows := sqlmock.NewRows([]string{"exact_count"}).AddRow(10)
-	mock.ExpectQuery("SELECT COUNT\\(\\*\\)::BIGINT AS exact_count FROM torrents;").WillReturnRows(rows)
-
 	db := &postgresDatabase{conn: conn}
+
+	// Test case 1: getExactCount succeeds
+	rows := sqlmock.NewRows([]string{"exact_count"}).AddRow(int64(10))
+	mock.ExpectQuery("SELECT id::BIGINT AS exact_count FROM torrents ORDER BY id DESC LIMIT 1;").
+		WillReturnRows(rows)
+
 	count, err := db.GetNumberOfTorrents()
 	if err != nil {
 		t.Error(err)
@@ -122,34 +236,33 @@ func TestPostgresDatabase_GetNumberOfTorrents(t *testing.T) {
 	if count != 10 {
 		t.Errorf("Expected count to be 10, but got %d", count)
 	}
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Error(err)
-	}
 
-	rows = sqlmock.NewRows([]string{"exact_count"})
-	mock.ExpectQuery("SELECT COUNT\\(\\*\\)::BIGINT AS exact_count FROM torrents;").WillReturnRows(rows)
-
-	count, err = db.GetNumberOfTorrents()
-	if err == nil {
-		t.Error("no rows returned for query without corresponding error")
-	}
-	if count != 0 {
-		t.Errorf("Expected count to be 0, but got %d", count)
-	}
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Error(err)
-	}
-
-	rows = sqlmock.NewRows([]string{"exact_count"}).AddRow(nil)
-	mock.ExpectQuery("SELECT COUNT\\(\\*\\)::BIGINT AS exact_count FROM torrents;").WillReturnRows(rows)
+	// Test case 2: getExactCount fails, getFuzzyCount succeeds
+	mock.ExpectQuery("SELECT id::BIGINT AS exact_count FROM torrents ORDER BY id DESC LIMIT 1;").
+		WillReturnError(fmt.Errorf("exact count failed"))
+	rows = sqlmock.NewRows([]string{"estimate_count"}).AddRow(int64(20))
+	mock.ExpectQuery("SELECT reltuples::BIGINT AS estimate_count FROM pg_class WHERE relname='torrents';").
+		WillReturnRows(rows)
 
 	count, err = db.GetNumberOfTorrents()
 	if err != nil {
 		t.Error(err)
 	}
-	if count != 0 {
-		t.Errorf("Expected count to be 0, but got %d", count)
+	if count != 20 {
+		t.Errorf("Expected count to be 20, but got %d", count)
 	}
+
+	// Test case 3: both getExactCount and getFuzzyCount fail
+	mock.ExpectQuery("SELECT id::BIGINT AS exact_count FROM torrents ORDER BY id DESC LIMIT 1;").
+		WillReturnError(fmt.Errorf("exact count failed"))
+	mock.ExpectQuery("SELECT reltuples::BIGINT AS estimate_count FROM pg_class WHERE relname='torrents';").
+		WillReturnError(fmt.Errorf("fuzzy count failed"))
+
+	_, err = db.GetNumberOfTorrents()
+	if err == nil {
+		t.Error("Expected error when both counts fail, but got nil")
+	}
+
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Error(err)
 	}

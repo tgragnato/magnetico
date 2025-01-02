@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -143,14 +144,50 @@ func (db *postgresDatabase) Close() error {
 }
 
 func (db *postgresDatabase) GetNumberOfTorrents() (uint, error) {
-	rows, err := db.conn.Query("SELECT COUNT(*)::BIGINT AS exact_count FROM torrents;")
+	if rows, err := db.getExactCount(); err == nil {
+		return rows, nil
+	}
+
+	return db.getFuzzyCount()
+}
+
+func (db *postgresDatabase) getExactCount() (uint, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second/2)
+	defer cancel()
+
+	rows, err := db.conn.QueryContext(ctx, "SELECT id::BIGINT AS exact_count FROM torrents ORDER BY id DESC LIMIT 1;")
 	if err != nil {
 		return 0, err
 	}
 	defer rows.Close()
 
 	if !rows.Next() {
-		return 0, errors.New("no rows returned from `SELECT COUNT(*)::BIGINT AS exact_count FROM torrents;`")
+		return 0, errors.New("no rows returned from `SELECT id::BIGINT AS exact_count FROM torrents ORDER BY id DESC LIMIT 1;`")
+	}
+
+	// Returns int64: https://godoc.org/github.com/lib/pq#hdr-Data_Types
+	var n *int64
+	if err = rows.Scan(&n); err != nil {
+		return 0, err
+	}
+
+	// If the database is empty (i.e. 0 entries in 'torrents') then the query will return nil.
+	if n == nil {
+		return 0, nil
+	} else {
+		return uint(*n), nil
+	}
+}
+
+func (db *postgresDatabase) getFuzzyCount() (uint, error) {
+	rows, err := db.conn.Query("SELECT reltuples::BIGINT AS estimate_count FROM pg_class WHERE relname='torrents';")
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		return 0, errors.New("no rows returned from `SELECT reltuples::BIGINT AS estimate_count FROM pg_class WHERE relname='torrents';`")
 	}
 
 	// Returns int64: https://godoc.org/github.com/lib/pq#hdr-Data_Types
