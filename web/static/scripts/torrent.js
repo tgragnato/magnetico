@@ -19,7 +19,7 @@ window.onload = function () {
             name: x.name,
             infoHash: x.infoHash,
             sizeHumanised: fileSize(x.size),
-            discoveredOnHumanised: humaniseDate(x.discoveredOn),
+            discoveredOn: humaniseDate(x.discoveredOn),
             nFiles: x.nFiles,
         });
 
