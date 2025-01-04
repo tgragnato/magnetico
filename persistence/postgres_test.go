@@ -116,7 +116,7 @@ func TestPostgresDatabase_GetExactCount(t *testing.T) {
 
 	// Test case 1: Valid row returned
 	rows := sqlmock.NewRows([]string{"exact_count"}).AddRow(int64(10))
-	mock.ExpectQuery("SELECT id::BIGINT AS exact_count FROM torrents ORDER BY id DESC LIMIT 1;").
+	mock.ExpectQuery("SELECT last_value::BIGINT AS exact_count FROM seq_torrents_id;").
 		WillReturnRows(rows)
 
 	count, err := db.getExactCount()
@@ -129,7 +129,7 @@ func TestPostgresDatabase_GetExactCount(t *testing.T) {
 
 	// Test case 2: No rows returned
 	rows = sqlmock.NewRows([]string{"exact_count"})
-	mock.ExpectQuery("SELECT id::BIGINT AS exact_count FROM torrents ORDER BY id DESC LIMIT 1;").
+	mock.ExpectQuery("SELECT last_value::BIGINT AS exact_count FROM seq_torrents_id;").
 		WillReturnRows(rows)
 
 	count, err = db.getExactCount()
@@ -142,7 +142,7 @@ func TestPostgresDatabase_GetExactCount(t *testing.T) {
 
 	// Test case 3: Null value returned
 	rows = sqlmock.NewRows([]string{"exact_count"}).AddRow(nil)
-	mock.ExpectQuery("SELECT id::BIGINT AS exact_count FROM torrents ORDER BY id DESC LIMIT 1;").
+	mock.ExpectQuery("SELECT last_value::BIGINT AS exact_count FROM seq_torrents_id;").
 		WillReturnRows(rows)
 
 	count, err = db.getExactCount()
@@ -226,7 +226,7 @@ func TestPostgresDatabase_GetNumberOfTorrents(t *testing.T) {
 
 	// Test case 1: getExactCount succeeds
 	rows := sqlmock.NewRows([]string{"exact_count"}).AddRow(int64(10))
-	mock.ExpectQuery("SELECT id::BIGINT AS exact_count FROM torrents ORDER BY id DESC LIMIT 1;").
+	mock.ExpectQuery("SELECT last_value::BIGINT AS exact_count FROM seq_torrents_id;").
 		WillReturnRows(rows)
 
 	count, err := db.GetNumberOfTorrents()
@@ -238,7 +238,7 @@ func TestPostgresDatabase_GetNumberOfTorrents(t *testing.T) {
 	}
 
 	// Test case 2: getExactCount fails, getFuzzyCount succeeds
-	mock.ExpectQuery("SELECT id::BIGINT AS exact_count FROM torrents ORDER BY id DESC LIMIT 1;").
+	mock.ExpectQuery("SELECT last_value::BIGINT AS exact_count FROM seq_torrents_id;").
 		WillReturnError(fmt.Errorf("exact count failed"))
 	rows = sqlmock.NewRows([]string{"estimate_count"}).AddRow(int64(20))
 	mock.ExpectQuery("SELECT reltuples::BIGINT AS estimate_count FROM pg_class WHERE relname='torrents';").
@@ -253,7 +253,7 @@ func TestPostgresDatabase_GetNumberOfTorrents(t *testing.T) {
 	}
 
 	// Test case 3: both getExactCount and getFuzzyCount fail
-	mock.ExpectQuery("SELECT id::BIGINT AS exact_count FROM torrents ORDER BY id DESC LIMIT 1;").
+	mock.ExpectQuery("SELECT last_value::BIGINT AS exact_count FROM seq_torrents_id;").
 		WillReturnError(fmt.Errorf("exact count failed"))
 	mock.ExpectQuery("SELECT reltuples::BIGINT AS estimate_count FROM pg_class WHERE relname='torrents';").
 		WillReturnError(fmt.Errorf("fuzzy count failed"))
