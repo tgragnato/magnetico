@@ -155,14 +155,14 @@ func (db *postgresDatabase) getExactCount() (uint, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second/2)
 	defer cancel()
 
-	rows, err := db.conn.QueryContext(ctx, "SELECT id::BIGINT AS exact_count FROM torrents ORDER BY id DESC LIMIT 1;")
+	rows, err := db.conn.QueryContext(ctx, "SELECT last_value::BIGINT AS exact_count FROM seq_torrents_id;")
 	if err != nil {
 		return 0, err
 	}
 	defer rows.Close()
 
 	if !rows.Next() {
-		return 0, errors.New("no rows returned from `SELECT id::BIGINT AS exact_count FROM torrents ORDER BY id DESC LIMIT 1;`")
+		return 0, errors.New("no rows returned from `SELECT last_value::BIGINT AS exact_count FROM seq_torrents_id;`")
 	}
 
 	// Returns int64: https://godoc.org/github.com/lib/pq#hdr-Data_Types
