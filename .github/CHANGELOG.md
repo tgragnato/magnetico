@@ -1,3 +1,23 @@
+## [2.1.0](https://github.com/tgragnato/magnetico/compare/v2.0.0...v2.1.0) (2025-01-04)
+
+
+### Features
+
+* add api endpoint to get total count of torrents based on query keyword ([bd5c138](https://github.com/tgragnato/magnetico/commit/bd5c138bba29c9e1b7430fc1fa82f4b2320c91e2))
+* **web:** add new parameters with different semantics to the `torrentstotal` api ([fc60049](https://github.com/tgragnato/magnetico/commit/fc60049ad9f4ed417bdb2e186ddb22a270d98127))
+
+
+### Bug Fixes
+
+* **web:** correct property name for discoveredOn in torrent data ([b6bcc68](https://github.com/tgragnato/magnetico/commit/b6bcc6806af645edb9d7e62a9c7d4c20547e1961))
+* **web:** don't use HTML entities when building URL (12c79539 fix-up) ([aff9ee5](https://github.com/tgragnato/magnetico/commit/aff9ee566fdb638252b954287109c180b71979c7))
+* **web:** remove two debugging messages from the statistics page ([4d1097f](https://github.com/tgragnato/magnetico/commit/4d1097ffca156d04f87bf4b1069e96a07fd5b66d))
+
+
+### Performance Improvements
+
+* **persistence:** improve the count method for torrents ([0e995d4](https://github.com/tgragnato/magnetico/commit/0e995d4bd72b8aa361e9653ccf2f50472ad25441))
+
 ## [2.0.0](https://github.com/tgragnato/magnetico/compare/v1.62.0...v2.0.0) (2024-11-30)
 
 
