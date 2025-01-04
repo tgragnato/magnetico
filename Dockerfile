@@ -1,4 +1,4 @@
-FROM golang:alpine3.20 AS builder
+FROM golang:alpine3.21 AS builder
 ENV CGO_ENABLED=1
 ENV CGO_CFLAGS=-D_LARGEFILE64_SOURCE
 WORKDIR /workspace
@@ -7,7 +7,7 @@ COPY go.sum .
 COPY . .
 RUN apk add --no-cache alpine-sdk libsodium-dev zeromq-dev czmq-dev && go mod download && go build --tags fts5 . && go build --tags fts5 .
 
-FROM alpine:3.20
+FROM alpine:3.21
 WORKDIR /tmp
 COPY --from=builder /workspace/magnetico /usr/bin/
 RUN apk add --no-cache libstdc++ libgcc libsodium libzmq czmq \
