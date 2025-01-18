@@ -49,7 +49,11 @@ func main() {
 		if err != nil {
 			log.Fatalf("could not start pyroscope %s\n", err.Error())
 		}
-		defer profiler.Stop()
+		defer func() {
+			if err := profiler.Stop(); err != nil {
+				log.Printf("Could not stop pyroscope! %s\n", err.Error())
+			}
+		}()
 	}
 
 	database, err := persistence.MakeDatabase(opFlags.DatabaseURL)
