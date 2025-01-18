@@ -44,6 +44,14 @@ func main() {
 		}
 	}()
 
+	if opFlags.PyroscopeURL != "" {
+		profiler, err := stats.InitPyroscope(opFlags.PyroscopeURL)
+		if err != nil {
+			log.Fatalf("could not start pyroscope %s\n", err.Error())
+		}
+		defer profiler.Stop()
+	}
+
 	database, err := persistence.MakeDatabase(opFlags.DatabaseURL)
 	if err != nil {
 		log.Fatalf("Could not open the database %s. %s\n", opFlags.DatabaseURL, err.Error())
