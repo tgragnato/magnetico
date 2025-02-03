@@ -49,24 +49,30 @@ func makeRouter() *http.ServeMux {
 	router.HandleFunc("/", BasicAuth(rootHandler))
 
 	staticFS := http.FS(static)
-	router.HandleFunc("/static/", BasicAuth(
+	router.HandleFunc("GET /static/", BasicAuth(
 		http.StripPrefix("/", http.FileServer(staticFS)).ServeHTTP,
 	))
 
 	router.HandleFunc("/metrics", BasicAuth(stats.MakePrometheusHandler()))
 
-	router.HandleFunc("/api/v0.1/statistics", BasicAuth(apiStatistics))
-	router.HandleFunc("/api/v0.1/torrents", BasicAuth(apiTorrents))
-	router.HandleFunc("/api/v0.1/torrentstotal", BasicAuth(apiTorrentsTotal))
-	router.HandleFunc("/api/v0.1/torrents/{infohash}", BasicAuth(infohashMiddleware(apiTorrent)))
-	router.HandleFunc("/api/v0.1/torrents/{infohash}/filelist", BasicAuth(infohashMiddleware(apiFileList)))
+	router.HandleFunc("GET /api/v0.1/statistics", BasicAuth(apiStatistics))
+	router.HandleFunc("GET /api/v0.1/torrents", BasicAuth(apiTorrents))
+	router.HandleFunc("GET /api/v0.1/torrentstotal", BasicAuth(apiTorrentsTotal))
+	router.HandleFunc("GET /api/v0.1/torrents/{infohash}", BasicAuth(infohashMiddleware(apiTorrent)))
+	router.HandleFunc("GET /api/v0.1/torrents/{infohash}/filelist", BasicAuth(infohashMiddleware(apiFileList)))
 
-	router.HandleFunc("/feed", BasicAuth(feedHandler))
-	router.HandleFunc("/statistics", BasicAuth(statisticsHandler))
-	router.HandleFunc("/torrents/", BasicAuth(torrentsInfohashHandler))
-	router.HandleFunc("/torrents", BasicAuth(torrentsHandler))
+	router.HandleFunc("GET /robots.txt", BasicAuth(robotsHandler))
+	router.HandleFunc("GET /feed", BasicAuth(feedHandler))
+	router.HandleFunc("GET /statistics", BasicAuth(statisticsHandler))
+	router.HandleFunc("GET /torrents/", BasicAuth(torrentsInfohashHandler))
+	router.HandleFunc("GET /torrents", BasicAuth(torrentsHandler))
 
 	return router
+}
+
+func robotsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set(ContentType, "text/plain")
+	w.Write([]byte("User-agent: *\nDisallow: /\n"))
 }
 
 func infohashMiddleware(next http.HandlerFunc) http.HandlerFunc {

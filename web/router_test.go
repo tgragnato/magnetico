@@ -76,6 +76,24 @@ func TestInfohashMiddleware(t *testing.T) {
 	}
 }
 
+func TestRobotsHandler(t *testing.T) {
+	t.Parallel()
+
+	req := httptest.NewRequest(http.MethodGet, "/robots.txt", nil)
+	rr := httptest.NewRecorder()
+
+	robotsHandler(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d", http.StatusOK, rr.Code)
+	}
+	if ct := rr.Header().Get(ContentType); ct != "text/plain" {
+		t.Errorf("expected Content-Type text/plain, got %q", ct)
+	}
+	if body := rr.Body.String(); body != "User-agent: *\nDisallow: /\n" {
+		t.Error("got unexpected body")
+	}
+}
+
 var initMux sync.Mutex
 
 func initDb() {
