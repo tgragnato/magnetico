@@ -50,6 +50,15 @@ func homepage(ntorrents uint) g.Node {
 }
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.Redirect(w, r, "/", http.StatusMovedPermanently)
+		return
+	}
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	nTorrents, err := database.GetNumberOfTorrents()
 	if err != nil {
 		http.Error(w, "GetNumberOfTorrents "+err.Error(), http.StatusInternalServerError)
