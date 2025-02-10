@@ -61,3 +61,7 @@ func (instance *zeromq) GetFiles(infoHash []byte) ([]File, error) {
 func (instance *zeromq) GetStatistics(from string, n uint) (*Statistics, error) {
 	return nil, errors.New("statistics not supported")
 }
+
+func (instance *zeromq) Export() (chan SimpleTorrentSummary, error) {
+	return nil, errors.New("export not supported")
+}
