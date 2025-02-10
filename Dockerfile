@@ -5,7 +5,7 @@ WORKDIR /workspace
 COPY go.mod .
 COPY go.sum .
 COPY . .
-RUN apk add --no-cache alpine-sdk libsodium-dev zeromq-dev czmq-dev && go mod download && go build --tags fts5 . && go build --tags fts5 .
+RUN apk add --no-cache alpine-sdk libsodium-dev zeromq-dev czmq-dev && go mod download && go build --tags fts5 .
 
 FROM alpine:3.21
 WORKDIR /tmp
