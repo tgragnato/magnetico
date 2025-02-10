@@ -1,16 +1,17 @@
 FROM golang:alpine3.21 AS builder
 ENV CGO_ENABLED=1
 ENV CGO_CFLAGS=-D_LARGEFILE64_SOURCE
+ENV CC=clang
 WORKDIR /workspace
 COPY go.mod .
 COPY go.sum .
 COPY . .
-RUN apk add --no-cache alpine-sdk libsodium-dev zeromq-dev czmq-dev && go mod download && go build --tags fts5 .
+RUN apk add --no-cache clang lld libsodium-dev zeromq-dev czmq-dev && go mod download && go build --tags fts5 .
 
 FROM alpine:3.21
 WORKDIR /tmp
 COPY --from=builder /workspace/magnetico /usr/bin/
-RUN apk add --no-cache libstdc++ libgcc libsodium libzmq czmq \
+RUN apk add --no-cache libsodium libzmq czmq \
     && echo '#!/bin/sh' >> /usr/bin/magneticod \
     && echo '/usr/bin/magnetico "$@" --daemon' >> /usr/bin/magneticod \
     && chmod +x /usr/bin/magneticod \
