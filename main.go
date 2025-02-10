@@ -27,6 +27,25 @@ func main() {
 	interruptChan := make(chan os.Signal, 1)
 	signal.Notify(interruptChan, os.Interrupt)
 
+	database, err := persistence.MakeDatabase(opFlags.DatabaseURL)
+	if err != nil {
+		log.Fatalf("Could not open the database %s. %s\n", opFlags.DatabaseURL, err.Error())
+	}
+	defer func() {
+		if err = database.Close(); err != nil {
+			log.Printf("Could not close database! %s\n", err.Error())
+		}
+	}()
+
+	// Export the database to file if requested.
+	if opFlags.Export != "" {
+		err := persistence.MakeExport(database, opFlags.Export, interruptChan)
+		if err != nil {
+			log.Fatalf("Could not export the database %s\n", err.Error())
+		}
+		return
+	}
+
 	// Reload credentials when you receive SIGHUP
 	sighupChan := make(chan os.Signal, 1)
 	signal.Notify(sighupChan, syscall.SIGHUP)
@@ -55,16 +74,6 @@ func main() {
 			}
 		}()
 	}
-
-	database, err := persistence.MakeDatabase(opFlags.DatabaseURL)
-	if err != nil {
-		log.Fatalf("Could not open the database %s. %s\n", opFlags.DatabaseURL, err.Error())
-	}
-	defer func() {
-		if err = database.Close(); err != nil {
-			log.Printf("Could not close database! %s\n", err.Error())
-		}
-	}()
 
 	if opFlags.RunWeb {
 		go web.StartWeb(opFlags.Addr, opFlags.Credentials, database)

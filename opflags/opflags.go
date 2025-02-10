@@ -29,6 +29,8 @@ type OpFlags struct {
 	RunDaemon bool `short:"d" long:"daemon" description:"Run the crawler without the web interface." yaml:"runDaemon"`
 	RunWeb    bool `short:"w" long:"web"    description:"Run the web interface without the crawler." yaml:"runWeb"`
 
+	Export string `short:"e" long:"export" description:"Export the database to the path." default:"" yaml:"export"`
+
 	ConfigFilePath string `long:"config-file-path" description:"Configuration YAML file path. If not filled in, it will default to disabled." default:""`
 }
 

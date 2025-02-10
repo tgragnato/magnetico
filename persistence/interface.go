@@ -5,7 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/url"
+	"os"
+	"strings"
+
+	"github.com/klauspost/compress/zstd"
 )
 
 type Database interface {
@@ -140,4 +145,58 @@ func NewStatistics() (s *Statistics) {
 	s.NFiles = make(map[string]uint64)
 	s.TotalSize = make(map[string]uint64)
 	return
+}
+
+func MakeExport(db Database, path string, interruptChan chan os.Signal) error {
+	torrentsChan, err := db.Export()
+	if err != nil {
+		return err
+	}
+
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err = file.Close(); err != nil {
+			log.Printf("Could not close file! %s\n", err.Error())
+		}
+	}()
+
+	writer := file.Write
+	if strings.HasSuffix(path, ".zstd") {
+		zw, err := zstd.NewWriter(file, zstd.WithEncoderLevel(zstd.SpeedBestCompression))
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if err = zw.Close(); err != nil {
+				log.Printf("Could not close zstd writer! %s\n", err.Error())
+			}
+		}()
+		writer = zw.Write
+	}
+
+	for {
+		select {
+		case result, ok := <-torrentsChan:
+			if !ok {
+				log.Println("Database export completed. Shutting down.")
+				return nil
+			}
+
+			jsonResult, err := json.Marshal(result)
+			if err != nil {
+				return err
+			}
+			jsonResult = append(jsonResult, '\n')
+
+			if _, err = writer(jsonResult); err != nil {
+				return err
+			}
+
+		case <-interruptChan:
+			return nil
+		}
+	}
 }

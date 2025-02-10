@@ -1,8 +1,10 @@
 package persistence
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"net/url"
+	"os"
 	"testing"
 )
 
@@ -105,6 +107,74 @@ func TestMakeDatabase(t *testing.T) {
 
 		if db.Engine() != tt.expectedType {
 			t.Errorf("Unexpected database engine for URL %s. Expected: %v, Got: %v", tt.rawURL, tt.expectedType, db.Engine())
+		}
+	}
+}
+
+func splitLines(data []byte) [][]byte {
+	var lines [][]byte
+	start := 0
+	for i, b := range data {
+		if b == '\n' {
+			if i > start {
+				lines = append(lines, data[start:i])
+			}
+			start = i + 1
+		}
+	}
+	if start < len(data) {
+		lines = append(lines, data[start:])
+	}
+	return lines
+}
+
+func TestMakeExport_WithContent_JSON(t *testing.T) {
+	t.Parallel()
+
+	exportFile, err := os.CreateTemp("", "test_content_export.json")
+	if err != nil {
+		t.Fatalf("Failed to create temporary file: %v", err)
+	}
+	exportPath := exportFile.Name()
+	os.Remove(exportPath)
+	exportFile.Close()
+
+	infoHash := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	data := []SimpleTorrentSummary{
+		{
+			InfoHash: hex.EncodeToString(infoHash),
+			Name:     "content_torrent",
+			Files:    []File{{Path: "fileA.txt", Size: 150}},
+		},
+	}
+
+	db := newDb(t)
+	for _, st := range data {
+		db.AddNewTorrent(infoHash, st.Name, st.Files)
+	}
+
+	err = MakeExport(db, exportPath, make(chan os.Signal, 1))
+	if err != nil {
+		t.Fatalf("MakeExport() error = %v", err)
+	}
+
+	fileContent, err := os.ReadFile(exportPath)
+	if err != nil {
+		t.Fatalf("Failed to read export file: %v", err)
+	}
+
+	if len(fileContent) == 0 {
+		t.Errorf("Expected non-empty export file for JSON, got empty")
+	}
+
+	lines := splitLines(fileContent)
+	if len(lines) != len(data) {
+		t.Errorf("Expected %d JSON lines, got %d", len(data), len(lines))
+	}
+	for _, line := range lines {
+		var sts SimpleTorrentSummary
+		if err = json.Unmarshal(line, &sts); err != nil {
+			t.Errorf("Failed to unmarshal JSON line: %v", err)
 		}
 	}
 }
