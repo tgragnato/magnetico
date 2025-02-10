@@ -418,3 +418,60 @@ func Test_sqlite3Database_Engine(t *testing.T) {
 		t.Errorf("zeromq.Engine() = %v, want %v", got, Sqlite3)
 	}
 }
+
+func Test_sqlite3Database_Export(t *testing.T) {
+	t.Parallel()
+	db := newDb(t)
+
+	infoHash1 := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
+	name1 := "Test Torrent 1"
+	files1 := []File{{Size: 100, Path: "file1.txt"}, {Size: 200, Path: "file2.txt"}}
+	err := db.AddNewTorrent(infoHash1, name1, files1)
+	if err != nil {
+		t.Fatalf("Failed to add torrent: %v", err)
+	}
+
+	infoHash2 := []byte{21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40}
+	name2 := "Test Torrent 2"
+	files2 := []File{{Size: 300, Path: "file3.txt"}}
+	err = db.AddNewTorrent(infoHash2, name2, files2)
+	if err != nil {
+		t.Fatalf("Failed to add torrent: %v", err)
+	}
+
+	exportChan, err := db.Export()
+	if err != nil {
+		t.Fatalf("Export returned an error: %v", err)
+	}
+
+	var summaries []SimpleTorrentSummary
+	for summary := range exportChan {
+		summaries = append(summaries, summary)
+	}
+
+	if len(summaries) != 2 {
+		t.Fatalf("Expected 2 summaries, got %d", len(summaries))
+	}
+
+	expectedHash1 := "0102030405060708090a0b0c0d0e0f1011121314"
+	if summaries[0].InfoHash != expectedHash1 {
+		t.Errorf("Summary 1: Expected InfoHash %s, got %s", expectedHash1, summaries[0].InfoHash)
+	}
+	if summaries[0].Name != name1 {
+		t.Errorf("Summary 1: Expected Name %s, got %s", name1, summaries[0].Name)
+	}
+	if !reflect.DeepEqual(summaries[0].Files, files1) {
+		t.Errorf("Summary 1: Expected Files %v, got %v", files1, summaries[0].Files)
+	}
+
+	expectedHash2 := "15161718191a1b1c1d1e1f202122232425262728"
+	if summaries[1].InfoHash != expectedHash2 {
+		t.Errorf("Summary 2: Expected InfoHash %s, got %s", expectedHash2, summaries[1].InfoHash)
+	}
+	if summaries[1].Name != name2 {
+		t.Errorf("Summary 2: Expected Name %s, got %s", name2, summaries[1].Name)
+	}
+	if !reflect.DeepEqual(summaries[1].Files, files2) {
+		t.Errorf("Summary 2: Expected Files %v, got %v", files2, summaries[1].Files)
+	}
+}

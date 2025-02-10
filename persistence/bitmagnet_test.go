@@ -302,3 +302,22 @@ func Test_makeBitmagnet(t *testing.T) {
 		})
 	}
 }
+
+func Test_bitmagnet_Export(t *testing.T) {
+	t.Parallel()
+
+	b := &bitmagnet{
+		url:        "",
+		debug:      true,
+		sourceName: "testsource",
+		cache:      map[string]time.Time{},
+		Mutex:      sync.Mutex{},
+	}
+	got, err := b.Export()
+	if err == nil {
+		t.Error("bitmagnet.Export() error = nil, wanted error")
+	}
+	if got != nil {
+		t.Errorf("bitmagnet.Export() = %v, want nil", got)
+	}
+}

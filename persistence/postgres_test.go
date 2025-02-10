@@ -816,3 +816,69 @@ func TestPostgresDatabase_SetupDatabase(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestPostgresDatabase_Export(t *testing.T) {
+	t.Parallel()
+
+	conn, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+
+	db := &postgresDatabase{conn: conn}
+
+	rows := sqlmock.NewRows([]string{"info_hash", "name", "id"}).
+		AddRow([]byte("infohash1"), "Torrent 1", 1).
+		AddRow([]byte("infohash2"), "Torrent 2", 2)
+	mock.ExpectQuery("SELECT info_hash, name, id FROM torrents;").WillReturnRows(rows)
+
+	filesRows1 := sqlmock.NewRows([]string{"size", "path"}).
+		AddRow(1024, "/path/to/file1").
+		AddRow(2048, "/path/to/file2")
+	mock.ExpectQuery("SELECT f.size, f.path FROM files f, torrents t WHERE f.torrent_id = t.id AND t.info_hash = \\$1;").
+		WithArgs([]byte("infohash1")).
+		WillReturnRows(filesRows1)
+
+	filesRows2 := sqlmock.NewRows([]string{"size", "path"}).
+		AddRow(512, "/path/to/file3")
+	mock.ExpectQuery("SELECT f.size, f.path FROM files f, torrents t WHERE f.torrent_id = t.id AND t.info_hash = \\$1;").
+		WithArgs([]byte("infohash2")).
+		WillReturnRows(filesRows2)
+
+	exportChan, err := db.Export()
+	if err != nil {
+		t.Error(err)
+	}
+
+	var summaries []SimpleTorrentSummary
+	for summary := range exportChan {
+		summaries = append(summaries, summary)
+	}
+
+	expectedSummaries := []SimpleTorrentSummary{
+		{
+			InfoHash: "696e666f6861736831",
+			Name:     "Torrent 1",
+			Files: []File{
+				{Size: 1024, Path: "/path/to/file1"},
+				{Size: 2048, Path: "/path/to/file2"},
+			},
+		},
+		{
+			InfoHash: "696e666f6861736832",
+			Name:     "Torrent 2",
+			Files: []File{
+				{Size: 512, Path: "/path/to/file3"},
+			},
+		},
+	}
+
+	if !reflect.DeepEqual(summaries, expectedSummaries) {
+		t.Errorf("Expected summaries to be %v, but got %v", expectedSummaries, summaries)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Error(err)
+	}
+}

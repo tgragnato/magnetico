@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
@@ -610,4 +611,40 @@ func (db *postgresDatabase) executeTemplate(text string, data interface{}, funcs
 		panic(err.Error())
 	}
 	return buf.String()
+}
+
+func (db *postgresDatabase) Export() (chan SimpleTorrentSummary, error) {
+	out := make(chan SimpleTorrentSummary)
+	rows, err := db.conn.Query("SELECT info_hash, name, id FROM torrents;")
+	if err != nil {
+		return nil, err
+	}
+
+	go func(out chan SimpleTorrentSummary, rows *sql.Rows) {
+		defer close(out)
+		defer rows.Close()
+		for rows.Next() {
+			var infoHash []byte
+			var name string
+			var id int64
+
+			err = rows.Scan(&infoHash, &name, &id)
+			if err != nil {
+				log.Fatalln("Error scanning row:", err.Error())
+			}
+
+			files, err := db.GetFiles(infoHash)
+			if err != nil {
+				log.Fatalln("Error getting files:", err.Error())
+			}
+
+			out <- SimpleTorrentSummary{
+				InfoHash: hex.EncodeToString(infoHash),
+				Name:     name,
+				Files:    files,
+			}
+		}
+	}(out, rows)
+
+	return out, nil
 }

@@ -40,6 +40,8 @@ type Database interface {
 	GetTorrent(infoHash []byte) (*TorrentMetadata, error)
 	GetFiles(infoHash []byte) ([]File, error)
 	GetStatistics(from string, n uint) (*Statistics, error)
+	// Export returns a channel that will be used to dump all the torrents in the database.
+	Export() (chan SimpleTorrentSummary, error)
 }
 
 type OrderingCriteria uint8

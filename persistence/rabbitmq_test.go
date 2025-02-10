@@ -234,3 +234,23 @@ func Test_rabbitmq_AddNewTorrent(t *testing.T) {
 		t.Error("rabbitmq.AddNewTorrent() error = nil, want error")
 	}
 }
+
+func Test_rabbitmq_Export(t *testing.T) {
+	t.Parallel()
+
+	r := &rabbitMQ{
+		url:       "",
+		conn:      nil,
+		ch:        nil,
+		dataQueue: nil,
+		cache:     map[string]time.Time{},
+		Mutex:     sync.Mutex{},
+	}
+	got, err := r.Export()
+	if err == nil {
+		t.Error("rabbitmq.Export() error = nil, want error")
+	}
+	if got != nil {
+		t.Errorf("rabbitmq.Export() = %v, want nil", got)
+	}
+}

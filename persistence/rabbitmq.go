@@ -155,3 +155,7 @@ func (r *rabbitMQ) GetFiles(infoHash []byte) ([]File, error) {
 func (r *rabbitMQ) GetStatistics(from string, n uint) (*Statistics, error) {
 	return nil, errors.New("statistics not supported")
 }
+
+func (r *rabbitMQ) Export() (chan SimpleTorrentSummary, error) {
+	return nil, errors.New("export not supported")
+}

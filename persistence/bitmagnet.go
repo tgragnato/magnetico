@@ -144,3 +144,7 @@ func (b *bitmagnet) GetFiles(infoHash []byte) ([]File, error) {
 func (b *bitmagnet) GetStatistics(from string, n uint) (*Statistics, error) {
 	return nil, errors.New("statistics not supported")
 }
+
+func (b *bitmagnet) Export() (chan SimpleTorrentSummary, error) {
+	return nil, errors.New("export not supported")
+}

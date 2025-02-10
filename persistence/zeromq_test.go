@@ -161,3 +161,19 @@ func Test_zeromq_cleanup(t *testing.T) {
 		t.Errorf("zeromq.cleanup() removed valid torrent")
 	}
 }
+
+func Test_zeromq_Export(t *testing.T) {
+	t.Parallel()
+
+	instance := &zeromq{
+		context: &zmq.Sock{},
+		cache:   map[string]time.Time{},
+	}
+	got, err := instance.Export()
+	if err == nil {
+		t.Error("zeromq.Export() error = nil, want error")
+	}
+	if got != nil {
+		t.Errorf("zeromq.Export() = %v, want nil", got)
+	}
+}

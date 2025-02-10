@@ -3,6 +3,7 @@ package persistence
 import (
 	"bytes"
 	"database/sql"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
@@ -716,4 +717,40 @@ func closeRows(rows *sql.Rows) {
 	if err := rows.Close(); err != nil {
 		panic("sqlite: could not close row " + err.Error())
 	}
+}
+
+func (db *sqlite3Database) Export() (chan SimpleTorrentSummary, error) {
+	out := make(chan SimpleTorrentSummary)
+	rows, err := db.conn.Query("SELECT info_hash, name, id FROM torrents;")
+	if err != nil {
+		return nil, err
+	}
+
+	go func(out chan SimpleTorrentSummary, rows *sql.Rows) {
+		defer close(out)
+		defer rows.Close()
+
+		for rows.Next() {
+			var infoHash []byte
+			var name string
+			var id int64
+
+			if err := rows.Scan(&infoHash, &name, &id); err != nil {
+				return
+			}
+
+			files, err := db.GetFiles(infoHash)
+			if err != nil {
+				return
+			}
+
+			out <- SimpleTorrentSummary{
+				InfoHash: hex.EncodeToString(infoHash),
+				Name:     name,
+				Files:    files,
+			}
+		}
+	}(out, rows)
+
+	return out, nil
 }
