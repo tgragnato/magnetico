@@ -200,3 +200,65 @@ func MakeExport(db Database, path string, interruptChan chan os.Signal) error {
 		}
 	}
 }
+
+func MakeImport(db Database, path string, interruptChan chan os.Signal) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err = file.Close(); err != nil {
+			log.Printf("Could not close file! %s\n", err.Error())
+		}
+	}()
+
+	reader := file.Read
+	if strings.HasSuffix(path, ".zstd") {
+		zr, err := zstd.NewReader(file)
+		if err != nil {
+			return err
+		}
+		defer zr.Close()
+		reader = zr.Read
+	}
+
+	for {
+		select {
+
+		case <-interruptChan:
+			return nil
+
+		default:
+			var line []byte
+			// Read one byte at a time until newline or EOF
+			for {
+				buf := make([]byte, 1)
+				n, err := reader(buf)
+				if n == 0 || err != nil {
+					if len(line) == 0 {
+						return nil // EOF with no data
+					}
+					break
+				}
+				if buf[0] == '\n' {
+					break
+				}
+				line = append(line, buf[0])
+			}
+
+			var torrent SimpleTorrentSummary
+			if err := json.Unmarshal(line, &torrent); err != nil {
+				return fmt.Errorf("failed to unmarshal JSON: %v", err)
+			}
+
+			infoHash, err := hex.DecodeString(torrent.InfoHash)
+			if err != nil {
+				return fmt.Errorf("failed to decode infohash: %v", err)
+			}
+
+			if err := db.AddNewTorrent(infoHash, torrent.Name, torrent.Files); err != nil {
+				log.Printf("failed to add torrent: %v\n", err.Error())
+			}
+		}
+	}
+}

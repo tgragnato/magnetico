@@ -46,6 +46,15 @@ func main() {
 		return
 	}
 
+	// Import the database from file if requested.
+	if opFlags.Import != "" {
+		err := persistence.MakeImport(database, opFlags.Import, interruptChan)
+		if err != nil {
+			log.Fatalf("Could not import the database %s\n", err.Error())
+		}
+		return
+	}
+
 	// Reload credentials when you receive SIGHUP
 	sighupChan := make(chan os.Signal, 1)
 	signal.Notify(sighupChan, syscall.SIGHUP)
