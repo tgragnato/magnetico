@@ -18,7 +18,10 @@ var _ fmt.Formatter = (*T)(nil)
 func (t T) Format(f fmt.State, c rune) {
 	// TODO: I can't figure out a nice way to just override the 'x' rune, since it's meaningless
 	// with the "default" 'v', or .String() already returning the hex.
-	f.Write([]byte(t.HexString()))
+	_, err := f.Write([]byte(t.HexString()))
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (t T) Bytes() []byte {
@@ -40,10 +43,6 @@ func (t T) HexString() string {
 func (t *T) FromHexString(s string) (err error) {
 	if len(s) != 2*Size {
 		err = fmt.Errorf("hash hex string has bad length: %d", len(s))
-		return
-	}
-	if len(s) == 0 {
-		*t = T{}
 		return
 	}
 	n, err := hex.Decode(t[:], []byte(s))
@@ -74,9 +73,8 @@ func (t T) MarshalText() (text []byte, err error) {
 }
 
 func FromHexString(s string) (h T) {
-	err := h.FromHexString(s)
-	if err != nil {
-		h.FromHexString("")
+	if err := h.FromHexString(s); err != nil {
+		h = T{}
 	}
 	return
 }

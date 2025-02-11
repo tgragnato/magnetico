@@ -52,7 +52,9 @@ func TestInitPyroscope(t *testing.T) {
 			}
 
 			if profiler != nil {
-				profiler.Stop()
+				if err := profiler.Stop(); err != nil {
+					t.Errorf("error stopping profiler: %v", err)
+				}
 			}
 		})
 	}

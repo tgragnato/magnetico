@@ -9,7 +9,9 @@ func TestBytesMarshalNil(t *testing.T) {
 	t.Parallel()
 
 	var b Bytes
-	Marshal(b)
+	if _, err := Marshal(b); err == nil {
+		t.Error("Marshal did not fail with error: marshalled Bytes should not be zero-length")
+	}
 }
 
 type structWithBytes struct {

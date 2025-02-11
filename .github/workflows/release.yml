@@ -19,16 +19,16 @@ jobs:
     strategy:
       matrix:
         include:
-          - { go-version: 1.23, go-os: linux, go-arch: amd64 }
-          - { go-version: 1.23, go-os: linux, go-arch: 386 }
-          - { go-version: 1.23, go-os: linux, go-arch: arm64 }
-          - { go-version: 1.23, go-os: linux, go-arch: arm }
-          - { go-version: 1.23, go-os: openbsd, go-arch: amd64 }
-          - { go-version: 1.23, go-os: openbsd, go-arch: 386 }
-          - { go-version: 1.23, go-os: openbsd, go-arch: arm64 }
-          - { go-version: 1.23, go-os: openbsd, go-arch: arm }
-          - { go-version: 1.23, go-os: darwin, go-arch: arm64 }
-          - { go-version: 1.23, go-os: freebsd, go-arch: amd64 }
+          - { go-version: 1.24, go-os: linux, go-arch: amd64 }
+          - { go-version: 1.24, go-os: linux, go-arch: 386 }
+          - { go-version: 1.24, go-os: linux, go-arch: arm64 }
+          - { go-version: 1.24, go-os: linux, go-arch: arm }
+          - { go-version: 1.24, go-os: openbsd, go-arch: amd64 }
+          - { go-version: 1.24, go-os: openbsd, go-arch: 386 }
+          - { go-version: 1.24, go-os: openbsd, go-arch: arm64 }
+          - { go-version: 1.24, go-os: openbsd, go-arch: arm }
+          - { go-version: 1.24, go-os: darwin, go-arch: arm64 }
+          - { go-version: 1.24, go-os: freebsd, go-arch: amd64 }
 
     steps:
 

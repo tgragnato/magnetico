@@ -150,7 +150,9 @@ func TestMakeExport_WithContent_JSON(t *testing.T) {
 
 	db := newDb(t)
 	for _, st := range data {
-		db.AddNewTorrent(infoHash, st.Name, st.Files)
+		if err := db.AddNewTorrent(infoHash, st.Name, st.Files); err != nil {
+			t.Fatalf("Failed to add torrent to database: %v", err)
+		}
 	}
 
 	err = MakeExport(db, exportPath, make(chan os.Signal, 1))
