@@ -5,7 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/sha1"
 	"fmt"
-	mrand "math/rand"
+	mrand "math/rand/v2"
 	"reflect"
 	"testing"
 	"text/template"
@@ -69,7 +69,7 @@ func TestDoesTorrentExist(t *testing.T) {
 	_, err = rand.Read(random[:])
 	if err != nil {
 		for i := 0; i < 100; i++ {
-			random[i] = byte(mrand.Intn(256))
+			random[i] = byte(mrand.IntN(256))
 		}
 	}
 	infohash := sha1.Sum(random[:])
@@ -374,7 +374,7 @@ func TestPostgresDatabase_GetTorrent(t *testing.T) {
 	_, err = rand.Read(random[:])
 	if err != nil {
 		for i := 0; i < 100; i++ {
-			random[i] = byte(mrand.Intn(256))
+			random[i] = byte(mrand.IntN(256))
 		}
 	}
 	infohash := sha1.Sum(random[:])
@@ -447,7 +447,7 @@ func TestPostgresDatabase_GetFiles(t *testing.T) {
 	_, err = rand.Read(random[:])
 	if err != nil {
 		for i := 0; i < 100; i++ {
-			random[i] = byte(mrand.Intn(256))
+			random[i] = byte(mrand.IntN(256))
 		}
 	}
 	infohash := sha1.Sum(random[:])

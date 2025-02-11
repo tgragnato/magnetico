@@ -3,7 +3,7 @@ package mainline
 import (
 	"crypto/rand"
 	"encoding/binary"
-	mrand "math/rand"
+	mrand "math/rand/v2"
 	"net"
 	"reflect"
 	"strconv"
@@ -343,7 +343,7 @@ func randomNodeID() []byte {
 	_, err := rand.Read(nodeID)
 	if err != nil {
 		for i := 0; i < 20; i++ {
-			nodeID[i] = byte(mrand.Intn(256))
+			nodeID[i] = byte(mrand.IntN(256))
 		}
 	}
 	return nodeID

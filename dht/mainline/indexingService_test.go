@@ -1,7 +1,7 @@
 package mainline
 
 import (
-	"math/rand"
+	"math/rand/v2"
 	"net"
 	"strconv"
 	"testing"
@@ -37,7 +37,7 @@ func TestUint16BE(t *testing.T) {
 func TestBasicIndexingService(t *testing.T) {
 	t.Parallel()
 
-	randomPort := rand.Intn(64511) + 1024
+	randomPort := rand.IntN(64511) + 1024
 	tests := []struct {
 		name          string
 		laddr         string

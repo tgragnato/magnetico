@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/sha1"
-	mrand "math/rand"
+	mrand "math/rand/v2"
 	"net"
 	"sync"
 	"time"
@@ -342,10 +342,10 @@ func (p *Protocol) updateTokenSecret() {
 	defer p.tokenLock.Unlock()
 	_, err := rand.Read(p.tokenSecret)
 	if err != nil {
-		len := mrand.Intn(256)
+		len := mrand.IntN(256)
 		p.tokenSecret = make([]byte, len)
 		for i := 0; i < len; i++ {
-			p.tokenSecret[i] = byte(mrand.Intn(256))
+			p.tokenSecret[i] = byte(mrand.IntN(256))
 		}
 	}
 }

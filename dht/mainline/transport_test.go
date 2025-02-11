@@ -1,7 +1,7 @@
 package mainline
 
 import (
-	"math/rand"
+	"math/rand/v2"
 	"net"
 	"strconv"
 	"strings"
@@ -105,7 +105,7 @@ func TestTransport_WriteMessages(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			transport := NewTransport(
-				net.JoinHostPort("::1", strconv.Itoa(rand.Intn(64511)+1024)),
+				net.JoinHostPort("::1", strconv.Itoa(rand.IntN(64511)+1024)),
 				func(m *Message, u *net.UDPAddr) {},
 				1000,
 			)

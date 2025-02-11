@@ -1,7 +1,7 @@
 package dht
 
 import (
-	"math/rand"
+	"math/rand/v2"
 	"net"
 	"reflect"
 	"strconv"
@@ -35,9 +35,9 @@ func (tr *TestResult) PeerAddrs() []net.TCPAddr {
 func TestChannelOutput(t *testing.T) {
 	t.Parallel()
 
-	address := ManagerAddress + ":" + strconv.Itoa(rand.Intn(64511)+1024)
+	address := ManagerAddress + ":" + strconv.Itoa(rand.IntN(64511)+1024)
 	manager := NewManager([]string{address}, MaxNeighbours, []string{"dht.tgragnato.it"}, []net.IPNet{})
-	peerPort := rand.Intn(64511) + 1024
+	peerPort := rand.IntN(64511) + 1024
 
 	result := &TestResult{
 		infoHash: [20]byte{255},
@@ -61,7 +61,7 @@ func TestChannelOutput(t *testing.T) {
 func TestOnIndexingResult(t *testing.T) {
 	t.Parallel()
 
-	address := ManagerAddress + ":" + strconv.Itoa(rand.Intn(64511)+1024)
+	address := ManagerAddress + ":" + strconv.Itoa(rand.IntN(64511)+1024)
 	manager := NewManager([]string{address}, MaxNeighbours, []string{"dht.tgragnato.it"}, []net.IPNet{})
 
 	result := mainline.IndexingResult{}

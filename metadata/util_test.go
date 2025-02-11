@@ -5,7 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/sha1"
 	"math"
-	mrand "math/rand"
+	mrand "math/rand/v2"
 	"reflect"
 	"testing"
 	"time"
@@ -17,7 +17,7 @@ import (
 
 func TestTotalSize(t *testing.T) {
 	t.Parallel()
-	positiveRand := mrand.Int63n(math.MaxInt64)
+	positiveRand := mrand.Int64N(math.MaxInt64)
 
 	tests := []struct {
 		name    string
@@ -35,7 +35,7 @@ func TestTotalSize(t *testing.T) {
 			name: "Negative size",
 			files: []persistence.File{
 				{
-					Size: -mrand.Int63n(math.MaxInt64),
+					Size: -mrand.Int64N(math.MaxInt64),
 					Path: "",
 				},
 			},
@@ -272,7 +272,7 @@ func TestUnmarshalMetainfo(t *testing.T) {
 	metadataBytes := make([]byte, 100)
 	if _, err := rand.Read(metadataBytes); err != nil {
 		for i := 0; i < 100; i++ {
-			metadataBytes[i] = byte(mrand.Intn(256))
+			metadataBytes[i] = byte(mrand.IntN(256))
 		}
 	}
 

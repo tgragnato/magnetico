@@ -13,7 +13,7 @@ import (
 	"io"
 	"math"
 	"math/big"
-	mrand "math/rand"
+	mrand "math/rand/v2"
 )
 
 // The MIT License (MIT)
@@ -382,7 +382,7 @@ func privateKey() *big.Int {
 	_, err := rand.Read(b)
 	if err != nil {
 		for i := 0; i < 20; i++ {
-			b[i] = byte(mrand.Intn(256))
+			b[i] = byte(mrand.IntN(256))
 		}
 	}
 	var n big.Int
@@ -456,7 +456,7 @@ func padRandom() ([]byte, error) {
 	_, err = rand.Read(b)
 	if err != nil {
 		for i := 0; i < len(b); i++ {
-			b[i] = byte(mrand.Intn(256))
+			b[i] = byte(mrand.IntN(256))
 		}
 	}
 	return b, nil

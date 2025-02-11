@@ -6,7 +6,7 @@ import (
 	"crypto/sha1"
 	"encoding/binary"
 	"errors"
-	mrand "math/rand"
+	mrand "math/rand/v2"
 	"time"
 
 	"tgragnato.it/magnetico/bencode"
@@ -137,7 +137,7 @@ func randomDigit() byte {
 	b := make([]byte, 1)
 	_, err := rand.Read(b)
 	if err != nil {
-		b[0] = byte(mrand.Intn(256))
+		b[0] = byte(mrand.IntN(256))
 	}
 	return (b[0] % 10) + '0'
 }
