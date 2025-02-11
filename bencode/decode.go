@@ -518,7 +518,9 @@ func (d *Decoder) readOneValue() bool {
 		panic(err)
 	}
 	if b == 'e' {
-		d.r.UnreadByte()
+		if err := d.r.UnreadByte(); err != nil {
+			panic(err)
+		}
 		return false
 	} else {
 		d.Offset++

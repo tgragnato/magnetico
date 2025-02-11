@@ -11,36 +11,18 @@ linters:
     - gci
 
 issues:
-  new: true
   exclude-rules:
-
-    - linters:
-        - staticcheck
-      text: "SA4027:"
-
-    - linters:
-        - staticcheck
-      text: "ST1005:"
 
     - text: "weak random number generator"
       linters:
         - gosec
 
+    # The BitTorrent protocol is based upon weak cryptographic primitives
+    # it's pointless to be stubborn about their usage
     - text: "weak cryptographic primitive"
       linters:
         - gosec
 
-    - path: dht/mainline/routingTable.go
-      text: "integer overflow conversion uint -> int"
-      linters:
-        - gosec
-
-    - path: main.go
-      text: "integer overflow conversion uint -> int"
-      linters:
-        - gosec
-    
-    - path: persistence/postgres.go
-      text: "G115: integer overflow conversion int64 -> uint"
+    - text: "G115: integer overflow conversion"
       linters:
         - gosec

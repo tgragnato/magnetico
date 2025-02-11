@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/multiformats/go-multihash"
-
 	"tgragnato.it/magnetico/types/infohash"
 	infohash_v2 "tgragnato.it/magnetico/types/infohash-v2"
 )

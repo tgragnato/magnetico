@@ -18,7 +18,10 @@ var (
 )
 
 func init() {
-	hex.Decode(exampleMagnet.InfoHash[:], []byte("51340689c960f0778a4387aef9b4b52fd08390cd"))
+	_, err := hex.Decode(exampleMagnet.InfoHash[:], []byte("51340689c960f0778a4387aef9b4b52fd08390cd"))
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Converting from our Magnet type to URL string.

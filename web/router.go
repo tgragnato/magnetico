@@ -72,7 +72,9 @@ func makeRouter() *http.ServeMux {
 
 func robotsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set(ContentType, "text/plain")
-	w.Write([]byte("User-agent: *\nDisallow: /\n"))
+	if _, err := w.Write([]byte("User-agent: *\nDisallow: /\n")); err != nil {
+		http.Error(w, "Failed to write response: "+err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func infohashMiddleware(next http.HandlerFunc) http.HandlerFunc {

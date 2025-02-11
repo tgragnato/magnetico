@@ -307,8 +307,12 @@ func decodeHugeString(strLen int64, header, tail string, v interface{}, maxStrLe
 	r, w := io.Pipe()
 	go func() {
 		fmt.Fprintf(w, header, strLen)
-		io.CopyN(w, arbitraryReader{}, strLen)
-		w.Write([]byte(tail))
+		if _, err := io.CopyN(w, arbitraryReader{}, strLen); err != nil {
+			panic(err)
+		}
+		if _, err := w.Write([]byte(tail)); err != nil {
+			panic(err)
+		}
 		w.Close()
 	}()
 	d := NewDecoder(r)
