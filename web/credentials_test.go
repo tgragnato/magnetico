@@ -61,7 +61,7 @@ func TestBasicAuth(t *testing.T) {
 			}
 
 			rr := httptest.NewRecorder()
-			handler := BasicAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			handler := basicAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
 			}))
 

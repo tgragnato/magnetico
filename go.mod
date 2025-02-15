@@ -4,6 +4,7 @@ go 1.23.6
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
+	github.com/andybalholm/brotli v1.1.1
 	github.com/bits-and-blooms/bloom/v3 v3.7.0
 	github.com/grafana/pyroscope-go v1.2.0
 	github.com/jackc/pgx/v5 v5.7.2

@@ -43,29 +43,33 @@ func StartWeb(address string, cred map[string][]byte, db persistence.Database) {
 	}
 }
 
+func middlewares(next http.HandlerFunc) http.HandlerFunc {
+	return compressMiddleware(basicAuth(next))
+}
+
 func makeRouter() *http.ServeMux {
 	router := http.NewServeMux()
 
-	router.HandleFunc("/", BasicAuth(rootHandler))
+	router.HandleFunc("/", middlewares(rootHandler))
 
 	staticFS := http.FS(static)
-	router.HandleFunc("GET /static/", BasicAuth(
+	router.HandleFunc("GET /static/", middlewares(
 		http.StripPrefix("/", http.FileServer(staticFS)).ServeHTTP,
 	))
 
-	router.HandleFunc("/metrics", BasicAuth(stats.MakePrometheusHandler()))
+	router.HandleFunc("/metrics", middlewares(stats.MakePrometheusHandler()))
 
-	router.HandleFunc("GET /api/v0.1/statistics", BasicAuth(apiStatistics))
-	router.HandleFunc("GET /api/v0.1/torrents", BasicAuth(apiTorrents))
-	router.HandleFunc("GET /api/v0.1/torrentstotal", BasicAuth(apiTorrentsTotal))
-	router.HandleFunc("GET /api/v0.1/torrents/{infohash}", BasicAuth(infohashMiddleware(apiTorrent)))
-	router.HandleFunc("GET /api/v0.1/torrents/{infohash}/filelist", BasicAuth(infohashMiddleware(apiFileList)))
+	router.HandleFunc("GET /api/v0.1/statistics", middlewares(apiStatistics))
+	router.HandleFunc("GET /api/v0.1/torrents", middlewares(apiTorrents))
+	router.HandleFunc("GET /api/v0.1/torrentstotal", middlewares(apiTorrentsTotal))
+	router.HandleFunc("GET /api/v0.1/torrents/{infohash}", middlewares(infohashMiddleware(apiTorrent)))
+	router.HandleFunc("GET /api/v0.1/torrents/{infohash}/filelist", middlewares(infohashMiddleware(apiFileList)))
 
-	router.HandleFunc("GET /robots.txt", BasicAuth(robotsHandler))
-	router.HandleFunc("GET /feed", BasicAuth(feedHandler))
-	router.HandleFunc("GET /statistics", BasicAuth(statisticsHandler))
-	router.HandleFunc("GET /torrents/", BasicAuth(torrentsInfohashHandler))
-	router.HandleFunc("GET /torrents", BasicAuth(torrentsHandler))
+	router.HandleFunc("GET /robots.txt", middlewares(robotsHandler))
+	router.HandleFunc("GET /feed", middlewares(feedHandler))
+	router.HandleFunc("GET /statistics", middlewares(statisticsHandler))
+	router.HandleFunc("GET /torrents/", middlewares(torrentsInfohashHandler))
+	router.HandleFunc("GET /torrents", middlewares(torrentsHandler))
 
 	return router
 }
