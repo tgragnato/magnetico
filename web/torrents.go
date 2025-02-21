@@ -88,6 +88,7 @@ func torrents() g.Node {
 }
 
 func torrentsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set(ContentType, ContentTypeHtml)
 	if err := torrents().Render(w); err != nil {
 		http.Error(w, "Torrents render "+err.Error(), http.StatusInternalServerError)
 	}

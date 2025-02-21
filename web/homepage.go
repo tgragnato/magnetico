@@ -65,6 +65,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set(ContentType, ContentTypeHtml)
 	if err = homepage(nTorrents).Render(w); err != nil {
 		http.Error(w, "Homepage render "+err.Error(), http.StatusInternalServerError)
 	}

@@ -94,8 +94,8 @@ func statistics() g.Node {
 }
 
 func statisticsHandler(w http.ResponseWriter, r *http.Request) {
-	err := statistics().Render(w)
-	if err != nil {
+	w.Header().Set(ContentType, ContentTypeHtml)
+	if err := statistics().Render(w); err != nil {
 		http.Error(w, "Statistics render "+err.Error(), http.StatusInternalServerError)
 		return
 	}

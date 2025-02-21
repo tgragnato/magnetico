@@ -45,6 +45,10 @@ func TestRootHandler(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
+	if ct := rr.Header().Get(ContentType); ct != ContentTypeHtml {
+		t.Errorf("handler returned wrong content type: got %v want %v", ct, ContentTypeHtml)
+	}
+
 	if !strings.Contains(rr.Body.String(), "0 torrents available") {
 		t.Error("handler returned unexpected body: did not contain 0 torrents available")
 	}

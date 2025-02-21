@@ -38,8 +38,7 @@ func TestTorrentsHandler(t *testing.T) {
 		t.Errorf("expected status OK; got %v", res.Status)
 	}
 
-	contentType := res.Header.Get("Content-Type")
-	if contentType != "text/html; charset=utf-8" {
+	if contentType := res.Header.Get("Content-Type"); contentType != ContentTypeHtml {
 		t.Errorf("expected Content-Type text/html; got %v", contentType)
 	}
 }

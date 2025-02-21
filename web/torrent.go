@@ -95,6 +95,7 @@ func torrent() g.Node {
 }
 
 func torrentsInfohashHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set(ContentType, ContentTypeHtml)
 	if err := torrent().Render(w); err != nil {
 		http.Error(w, "Torrent render "+err.Error(), http.StatusInternalServerError)
 	}

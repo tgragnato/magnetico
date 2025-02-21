@@ -24,6 +24,7 @@ type InfohashKeyType string
 const (
 	ContentType     string          = "Content-Type"
 	ContentTypeJson string          = "application/json; charset=utf-8"
+	ContentTypeHtml string          = "text/html; charset=utf-8"
 	InfohashKey     InfohashKeyType = "infohash"
 )
 
