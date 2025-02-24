@@ -28,16 +28,18 @@ const (
 	InfohashKey     InfohashKeyType = "infohash"
 )
 
-func StartWeb(address string, cred map[string][]byte, db persistence.Database) {
+func StartWeb(address string, timeout int64, cred map[string][]byte, db persistence.Database) {
 	credentials = cred
 	database = db
 	log.Printf("magnetico is ready to serve on %s!\n", address)
+	timeoutDuration := time.Duration(timeout) * time.Second
 	server := &http.Server{
-		Addr:         address,
-		Handler:      makeRouter(),
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  120 * time.Second,
+		Addr:              address,
+		Handler:           makeRouter(),
+		ReadTimeout:       timeoutDuration,
+		ReadHeaderTimeout: timeoutDuration,
+		WriteTimeout:      timeoutDuration,
+		IdleTimeout:       timeoutDuration,
 	}
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("ListenAndServe error %s\n", err.Error())

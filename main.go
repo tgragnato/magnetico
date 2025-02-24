@@ -85,7 +85,7 @@ func main() {
 	}
 
 	if opFlags.RunWeb {
-		go web.StartWeb(opFlags.Addr, opFlags.Credentials, database)
+		go web.StartWeb(opFlags.Addr, opFlags.Timeout, opFlags.Credentials, database)
 	}
 
 	if !opFlags.RunDaemon {
