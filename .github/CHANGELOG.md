@@ -1,3 +1,28 @@
+## [2.2.0](https://github.com/tgragnato/magnetico/compare/v2.1.0...v2.2.0) (2025-02-25)
+
+
+### Features
+
+* **persistence:** add database import functionality ([6f0cfb1](https://github.com/tgragnato/magnetico/commit/6f0cfb1141c36b27e5c9c85cbfb990a5e8a478d7))
+* **persistence:** implement database export functionality ([c804674](https://github.com/tgragnato/magnetico/commit/c80467425edd3a8da0e9f228e624ab1c38b16a26))
+* **persistence:** implement export method for database interfaces ([7a705a6](https://github.com/tgragnato/magnetico/commit/7a705a69e08b3c9e968a68f8807533715ddbfae7))
+* **stats:** add pyroscope profiling support ([5d261e1](https://github.com/tgragnato/magnetico/commit/5d261e12df1e29445a03e9bc5478729efef2900d))
+* **web:** add redirect for non-root paths and handle invalid methods ([3604006](https://github.com/tgragnato/magnetico/commit/360400601ab494a68accb06e455ceac2db060554))
+* **web:** add timeout configuration for web interface and apis ([2255959](https://github.com/tgragnato/magnetico/commit/225595982cdf094762aabe99d809ca76c1104fe5))
+* **web:** introduce a compression middleware ([a406108](https://github.com/tgragnato/magnetico/commit/a406108a9665858a68f05644838142cdde0996ad))
+* **web:** set Content-Type header to text/html for HTML responses ([f6ee78a](https://github.com/tgragnato/magnetico/commit/f6ee78a8e2ef940b3f0e3bee6d4845fa096c4592))
+* **web:** update router to specify HTTP methods and add robots.txt handler ([206757e](https://github.com/tgragnato/magnetico/commit/206757e9453e5d49c40d2bdaba214ec93e69e6b8))
+
+
+### Bug Fixes
+
+* **oci:** update dockerfile to use clang for building ([a368255](https://github.com/tgragnato/magnetico/commit/a3682556d16e1d784492672862e3acd61fa637f7))
+
+
+### Performance Improvements
+
+* **dht:** use swiss tables for nodes routing ([88b33ea](https://github.com/tgragnato/magnetico/commit/88b33ea8fcfcd5c7ac23101578031f3bb05d6c58))
+
 ## [2.1.0](https://github.com/tgragnato/magnetico/compare/v2.0.0...v2.1.0) (2025-01-04)
 
 
