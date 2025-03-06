@@ -17,7 +17,7 @@ require (
 	golang.org/x/crypto v0.35.0
 	gopkg.in/yaml.v3 v3.0.1
 	gopkg.in/zeromq/goczmq.v4 v4.1.0
-	maragu.dev/gomponents v1.0.0
+	maragu.dev/gomponents v1.1.0
 )
 
 require (
@@ -41,7 +41,7 @@ require (
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect
 	lukechampine.com/blake3 v1.4.0 // indirect
