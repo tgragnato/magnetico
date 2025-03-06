@@ -17,7 +17,7 @@ require (
 	golang.org/x/crypto v0.35.0
 	gopkg.in/yaml.v3 v3.0.1
 	gopkg.in/zeromq/goczmq.v4 v4.1.0
-	maragu.dev/gomponents v1.0.0
+	maragu.dev/gomponents v1.1.0
 )
 
 require (
