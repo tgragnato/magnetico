@@ -35,7 +35,7 @@ func TestReadFromOnClosedConn(t *testing.T) {
 
 	// Testing
 	_, _, err = conn.ReadFrom(buffer)
-	if !(err != nil && strings.HasSuffix(err.Error(), MSG_CLOSED_CONNECTION)) {
+	if err == nil || !strings.HasSuffix(err.Error(), MSG_CLOSED_CONNECTION) {
 		t.Fatal(MSG_UNEXPECTED_SUFFIX)
 	}
 }
@@ -58,7 +58,7 @@ func TestWriteToOnClosedConn(t *testing.T) {
 
 	// Testing
 	_, err = conn.WriteTo([]byte("estarabim"), laddr)
-	if !(err != nil && strings.HasSuffix(err.Error(), MSG_CLOSED_CONNECTION)) {
+	if err == nil || !strings.HasSuffix(err.Error(), MSG_CLOSED_CONNECTION) {
 		t.Fatal(MSG_UNEXPECTED_SUFFIX)
 	}
 }
