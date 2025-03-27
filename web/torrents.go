@@ -97,8 +97,7 @@ func torrentsHandler(w http.ResponseWriter, r *http.Request) {
 func apiTorrents(w http.ResponseWriter, r *http.Request) {
 	// @lastOrderedValue AND @lastID are either both supplied or neither of them should be supplied
 	// at all; and if that is NOT the case, then return an error.
-	if q := r.URL.Query(); !((q.Get("lastOrderedValue") != "" && q.Get("lastID") != "") ||
-		(q.Get("lastOrderedValue") == "" && q.Get("lastID") == "")) {
+	if q := r.URL.Query(); q.Get("lastOrderedValue") == "" && q.Get("lastID") != "" || q.Get("lastOrderedValue") != "" && q.Get("lastID") == "" {
 		http.Error(w, "`lastOrderedValue`, `lastID` must be supplied altogether, if supplied.", http.StatusBadRequest)
 		return
 	}
@@ -202,8 +201,7 @@ func apiTorrents(w http.ResponseWriter, r *http.Request) {
 func apiTorrentsTotal(w http.ResponseWriter, r *http.Request) {
 	// @lastOrderedValue AND @lastID are either both supplied or neither of them should be supplied
 	// at all; and if that is NOT the case, then return an error.
-	if q := r.URL.Query(); !((q.Get("lastOrderedValue") != "" && q.Get("lastID") != "") ||
-		(q.Get("lastOrderedValue") == "" && q.Get("lastID") == "")) {
+	if q := r.URL.Query(); q.Get("lastOrderedValue") == "" && q.Get("lastID") != "" || q.Get("lastOrderedValue") != "" && q.Get("lastID") == "" {
 		http.Error(w, "`lastOrderedValue`, `lastID` must be supplied altogether, if supplied.", http.StatusBadRequest)
 		return
 	}
