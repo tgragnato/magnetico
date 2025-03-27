@@ -7,13 +7,13 @@ import (
 	"syscall"
 	"time"
 
-	"tgragnato.it/magnetico/dht"
-	"tgragnato.it/magnetico/dht/mainline"
-	"tgragnato.it/magnetico/metadata"
-	"tgragnato.it/magnetico/opflags"
-	"tgragnato.it/magnetico/persistence"
-	"tgragnato.it/magnetico/stats"
-	"tgragnato.it/magnetico/web"
+	"tgragnato.it/magnetico/v2/dht"
+	"tgragnato.it/magnetico/v2/dht/mainline"
+	"tgragnato.it/magnetico/v2/metadata"
+	"tgragnato.it/magnetico/v2/opflags"
+	"tgragnato.it/magnetico/v2/persistence"
+	"tgragnato.it/magnetico/v2/stats"
+	"tgragnato.it/magnetico/v2/web"
 )
 
 func main() {

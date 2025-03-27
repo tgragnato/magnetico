@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"tgragnato.it/magnetico/stats"
+	"tgragnato.it/magnetico/v2/stats"
 )
 
 type IndexingService struct {

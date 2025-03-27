@@ -1,4 +1,4 @@
-module tgragnato.it/magnetico
+module tgragnato.it/magnetico/v2
 
 go 1.23.6
 

@@ -3,7 +3,7 @@ package dht
 import (
 	"net"
 
-	"tgragnato.it/magnetico/dht/mainline"
+	"tgragnato.it/magnetico/v2/dht/mainline"
 )
 
 type Service interface {

@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"time"
 
-	"tgragnato.it/magnetico/persistence"
-	"tgragnato.it/magnetico/stats"
-	"tgragnato.it/magnetico/types/infohash"
-	infohash_v2 "tgragnato.it/magnetico/types/infohash-v2"
+	"tgragnato.it/magnetico/v2/persistence"
+	"tgragnato.it/magnetico/v2/stats"
+	"tgragnato.it/magnetico/v2/types/infohash"
+	infohash_v2 "tgragnato.it/magnetico/v2/types/infohash-v2"
 )
 
 var (

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"sync"
 
-	"tgragnato.it/magnetico/stats"
+	"tgragnato.it/magnetico/v2/stats"
 )
 
 type routingTable struct {

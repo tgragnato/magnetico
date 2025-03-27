@@ -3,7 +3,7 @@ package metainfo
 import (
 	"testing"
 
-	"tgragnato.it/magnetico/types/infohash"
+	"tgragnato.it/magnetico/v2/types/infohash"
 )
 
 func TestPiece_Length(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"tgragnato.it/magnetico/bencode"
+	"tgragnato.it/magnetico/v2/bencode"
 )
 
 func testFileNodesMatch(t *testing.T, file string, nodes []Node) {

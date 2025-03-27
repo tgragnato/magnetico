@@ -1,7 +1,7 @@
 package metainfo
 
 import (
-	"tgragnato.it/magnetico/bencode"
+	"tgragnato.it/magnetico/v2/bencode"
 )
 
 type UrlList []string

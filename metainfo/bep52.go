@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"tgragnato.it/magnetico/merkle"
+	"tgragnato.it/magnetico/v2/merkle"
 )
 
 func ValidatePieceLayers(

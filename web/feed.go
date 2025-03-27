@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"tgragnato.it/magnetico/persistence"
+	"tgragnato.it/magnetico/v2/persistence"
 )
 
 type Feed struct {

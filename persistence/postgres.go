@@ -17,7 +17,7 @@ import (
 
 	_ "github.com/jackc/pgx/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"tgragnato.it/magnetico/stats"
+	"tgragnato.it/magnetico/v2/stats"
 )
 
 type postgresDatabase struct {

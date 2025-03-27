@@ -8,9 +8,9 @@ import (
 	"os"
 	"time"
 
-	"tgragnato.it/magnetico/bencode"
-	"tgragnato.it/magnetico/types/infohash"
-	infohash_v2 "tgragnato.it/magnetico/types/infohash-v2"
+	"tgragnato.it/magnetico/v2/bencode"
+	"tgragnato.it/magnetico/v2/types/infohash"
+	infohash_v2 "tgragnato.it/magnetico/v2/types/infohash-v2"
 )
 
 // Also known as a torrent file.
@@ -75,7 +75,7 @@ func (mi *MetaInfo) Write(w io.Writer) error {
 
 // Set good default values in preparation for creating a new MetaInfo file.
 func (mi *MetaInfo) SetDefaults() {
-	mi.CreatedBy = "tgragnato.it/magnetico"
+	mi.CreatedBy = "tgragnato.it/magnetico/v2"
 	mi.CreationDate = time.Now().Unix()
 }
 

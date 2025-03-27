@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"tgragnato.it/magnetico/bencode"
-	"tgragnato.it/magnetico/metainfo"
-	"tgragnato.it/magnetico/persistence"
+	"tgragnato.it/magnetico/v2/bencode"
+	"tgragnato.it/magnetico/v2/metainfo"
+	"tgragnato.it/magnetico/v2/persistence"
 )
 
 func TestTotalSize(t *testing.T) {
