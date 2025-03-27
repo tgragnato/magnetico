@@ -391,10 +391,11 @@ func TestPostgresDatabase_GetTorrent(t *testing.T) {
 	db := &postgresDatabase{conn: conn}
 	torrent, err := db.GetTorrent(infohash[:])
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	if torrent == nil {
 		t.Fatal("Expected torrent to be found, but got nil")
+		return
 	}
 
 	if !bytes.Equal(torrent.InfoHash, infohash[:]) {
