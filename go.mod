@@ -1,6 +1,7 @@
 module tgragnato.it/magnetico/v2
 
 go 1.23.6
+toolchain go1.24.1
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
@@ -10,7 +11,7 @@ require (
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/klauspost/compress v1.18.0
-	github.com/mattn/go-sqlite3 v1.14.24
+	github.com/mattn/go-sqlite3 v1.14.25
 	github.com/multiformats/go-multihash v0.2.3
 	github.com/prometheus/client_golang v1.21.1
 	github.com/rabbitmq/amqp091-go v1.10.0
