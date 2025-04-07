@@ -44,7 +44,7 @@ require (
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	golang.org/x/sync v0.13.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
-	golang.org/x/text v0.23.0 // indirect
+	golang.org/x/text v0.24.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	lukechampine.com/blake3 v1.4.0 // indirect
 )
