@@ -14,7 +14,7 @@ require (
 	github.com/klauspost/compress v1.18.0
 	github.com/mattn/go-sqlite3 v1.14.27
 	github.com/multiformats/go-multihash v0.2.3
-	github.com/prometheus/client_golang v1.21.1
+	github.com/prometheus/client_golang v1.22.0
 	github.com/rabbitmq/amqp091-go v1.10.0
 	golang.org/x/crypto v0.37.0
 	gopkg.in/yaml.v3 v3.0.1
