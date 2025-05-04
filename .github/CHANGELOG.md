@@ -1,3 +1,14 @@
+## [2.2.1](https://github.com/tgragnato/magnetico/compare/v2.2.0...v2.2.1) (2025-05-04)
+
+
+### Bug Fixes
+
+* **deps:** replace gopkg.in/yaml.v3 with github.com/goccy/go-yaml ([3493828](https://github.com/tgragnato/magnetico/commit/349382827e43b2d68cb30e542b043a77e6951675))
+* **linter:** bump golangci configuration format to the v2 syntax ([73e0b4b](https://github.com/tgragnato/magnetico/commit/73e0b4b1c2cc82d82584b461927e9d81468c85d4))
+* **oci:** harden runtime image by switching to chainguard/static ([54a229b](https://github.com/tgragnato/magnetico/commit/54a229b03b1d4d3a2cf1e476d3887e15db150bd8))
+* **opflags:** detect invocation via magneticod or magneticow symlinks ([d1f7cf3](https://github.com/tgragnato/magnetico/commit/d1f7cf3e04d2888df1e68d30467d3671cb0a1c10))
+* **persistence:** update the zeromq integration to use pebbe/zmq4 ([4af4ba3](https://github.com/tgragnato/magnetico/commit/4af4ba35d3a3133b7d6930a0792b38a164ae5521))
+
 ## [2.2.0](https://github.com/tgragnato/magnetico/compare/v2.1.0...v2.2.0) (2025-02-25)
 
 
