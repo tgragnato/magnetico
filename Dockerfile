@@ -6,12 +6,12 @@ WORKDIR /workspace
 COPY go.mod .
 COPY go.sum .
 COPY . .
-RUN apk add --no-cache clang lld libsodium-dev zeromq-dev czmq-dev && go mod download && go build --tags fts5 .
+RUN apk add --no-cache clang lld libsodium-dev zeromq-dev && go mod download && go build --tags fts5 .
 
 FROM alpine:3.21
 WORKDIR /tmp
 COPY --from=builder /workspace/magnetico /usr/bin/
-RUN apk add --no-cache libsodium libzmq czmq \
+RUN apk add --no-cache libsodium libzmq \
     && echo '#!/bin/sh' >> /usr/bin/magneticod \
     && echo '/usr/bin/magnetico "$@" --daemon' >> /usr/bin/magneticod \
     && chmod +x /usr/bin/magneticod \

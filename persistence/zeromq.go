@@ -11,24 +11,28 @@ import (
 	"sync"
 	"time"
 
-	zmq "gopkg.in/zeromq/goczmq.v4"
+	zmq "github.com/pebbe/zmq4"
 )
 
 type zeromq struct {
-	context *zmq.Sock
-	cache   map[string]time.Time
+	socket *zmq.Socket
+	cache  map[string]time.Time
 	sync.Mutex
 }
 
 func makeZeroMQ(url_ *url.URL) (Database, error) {
 	url_.Scheme = "tcp"
-	context, err := zmq.NewPub(url_.String())
+	socket, err := zmq.NewSocket(zmq.PUB)
+	if err != nil {
+		return nil, err
+	}
+	err = socket.Bind(url_.String())
 	if err != nil {
 		return nil, err
 	}
 	instance := &zeromq{
-		context: context,
-		cache:   map[string]time.Time{},
+		socket: socket,
+		cache:  map[string]time.Time{},
 	}
 	go func() {
 		for range time.NewTicker(10 * time.Minute).C {
@@ -78,12 +82,12 @@ func (instance *zeromq) AddNewTorrent(infoHash []byte, name string, files []File
 	}
 	instance.cache[string(infoHash)] = time.Now().Add(10 * time.Minute)
 
-	return instance.context.SendMessage([][]byte{data})
+	_, err = instance.socket.SendMessage(data)
+	return err
 }
 
 func (instance *zeromq) Close() error {
-	instance.context.Destroy()
-	return nil
+	return instance.socket.Close()
 }
 
 func (instance *zeromq) GetNumberOfTorrents() (uint, error) {

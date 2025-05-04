@@ -7,19 +7,25 @@ import (
 	"testing"
 	"time"
 
-	zmq "gopkg.in/zeromq/goczmq.v4"
+	zmq "github.com/pebbe/zmq4"
 )
 
 func Test_zeromq_DoesTorrentExist(t *testing.T) {
 	t.Parallel()
 
+	socket, err := zmq.NewSocket(zmq.PUB)
+	if err != nil {
+		t.Fatalf("failed to create zmq socket: %v", err)
+	}
+	defer socket.Close()
+
 	instance := &zeromq{
-		context: zmq.NewSock(zmq.Pub),
-		cache:   map[string]time.Time{},
+		socket: socket,
+		cache:  map[string]time.Time{},
 	}
 
 	infoHash := []byte("exampleInfoHash")
-	err := instance.AddNewTorrent(infoHash, "exampleName", []File{})
+	err = instance.AddNewTorrent(infoHash, "exampleName", []File{})
 	if err != nil {
 		t.Errorf("zeromq.AddNewTorrent() error = %v, want nil", err)
 	}
@@ -40,9 +46,15 @@ func Test_zeromq_DoesTorrentExist(t *testing.T) {
 func Test_zeromq_GetNumberOfTorrents(t *testing.T) {
 	t.Parallel()
 
+	socket, err := zmq.NewSocket(zmq.PUB)
+	if err != nil {
+		t.Fatalf("failed to create zmq socket: %v", err)
+	}
+	defer socket.Close()
+
 	instance := &zeromq{
-		context: &zmq.Sock{},
-		cache:   map[string]time.Time{},
+		socket: socket,
+		cache:  map[string]time.Time{},
 	}
 	got, err := instance.GetNumberOfTorrents()
 	if err != nil {
@@ -56,9 +68,15 @@ func Test_zeromq_GetNumberOfTorrents(t *testing.T) {
 func Test_zeromq_QueryTorrents(t *testing.T) {
 	t.Parallel()
 
+	socket, err := zmq.NewSocket(zmq.PUB)
+	if err != nil {
+		t.Fatalf("failed to create zmq socket: %v", err)
+	}
+	defer socket.Close()
+
 	instance := &zeromq{
-		context: &zmq.Sock{},
-		cache:   map[string]time.Time{},
+		socket: socket,
+		cache:  map[string]time.Time{},
 	}
 
 	got, err := instance.QueryTorrents(
@@ -81,9 +99,15 @@ func Test_zeromq_QueryTorrents(t *testing.T) {
 func Test_zeromq_GetTorrent(t *testing.T) {
 	t.Parallel()
 
+	socket, err := zmq.NewSocket(zmq.PUB)
+	if err != nil {
+		t.Fatalf("failed to create zmq socket: %v", err)
+	}
+	defer socket.Close()
+
 	instance := &zeromq{
-		context: &zmq.Sock{},
-		cache:   map[string]time.Time{},
+		socket: socket,
+		cache:  map[string]time.Time{},
 	}
 	got, err := instance.GetTorrent([]byte("infoHash"))
 	if err == nil {
@@ -97,9 +121,15 @@ func Test_zeromq_GetTorrent(t *testing.T) {
 func Test_zeromq_GetFiles(t *testing.T) {
 	t.Parallel()
 
+	socket, err := zmq.NewSocket(zmq.PUB)
+	if err != nil {
+		t.Fatalf("failed to create zmq socket: %v", err)
+	}
+	defer socket.Close()
+
 	instance := &zeromq{
-		context: &zmq.Sock{},
-		cache:   map[string]time.Time{},
+		socket: socket,
+		cache:  map[string]time.Time{},
 	}
 	got, err := instance.GetFiles([]byte("infoHash"))
 	if err == nil {
@@ -113,9 +143,15 @@ func Test_zeromq_GetFiles(t *testing.T) {
 func Test_zeromq_GetStatistics(t *testing.T) {
 	t.Parallel()
 
+	socket, err := zmq.NewSocket(zmq.PUB)
+	if err != nil {
+		t.Fatalf("failed to create zmq socket: %v", err)
+	}
+	defer socket.Close()
+
 	instance := &zeromq{
-		context: &zmq.Sock{},
-		cache:   map[string]time.Time{},
+		socket: socket,
+		cache:  map[string]time.Time{},
 	}
 	got, err := instance.GetStatistics("", 0)
 	if err == nil {
@@ -138,9 +174,15 @@ func Test_zeromq_Engine(t *testing.T) {
 func Test_zeromq_cleanup(t *testing.T) {
 	t.Parallel()
 
+	socket, err := zmq.NewSocket(zmq.PUB)
+	if err != nil {
+		t.Fatalf("failed to create zmq socket: %v", err)
+	}
+	defer socket.Close()
+
 	instance := &zeromq{
-		context: &zmq.Sock{},
-		cache:   map[string]time.Time{},
+		socket: socket,
+		cache:  map[string]time.Time{},
 	}
 
 	// Add expired torrent to cache
@@ -165,9 +207,15 @@ func Test_zeromq_cleanup(t *testing.T) {
 func Test_zeromq_Export(t *testing.T) {
 	t.Parallel()
 
+	socket, err := zmq.NewSocket(zmq.PUB)
+	if err != nil {
+		t.Fatalf("failed to create zmq socket: %v", err)
+	}
+	defer socket.Close()
+
 	instance := &zeromq{
-		context: &zmq.Sock{},
-		cache:   map[string]time.Time{},
+		socket: socket,
+		cache:  map[string]time.Time{},
 	}
 	got, err := instance.Export()
 	if err == nil {
