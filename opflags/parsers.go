@@ -3,8 +3,8 @@ package opflags
 import (
 	"os"
 
+	"github.com/goccy/go-yaml"
 	"github.com/jessevdk/go-flags"
-	"gopkg.in/yaml.v3"
 )
 
 func (o *OpFlags) Parse() (err error) {

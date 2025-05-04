@@ -8,6 +8,7 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/andybalholm/brotli v1.1.1
 	github.com/bits-and-blooms/bloom/v3 v3.7.0
+	github.com/goccy/go-yaml v1.17.1
 	github.com/grafana/pyroscope-go v1.2.2
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/jessevdk/go-flags v1.6.1
@@ -18,7 +19,6 @@ require (
 	github.com/prometheus/client_golang v1.22.0
 	github.com/rabbitmq/amqp091-go v1.10.0
 	golang.org/x/crypto v0.37.0
-	gopkg.in/yaml.v3 v3.0.1
 	maragu.dev/gomponents v1.1.0
 )
 
@@ -32,7 +32,6 @@ require (
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.10 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
 	github.com/mr-tron/base58 v1.2.0 // indirect
 	github.com/multiformats/go-varint v0.0.7 // indirect
