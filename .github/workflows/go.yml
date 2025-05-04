@@ -94,6 +94,8 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           context: .
+          provenance: mode=max
+          sbom: true
           tags: ghcr.io/${{ github.repository }}:next
           push: true
 
