@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
+	"path/filepath"
 	"reflect"
 )
 
@@ -39,6 +41,16 @@ type OpFlags struct {
 func (o *OpFlags) check() error {
 	if !o.RunDaemon && !o.RunWeb {
 		o.RunDaemon = true
+		o.RunWeb = true
+	}
+
+	execName := filepath.Base(os.Args[0])
+	switch execName {
+	case "magneticod":
+		o.RunDaemon = true
+		o.RunWeb = false
+	case "magneticow":
+		o.RunDaemon = false
 		o.RunWeb = true
 	}
 

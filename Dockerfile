@@ -7,17 +7,15 @@ COPY go.mod .
 COPY go.sum .
 COPY . .
 RUN apk add --no-cache clang lld libsodium-dev zeromq-dev && go mod download && go build --tags fts5 .
+RUN ln -s magnetico magneticod
+RUN ln -s magnetico magneticow
 
 FROM alpine:3.21
 WORKDIR /tmp
 COPY --from=builder /workspace/magnetico /usr/bin/
-RUN apk add --no-cache libsodium libzmq \
-    && echo '#!/bin/sh' >> /usr/bin/magneticod \
-    && echo '/usr/bin/magnetico "$@" --daemon' >> /usr/bin/magneticod \
-    && chmod +x /usr/bin/magneticod \
-    && echo '#!/bin/sh' >> /usr/bin/magneticow \
-    && echo '/usr/bin/magnetico "$@" --web' >> /usr/bin/magneticow \
-    && chmod +x /usr/bin/magneticow
+COPY --from=builder /workspace/magneticod /usr/bin/magneticod
+COPY --from=builder /workspace/magneticow /usr/bin/magneticow
+RUN apk add --no-cache libsodium libzmq
 ENTRYPOINT ["/usr/bin/magnetico"]
 LABEL org.opencontainers.image.title="magnetico"
 LABEL org.opencontainers.image.description="Autonomous (self-hosted) BitTorrent DHT search engine"
