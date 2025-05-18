@@ -2,7 +2,9 @@ package metainfo
 
 import (
 	"errors"
-	"sort"
+	"iter"
+	"maps"
+	"slices"
 
 	"tgragnato.it/magnetico/v2/bencode"
 )
@@ -92,46 +94,46 @@ func (ft *FileTree) IsDir() bool {
 }
 
 func (ft *FileTree) orderedKeys() []string {
-	keys := make([]string, 0, len(ft.Dir))
-	for key := range ft.Dir {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return keys
+	return slices.Sorted(maps.Keys(ft.Dir))
 }
 
-func (ft *FileTree) upvertedFiles(pieceLength int64, out func(fi FileInfo)) {
+func (ft *FileTree) upvertedFiles(pieceLength int64) iter.Seq[FileInfo] {
 	var offset int64
-	ft.upvertedFilesInner(pieceLength, nil, &offset, out)
+	return ft.upvertedFilesInner(pieceLength, nil, &offset)
 }
 
 func (ft *FileTree) upvertedFilesInner(
 	pieceLength int64,
 	path []string,
 	offset *int64,
-	out func(fi FileInfo),
-) {
-	if ft.IsDir() {
-		for _, key := range ft.orderedKeys() {
-			if key == FileTreePropertiesKey {
-				continue
+) iter.Seq[FileInfo] {
+	return func(yield func(FileInfo) bool) {
+		if ft.IsDir() {
+			for _, key := range ft.orderedKeys() {
+				if key == FileTreePropertiesKey {
+					continue
+				}
+				sub, ok := ft.Dir[key]
+				if !ok {
+					return
+				}
+				for fi := range sub.upvertedFilesInner(pieceLength, append(path, key), offset) {
+					if !yield(fi) {
+						return
+					}
+				}
 			}
-			sub, ok := ft.Dir[key]
-			if !ok {
-				panic(key)
-			}
-			sub.upvertedFilesInner(pieceLength, append(path, key), offset, out)
+		} else {
+			yield(FileInfo{
+				Length: ft.File.Length,
+				Path:   append([]string(nil), path...),
+				// BEP 52 requires paths be UTF-8 if possible.
+				PathUtf8:      append([]string(nil), path...),
+				PiecesRoot:    ft.PiecesRootAsByteArray(),
+				TorrentOffset: *offset,
+			})
+			*offset += (ft.File.Length + pieceLength - 1) / pieceLength * pieceLength
 		}
-	} else {
-		out(FileInfo{
-			Length: ft.File.Length,
-			Path:   append([]string(nil), path...),
-			// BEP 52 requires paths be UTF-8 if possible.
-			PathUtf8:      append([]string(nil), path...),
-			PiecesRoot:    ft.PiecesRootAsByteArray(),
-			TorrentOffset: *offset,
-		})
-		*offset += (ft.File.Length + pieceLength - 1) / pieceLength * pieceLength
 	}
 }
 

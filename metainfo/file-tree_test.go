@@ -156,9 +156,9 @@ func TestFileTree_upvertedFilesInner(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var gotFiles []FileInfo
-			tt.fileTree.upvertedFilesInner(tt.pieceLength, nil, new(int64), func(fi FileInfo) {
+			for fi := range tt.fileTree.upvertedFilesInner(tt.pieceLength, nil, new(int64)) {
 				gotFiles = append(gotFiles, fi)
-			})
+			}
 
 			if len(gotFiles) != len(tt.wantFiles) {
 				t.Fatalf("expected %d files, got %d", len(tt.wantFiles), len(gotFiles))
