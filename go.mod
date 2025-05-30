@@ -8,7 +8,7 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/andybalholm/brotli v1.1.1
 	github.com/bits-and-blooms/bloom/v3 v3.7.0
-	github.com/goccy/go-yaml v1.17.1
+	github.com/goccy/go-yaml v1.18.0
 	github.com/grafana/pyroscope-go v1.2.2
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/jessevdk/go-flags v1.6.1
