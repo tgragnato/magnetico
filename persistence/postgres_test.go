@@ -606,7 +606,15 @@ func TestPostgresDatabase_QueryTorrents(t *testing.T) {
 				0
 			FROM torrents
 			WHERE
-				\(\$1::text = '' OR name ILIKE CONCAT\('%',\$1::text,'%'\)\) AND
+				\(
+					\$1::text = ''
+					OR name ILIKE CONCAT\('%',\$1::text,'%'\)
+					OR EXISTS \(
+						SELECT 1 FROM files
+						WHERE files.torrent_id = torrents.id
+						AND files.path ILIKE CONCAT\('%',\$1::text,'%'\)
+					\)
+				\) AND
 				discovered_on <= \$2 AND
 				\(\$3 = 0 OR total_size > \$3\) AND
 				\(\$4 = 0 OR id > \$4\)
@@ -666,7 +674,15 @@ func TestPostgresDatabase_QueryTorrents(t *testing.T) {
 				0
 			FROM torrents
 			WHERE
-				\(\$1::text = '' OR name ILIKE CONCAT\('%',\$1::text,'%'\)\) AND
+				\(
+					\$1::text = ''
+					OR name ILIKE CONCAT\('%',\$1::text,'%'\)
+					OR EXISTS \(
+						SELECT 1 FROM files
+						WHERE files.torrent_id = torrents.id
+						AND files.path ILIKE CONCAT\('%',\$1::text,'%'\)
+					\)
+				\) AND
 				discovered_on <= \$2 AND
 				\(\$3 = 0 OR total_size > \$3\) AND
 				\(\$4 = 0 OR id > \$4\)
@@ -806,6 +822,12 @@ func TestPostgresDatabase_SetupDatabase(t *testing.T) {
 		WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectQuery("SELECT MAX\\(schema_version\\) FROM migrations;").
 		WillReturnRows(sqlmock.NewRows([]string{"MAX(schema_version)"}).AddRow(0))
+
+	mock.ExpectExec(`
+		CREATE INDEX IF NOT EXISTS idx_files_path_gin_trgm ON files USING GIN \(path gin_trgm_ops\);
+		INSERT INTO migrations \(schema_version\) VALUES \(1\);
+	`).WillReturnResult(sqlmock.NewResult(0, 0))
+
 	mock.ExpectCommit()
 
 	err = db.setupDatabase()
