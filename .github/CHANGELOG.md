@@ -1,3 +1,20 @@
+## [2.3.0](https://github.com/tgragnato/magnetico/compare/v2.2.1...v2.3.0) (2025-06-28)
+
+
+### Features
+
+* **persistence:** allows postgres to find torrents by searching for file names ([c81b406](https://github.com/tgragnato/magnetico/commit/c81b40677a0ca73ed7865a4774c52e072d709269))
+
+
+### Bug Fixes
+
+* **oci:** add missing sbom generation and provenance support ([8baf52b](https://github.com/tgragnato/magnetico/commit/8baf52baf58f6a7ea3779b1623adb4fd66b0e6f9))
+
+
+### Performance Improvements
+
+* **persistence:** implement partitioning for files table in postgresql ([f4bf572](https://github.com/tgragnato/magnetico/commit/f4bf572b2b78b421df16c851fc661d05c91bfd0c))
+
 ## [2.2.1](https://github.com/tgragnato/magnetico/compare/v2.2.0...v2.2.1) (2025-05-04)
 
 
