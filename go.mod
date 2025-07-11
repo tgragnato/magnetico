@@ -18,7 +18,7 @@ require (
 	github.com/pebbe/zmq4 v1.4.0
 	github.com/prometheus/client_golang v1.22.0
 	github.com/rabbitmq/amqp091-go v1.10.0
-	golang.org/x/crypto v0.39.0
+	golang.org/x/crypto v0.40.0
 	maragu.dev/gomponents v1.1.0
 )
 
