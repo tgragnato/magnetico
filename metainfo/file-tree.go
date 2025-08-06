@@ -7,6 +7,7 @@ import (
 	"slices"
 
 	"tgragnato.it/magnetico/v2/bencode"
+	infohash_v2 "tgragnato.it/magnetico/v2/types/infohash-v2"
 )
 
 const FileTreePropertiesKey = ""
@@ -132,6 +133,7 @@ func (ft *FileTree) upvertedFilesInner(
 				PiecesRoot:    ft.PiecesRootAsByteArray(),
 				TorrentOffset: *offset,
 			})
+			// v2 files are piece aligned. This bumps up the offset to the next piece boundary.
 			*offset += (ft.File.Length + pieceLength - 1) / pieceLength * pieceLength
 		}
 	}
@@ -147,7 +149,7 @@ func (ft *FileTree) Walk(path []string, f func(path []string, ft *FileTree)) {
 	}
 }
 
-func (ft *FileTree) PiecesRootAsByteArray() (ret [32]byte) {
+func (ft *FileTree) PiecesRootAsByteArray() (ret infohash_v2.T) {
 	if ft.File.PiecesRoot == "" {
 		return [32]byte{}
 	}
