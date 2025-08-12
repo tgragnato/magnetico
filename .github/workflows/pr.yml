@@ -18,7 +18,7 @@ jobs:
     steps:
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: ${{ github.event.pull_request.commits }}
           ref: ${{ github.event.pull_request.head.sha }}
