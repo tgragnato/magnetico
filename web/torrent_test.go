@@ -1,26 +1,50 @@
 package web
 
 import (
-	"bytes"
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
+	"tgragnato.it/magnetico/v2/persistence"
 	"tgragnato.it/magnetico/v2/types/infohash"
 )
 
 func TestTorrent(t *testing.T) {
 	t.Parallel()
 
-	var buffer bytes.Buffer
-	if err := torrent().Render(&buffer); err != nil {
-		t.Errorf("torrent render: %v", err)
+	infohashV1 := "abcdef1234567890abcdef1234567890abcdef12"
+	torrentMetadata := persistence.TorrentMetadata{
+		Name:         "Test Torrent",
+		Size:         12345678,
+		DiscoveredOn: 1710000000,
+		NFiles:       2,
+	}
+	files := []persistence.File{
+		{Path: "file1.txt", Size: 1000},
+		{Path: "file2.bin", Size: 2000},
+	}
+
+	node := torrent(infohashV1, torrentMetadata, files)
+	rec := httptest.NewRecorder()
+	if err := node.Render(rec); err != nil {
+		t.Fatalf("Render failed: %v", err)
+	}
+	html := rec.Body.String()
+
+	if !strings.Contains(html, "Test Torrent") {
+		t.Errorf("Torrent name not found in HTML")
+	}
+	if !strings.Contains(html, "file1.txt") || !strings.Contains(html, "file2.bin") {
+		t.Errorf("File names not found in HTML")
 	}
 }
 
 func TestTorrentsInfohashHandler(t *testing.T) {
 	t.Parallel()
+
+	initDb()
 
 	req, err := http.NewRequest("GET", "/torrents/blablabla", nil)
 	if err != nil {
@@ -34,12 +58,33 @@ func TestTorrentsInfohashHandler(t *testing.T) {
 	res := rec.Result()
 	defer res.Body.Close()
 
-	if res.StatusCode != http.StatusOK {
-		t.Errorf("expected status OK; got %v", res.Status)
+	if res.StatusCode != http.StatusNotFound {
+		t.Errorf("expected status Not Found; got %v", res.Status)
+	}
+	if contentType := res.Header.Get("Content-Type"); contentType != ContentTypeText {
+		t.Errorf("expected Content-Type text/plain; got %v", contentType)
 	}
 
-	if contentType := res.Header.Get("Content-Type"); contentType != ContentTypeHtml {
-		t.Errorf("expected Content-Type text/html; got %v", contentType)
+	infohashV1 := "1234567890123456789012345678901234567890"
+	req, err = http.NewRequest("GET", "/torrents/"+infohashV1, nil)
+	if err != nil {
+		t.Fatalf("could not create request: %v", err)
+	}
+
+	ctx := context.WithValue(req.Context(), InfohashKey, infohash.FromHexString(infohashV1).Bytes())
+	req = req.WithContext(ctx)
+
+	rec = httptest.NewRecorder()
+	torrentsInfohashHandler(rec, req)
+	res = rec.Result()
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusNotFound {
+		t.Errorf("expected status Not Found; got %v", res.StatusCode)
+	}
+
+	if contentType := res.Header.Get("Content-Type"); contentType != ContentTypeText {
+		t.Errorf("expected Content-Type text/plain; got %v", contentType)
 	}
 }
 
