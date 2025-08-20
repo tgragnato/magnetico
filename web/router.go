@@ -3,7 +3,9 @@ package web
 import (
 	"context"
 	"embed"
+	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"time"
 
@@ -25,6 +27,7 @@ const (
 	ContentType     string          = "Content-Type"
 	ContentTypeJson string          = "application/json; charset=utf-8"
 	ContentTypeHtml string          = "text/html; charset=utf-8"
+	ContentTypeText string          = "text/plain; charset=utf-8"
 	InfohashKey     InfohashKeyType = "infohash"
 )
 
@@ -71,7 +74,7 @@ func makeRouter() *http.ServeMux {
 	router.HandleFunc("GET /robots.txt", middlewares(robotsHandler))
 	router.HandleFunc("GET /feed", middlewares(feedHandler))
 	router.HandleFunc("GET /statistics", middlewares(statisticsHandler))
-	router.HandleFunc("GET /torrents/", middlewares(torrentsInfohashHandler))
+	router.HandleFunc("GET /torrents/{infohash}", middlewares(infohashMiddleware(torrentsInfohashHandler)))
 	router.HandleFunc("GET /torrents", middlewares(torrentsHandler))
 
 	return router
@@ -102,4 +105,15 @@ func infohashMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		ctx = context.WithValue(ctx, InfohashKey, infohashBytes)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+// bytesToHuman converts bytes to a human readable string (e.g. 1.2 MB)
+func bytesToHuman(bytes uint64) string {
+	if bytes < 1024 {
+		return fmt.Sprintf("%d B", bytes)
+	}
+	sizes := []string{"B", "KiB", "MiB", "GiB", "TiB", "PiB"}
+	i := int(math.Floor(math.Log(float64(bytes)) / math.Log(1024)))
+	val := float64(bytes) / math.Pow(1024, float64(i))
+	return fmt.Sprintf("%.1f %s", val, sizes[i])
 }
