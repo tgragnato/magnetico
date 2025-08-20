@@ -2,72 +2,27 @@ package web
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"time"
 
 	g "maragu.dev/gomponents"
 	c "maragu.dev/gomponents/components"
 	. "maragu.dev/gomponents/html"
+	"tgragnato.it/magnetico/v2/persistence"
 )
 
-func torrent() g.Node {
+func torrent(infohash string, torrentMetadata persistence.TorrentMetadata, files []persistence.File) g.Node {
 	return c.HTML5(c.HTML5Props{
-		Title:       "Loading ... - magnetico",
+		Title:       infohash + " - magnetico",
 		Description: "A self-hosted BitTorrent DHT search engine",
 		Language:    "en",
 		Head: []g.Node{
 			Meta(Charset("utf-8")),
 			Meta(Name("viewport"), Content("width=device-width, initial-scale=1")),
-			Link(Rel("stylesheet"), Href("/static/styles/vanillatree-v0.0.3.css")),
 			Link(Rel("stylesheet"), Href("/static/styles/reset.css")),
 			Link(Rel("stylesheet"), Href("/static/styles/essential.css")),
 			Link(Rel("stylesheet"), Href("/static/styles/torrent.css")),
-			Script(Src("/static/scripts/naturalSort-v0.8.1.js")),
-			Script(Src("/static/scripts/mustache-v2.3.0.min.js")),
-			Script(Src("/static/scripts/vanillatree-v0.0.3.js")),
-			Script(Defer(), Src("/static/scripts/common.js")),
-			Script(Defer(), Src("/static/scripts/torrent.js")),
-			Script(
-				ID("main-template"),
-				Type("text/x-handlebars-template"),
-				Div(
-					ID("title"),
-					H2(g.Text("{{ name }}")),
-					A(
-						Href("magnet:?xt=urn:btih:{{ infoHash }}&dn={{ name }}"),
-						Img(
-							Src("/static/assets/magnet.gif"),
-							Alt("Magnet link"),
-							Title("Download this torrent using magnet"),
-						),
-						Small(g.Text("{{ infoHash }}")),
-					),
-				),
-				Table(
-					Tr(
-						Th(
-							g.Attr(("scope"), "row"),
-							g.Text("Size"),
-						),
-						Td(g.Text("{{ sizeHumanised }}")),
-					),
-					Tr(
-						Th(
-							g.Attr(("scope"), "row"),
-							g.Text("Discovered on"),
-						),
-						Td(g.Text("{{ discoveredOn }}")),
-					),
-					Tr(
-						Th(
-							g.Attr(("scope"), "row"),
-							g.Text("Files"),
-						),
-						Td(g.Text("{{ nFiles }}")),
-					),
-				),
-				H3(g.Text("Files")),
-				Div(ID("fileTree")),
-			),
 		},
 		Body: []g.Node{
 			Header(
@@ -89,14 +44,84 @@ func torrent() g.Node {
 					),
 				),
 			),
-			Main(),
+			Main(
+				Div(
+					Div(
+						ID("title"),
+						H2(g.Text(fmt.Sprintf("%v", torrentMetadata.Name))),
+						A(
+							Href(fmt.Sprintf("magnet:?xt=urn:btih:%x&dn=%v", infohash, torrentMetadata.Name)),
+							Img(
+								Src("/static/assets/magnet.gif"),
+								Alt("Magnet link"),
+								Title("Download this torrent using magnet"),
+							),
+							Small(g.Text(fmt.Sprintf("%x", infohash))),
+						),
+					),
+					Table(
+						Tr(
+							Th(g.Attr(("scope"), "row"), g.Text("Size")),
+							Td(g.Text(bytesToHuman(torrentMetadata.Size))),
+						),
+						Tr(
+							Th(g.Attr(("scope"), "row"), g.Text("Discovered on")),
+							Td(g.Text(fmt.Sprintf("%v", time.Unix(torrentMetadata.DiscoveredOn, 0).Format("2006-01-02")))),
+						),
+						Tr(
+							Th(g.Attr(("scope"), "row"), g.Text("Files")),
+							Td(g.Text(fmt.Sprintf("%v", torrentMetadata.NFiles))),
+						),
+					),
+				),
+				Div(
+					H3(g.Text("Files")),
+					Div(
+						Ul(
+							g.Map(files, func(file persistence.File) g.Node {
+								return Li(
+									Span(
+										g.Text(file.Path + " (" + bytesToHuman(uint64(file.Size)) + ")"),
+									),
+								)
+							}),
+						),
+					),
+				),
+			),
 		},
 	})
 }
 
 func torrentsInfohashHandler(w http.ResponseWriter, r *http.Request) {
+	var infohash []byte
+	val := r.Context().Value(InfohashKey)
+	if val == nil {
+		infohash = []byte("")
+	} else {
+		infohash = val.([]byte)
+	}
+
+	torrentMetadata, err := database.GetTorrent(infohash)
+	if err != nil {
+		http.Error(w, "Couldn't get torrent: "+err.Error(), http.StatusInternalServerError)
+		return
+	} else if torrentMetadata == nil {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
+	}
+
+	files, err := database.GetFiles(infohash)
+	if err != nil {
+		http.Error(w, "Couldn't get files: "+err.Error(), http.StatusInternalServerError)
+		return
+	} else if files == nil {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
+	}
+
 	w.Header().Set(ContentType, ContentTypeHtml)
-	if err := torrent().Render(w); err != nil {
+	if err := torrent(string(infohash), *torrentMetadata, files).Render(w); err != nil {
 		http.Error(w, "Torrent render "+err.Error(), http.StatusInternalServerError)
 	}
 }
