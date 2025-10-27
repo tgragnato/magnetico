@@ -119,7 +119,7 @@ jobs:
           push: true
 
       - name: Download workflow artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           pattern: magnetico-*-*
 
