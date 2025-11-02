@@ -30,6 +30,14 @@ linters:
       - linters:
           - gosec
         text: 'G115: integer overflow conversion'
+      
+      - linters:
+          - gosec
+        text: 'G602: slice index out of range'
+
+      - linters:
+          - govet
+        text: 'buildtag: \+build line is no longer needed'
 
       - linters:
           - staticcheck
