@@ -48,7 +48,7 @@ jobs:
           GOARCH: ${{ matrix.go-arch }}
       
       - name: Upload workflow artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: magnetico-${{ matrix.go-os }}-${{ matrix.go-arch }}
           path: magnetico-${{ matrix.go-os }}-${{ matrix.go-arch }}
