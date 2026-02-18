@@ -47,8 +47,8 @@ func TestLoadCred(t *testing.T) {
 
 			// Initialize OpFlags with the temporary file path
 			o := &OpFlags{
-				Cred:        tmpfile.Name(),
-				Credentials: make(map[string][]byte),
+				CredentialsPath: tmpfile.Name(),
+				Credentials:     make(map[string][]byte),
 			}
 
 			// Call LoadCred and check the result

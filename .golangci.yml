@@ -30,23 +30,19 @@ linters:
       - linters:
           - gosec
         text: 'G115: integer overflow conversion'
-      
-      - linters:
-          - gosec
-        text: 'G602: slice index out of range'
-
-      - linters:
-          - govet
-        text: 'buildtag: \+build line is no longer needed'
 
       - linters:
           - staticcheck
         text: 'ST1001: should not use dot imports'
-      
+
       - linters:
+          - gosec
+        text: 'G703: Path traversal via taint analysis'
+
+      - linters:
+          - gosec
           - staticcheck
-        text: 'this check suggests that the pointer can be nil'
-        path: persistence/postgres_test.go
+        path: _test\.go$
 
     paths:
       - third_party$

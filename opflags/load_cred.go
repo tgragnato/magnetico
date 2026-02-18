@@ -10,11 +10,11 @@ import (
 )
 
 func (o *OpFlags) LoadCred() error {
-	if o.Cred == "" {
+	if o.CredentialsPath == "" {
 		return nil
 	}
 
-	file, err := os.Open(o.Cred)
+	file, err := os.Open(o.CredentialsPath)
 	if err != nil {
 		return fmt.Errorf("error while opening file: %s", err.Error())
 	}

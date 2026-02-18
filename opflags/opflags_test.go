@@ -66,8 +66,8 @@ func TestCheck(t *testing.T) {
 		{
 			name: "RunWebWithInvalidCred",
 			opFlags: OpFlags{
-				RunWeb: true,
-				Cred:   "invalid-cred",
+				RunWeb:          true,
+				CredentialsPath: "invalid-cred",
 			},
 			expectError: true,
 		},

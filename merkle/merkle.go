@@ -22,7 +22,7 @@ func Root(hashes [][sha256.Size]byte) [sha256.Size]byte {
 		panic(fmt.Sprintf("expected power of two number of hashes, got %d", numHashes))
 	}
 	var next [][sha256.Size]byte
-	for i := 0; i < len(hashes); i += 2 {
+	for i := 0; i < len(hashes)-1; i += 2 {
 		left := hashes[i]
 		right := hashes[i+1]
 		h := sha256.Sum256(append(left[:], right[:]...))

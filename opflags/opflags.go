@@ -24,10 +24,10 @@ type OpFlags struct {
 	FilterNodesCIDRs   []string `long:"filter-nodes-cidrs" description:"List of CIDRs on which Magnetico can operate. Empty is open mode." default:"" yaml:"filterNodesCIDRs"`
 	FilterNodesIpNets  []net.IPNet
 
-	Addr        string `short:"a" long:"addr"        description:"Address (host:port) to serve on" default:"[::1]:8080" yaml:"addr"`
-	Cred        string `short:"c" long:"credentials" description:"Path to the credentials file" default:"" yaml:"cred"`
-	Credentials map[string][]byte
-	Timeout     uint `short:"t" long:"timeout" description:"Timeout in seconds for the web interface and APIs." default:"600" yaml:"timeout"`
+	Addr            string `short:"a" long:"addr"        description:"Address (host:port) to serve on" default:"[::1]:8080" yaml:"addr"`
+	CredentialsPath string `short:"c" long:"credentials" description:"Path to the credentials file" default:"" yaml:"cred"`
+	Credentials     map[string][]byte
+	Timeout         uint `short:"t" long:"timeout" description:"Timeout in seconds for the web interface and APIs." default:"600" yaml:"timeout"`
 
 	RunDaemon bool `short:"d" long:"daemon" description:"Run the crawler without the web interface." yaml:"runDaemon"`
 	RunWeb    bool `short:"w" long:"web"    description:"Run the web interface without the crawler." yaml:"runWeb"`
