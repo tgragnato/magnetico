@@ -47,7 +47,9 @@ func TestChannelOutput(t *testing.T) {
 		}},
 	}
 	outputChan := make(chan Result, ChanSize)
+	manager.mu.Lock()
 	manager.output = outputChan
+	manager.mu.Unlock()
 	manager.output <- result
 
 	receivedResult := <-outputChan
@@ -66,7 +68,9 @@ func TestOnIndexingResult(t *testing.T) {
 
 	result := mainline.IndexingResult{}
 	outputChan := make(chan Result, ChanSize)
+	manager.mu.Lock()
 	manager.output = outputChan
+	manager.mu.Unlock()
 
 	for range ChanSize {
 		manager.onIndexingResult(result)
