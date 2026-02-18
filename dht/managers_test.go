@@ -68,7 +68,7 @@ func TestOnIndexingResult(t *testing.T) {
 	outputChan := make(chan Result, ChanSize)
 	manager.output = outputChan
 
-	for i := 0; i < ChanSize; i++ {
+	for range ChanSize {
 		manager.onIndexingResult(result)
 	}
 

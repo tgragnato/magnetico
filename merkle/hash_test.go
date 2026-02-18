@@ -59,7 +59,7 @@ func TestHash_Sum(t *testing.T) {
 		t.Errorf("Expected sum length %d, but got %d", len(expectedSum), len(sum))
 	}
 
-	for i := 0; i < len(sum); i++ {
+	for i := range sum {
 		if sum[i] != expectedSum[i] {
 			t.Errorf("Expected sum %x, but got %x", expectedSum, sum)
 			break

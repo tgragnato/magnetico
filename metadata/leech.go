@@ -138,7 +138,7 @@ func (l *Leech) requestAllPieces() error {
 		return errors.New("metadataSize is zero")
 	}
 
-	for piece := 0; piece < nPieces; piece++ {
+	for piece := range nPieces {
 		// __request_metadata_piece(piece)
 		// ...............................
 		extDictDump, err := bencode.Marshal(extDict{
@@ -149,12 +149,12 @@ func (l *Leech) requestAllPieces() error {
 			return errors.New("marshal extDict " + err.Error())
 		}
 
-		err = l.writeAll([]byte(fmt.Sprintf(
+		err = l.writeAll(fmt.Appendf(nil,
 			"%s\x14%s%s",
 			toBigEndian(uint(2+len(extDictDump)), 4),
 			toBigEndian(uint(l.ut_metadata), 1),
 			extDictDump,
-		)))
+		))
 		if err != nil {
 			return errors.New("writeAll piece request " + err.Error())
 		}

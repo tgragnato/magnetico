@@ -22,7 +22,7 @@ func TestTorrentMetadata_MarshalJSON(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	var result map[string]interface{}
+	var result map[string]any
 	err = json.Unmarshal(jsonData, &result)
 	if err != nil {
 		t.Errorf("Failed to unmarshal JSON: %v", err)

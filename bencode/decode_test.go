@@ -13,7 +13,7 @@ import (
 
 type random_decode_test struct {
 	data     string
-	expected interface{}
+	expected any
 }
 
 var random_decode_tests = []random_decode_test{
@@ -21,31 +21,31 @@ var random_decode_tests = []random_decode_test{
 	{"i-9223372036854775808e", int64(-9223372036854775808)},
 	{"5:hello", "hello"},
 	{"29:unicode test проверка", "unicode test проверка"},
-	{"d1:ai5e1:b5:helloe", map[string]interface{}{"a": int64(5), "b": "hello"}},
+	{"d1:ai5e1:b5:helloe", map[string]any{"a": int64(5), "b": "hello"}},
 	{
 		"li5ei10ei15ei20e7:bencodee",
-		[]interface{}{int64(5), int64(10), int64(15), int64(20), "bencode"},
+		[]any{int64(5), int64(10), int64(15), int64(20), "bencode"},
 	},
-	{"ldedee", []interface{}{map[string]interface{}{}, map[string]interface{}{}}},
-	{"le", []interface{}{}},
+	{"ldedee", []any{map[string]any{}, map[string]any{}}},
+	{"le", []any{}},
 	{"i604919719469385652980544193299329427705624352086e", func() *big.Int {
 		ret, _ := big.NewInt(-1).SetString("604919719469385652980544193299329427705624352086", 10)
 		return ret
 	}()},
-	{"d1:rd6:\xd4/\xe2F\x00\x01i42ee1:t3:\x9a\x87\x011:v4:TR%=1:y1:re", map[string]interface{}{
-		"r": map[string]interface{}{"\xd4/\xe2F\x00\x01": int64(42)},
+	{"d1:rd6:\xd4/\xe2F\x00\x01i42ee1:t3:\x9a\x87\x011:v4:TR%=1:y1:re", map[string]any{
+		"r": map[string]any{"\xd4/\xe2F\x00\x01": int64(42)},
 		"t": "\x9a\x87\x01",
 		"v": "TR%=",
 		"y": "r",
 	}},
-	{"d0:i420ee", map[string]interface{}{"": int64(420)}},
+	{"d0:i420ee", map[string]any{"": int64(420)}},
 }
 
 func TestRandomDecode(t *testing.T) {
 	t.Parallel()
 
 	for _, test := range random_decode_tests {
-		var value interface{}
+		var value any
 		err := Unmarshal([]byte(test.data), &value)
 		if err != nil {
 			t.Error(err, test.data)
@@ -106,7 +106,7 @@ func TestDecoderConsecutiveDicts(t *testing.T) {
 		t.Errorf("Unexpected value for d.Offset")
 	}
 
-	var m map[string]interface{}
+	var m map[string]any
 
 	err := d.Decode(&m)
 	if err != nil {
@@ -158,7 +158,7 @@ func check_error(t *testing.T, err error) {
 	}
 }
 
-func assert_equal(t *testing.T, x, y interface{}) {
+func assert_equal(t *testing.T, x, y any) {
 	if !reflect.DeepEqual(x, y) {
 		t.Errorf("got: %v (%T), expected: %v (%T)\n", x, x, y, y)
 	}
@@ -303,7 +303,7 @@ func (arbitraryReader) Read(b []byte) (int, error) {
 	return len(b), nil
 }
 
-func decodeHugeString(strLen int64, header, tail string, v interface{}, maxStrLen MaxStrLen) error {
+func decodeHugeString(strLen int64, header, tail string, v any, maxStrLen MaxStrLen) error {
 	r, w := io.Pipe()
 	go func() {
 		fmt.Fprintf(w, header, strLen)
@@ -324,7 +324,7 @@ func decodeHugeString(strLen int64, header, tail string, v interface{}, maxStrLe
 func TestDecodeMaxStrLen(t *testing.T) {
 	t.Parallel()
 
-	test := func(t *testing.T, header, tail string, v interface{}, maxStrLen MaxStrLen) {
+	test := func(t *testing.T, header, tail string, v any, maxStrLen MaxStrLen) {
 		strLen := maxStrLen
 		if strLen == 0 {
 			strLen = DefaultDecodeMaxStrLen
@@ -336,8 +336,8 @@ func TestDecodeMaxStrLen(t *testing.T) {
 			t.Errorf("An error was expected")
 		}
 	}
-	test(t, "d%d:", "i0ee", new(interface{}), 0)
-	test(t, "%d:", "", new(interface{}), DefaultDecodeMaxStrLen)
+	test(t, "d%d:", "i0ee", new(any), 0)
+	test(t, "%d:", "", new(any), DefaultDecodeMaxStrLen)
 	test(t, "%d:", "", new([]byte), 1)
 	test(t, "d3:420%d:", "e", new(struct {
 		Hi []byte `bencode:"420"`

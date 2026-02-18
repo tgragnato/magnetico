@@ -41,7 +41,7 @@ type Encoder struct {
 	scratch [64]byte
 }
 
-func (e *Encoder) Encode(v interface{}) (err error) {
+func (e *Encoder) Encode(v any) (err error) {
 	if v == nil {
 		return
 	}
@@ -102,8 +102,8 @@ func (e *Encoder) reflectByteSlice(s []byte) {
 // Returns true if the value implements Marshaler interface and marshaling was
 // done successfully.
 func (e *Encoder) reflectMarshaler(v reflect.Value) bool {
-	if !v.Type().Implements(reflect.TypeOf((*Marshaler)(nil)).Elem()) {
-		if v.Kind() != reflect.Ptr && v.CanAddr() && v.Addr().Type().Implements(reflect.TypeOf((*Marshaler)(nil)).Elem()) {
+	if !v.Type().Implements(reflect.TypeFor[Marshaler]()) {
+		if v.Kind() != reflect.Pointer && v.CanAddr() && v.Addr().Type().Implements(reflect.TypeFor[Marshaler]()) {
 			v = v.Addr()
 		} else {
 			return false
@@ -118,7 +118,7 @@ func (e *Encoder) reflectMarshaler(v reflect.Value) bool {
 	return true
 }
 
-var bigIntType = reflect.TypeOf((*big.Int)(nil)).Elem()
+var bigIntType = reflect.TypeFor[big.Int]()
 
 func (e *Encoder) reflectValue(v reflect.Value) {
 	if e.reflectMarshaler(v) {
@@ -186,7 +186,7 @@ func (e *Encoder) reflectValue(v reflect.Value) {
 		e.reflectSequence(v)
 	case reflect.Interface:
 		e.reflectValue(v.Elem())
-	case reflect.Ptr:
+	case reflect.Pointer:
 		if v.IsNil() {
 			v = reflect.Zero(v.Type().Elem())
 		} else {
@@ -269,7 +269,7 @@ func makeEncodeFields(t reflect.Type) (fs []encodeField) {
 		}
 		if f.Anonymous {
 			t := f.Type
-			if t.Kind() == reflect.Ptr {
+			if t.Kind() == reflect.Pointer {
 				t = t.Elem()
 			}
 			anonEFs := makeEncodeFields(t)
@@ -278,7 +278,7 @@ func makeEncodeFields(t reflect.Type) (fs []encodeField) {
 				bottomField := anonEF
 				bottomField.i = func(v reflect.Value) reflect.Value {
 					v = v.Field(i)
-					if v.Kind() == reflect.Ptr {
+					if v.Kind() == reflect.Pointer {
 						if v.IsNil() {
 							// This will skip serializing this value.
 							return reflect.Value{}

@@ -9,7 +9,7 @@ import (
 )
 
 type random_encode_test struct {
-	value    interface{}
+	value    any
 	expected string
 }
 
@@ -99,7 +99,7 @@ func TestIsEmptyValue(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		value    interface{}
+		value    any
 		expected bool
 	}{
 		{nil, true},

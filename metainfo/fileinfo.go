@@ -15,7 +15,7 @@ type FileInfo struct {
 	// Unofficial extension by BiglyBT? https://github.com/BiglySoftware/BiglyBT/issues/1274.
 	PathUtf8 []string `bencode:"path.utf-8,omitempty" json:"path.utf-8,omitempty"`
 
-	ExtendedFileAttrs `json:",omitempty"`
+	ExtendedFileAttrs
 
 	// BEP 52. This isn't encoded in a v1 FileInfo, but is exposed here for APIs that expect to deal
 	// v1 files.

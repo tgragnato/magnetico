@@ -272,7 +272,7 @@ func (cni CompactNodeInfo) MarshalBinary() []byte {
 }
 
 func (e Error) MarshalBencode() ([]byte, error) {
-	return []byte(fmt.Sprintf("li%de%d:%se", e.Code, len(e.Message), e.Message)), nil
+	return fmt.Appendf(nil, "li%de%d:%se", e.Code, len(e.Message), e.Message), nil
 }
 
 func (e *Error) UnmarshalBencode(b []byte) (err error) {

@@ -3,6 +3,7 @@ package metainfo
 import (
 	"encoding/hex"
 	"reflect"
+	"slices"
 	"testing"
 )
 
@@ -119,19 +120,10 @@ func TestMagnetize(t *testing.T) {
 	}
 
 	for _, expected := range trackers {
-		if !contains(m.Trackers, expected) {
+		if !slices.Contains(m.Trackers, expected) {
 			t.Errorf("Magnet does not contain expected tracker: %s", expected)
 		}
 	}
-}
-
-func contains(haystack []string, needle string) bool {
-	for _, s := range haystack {
-		if s == needle {
-			return true
-		}
-	}
-	return false
 }
 
 // Check that we can parse the magnet link generated from a real-world torrent. This was added due

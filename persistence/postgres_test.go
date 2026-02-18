@@ -68,7 +68,7 @@ func TestDoesTorrentExist(t *testing.T) {
 	var random [100]byte
 	_, err = rand.Read(random[:])
 	if err != nil {
-		for i := 0; i < 100; i++ {
+		for i := range 100 {
 			random[i] = byte(mrand.IntN(256))
 		}
 	}
@@ -373,7 +373,7 @@ func TestPostgresDatabase_GetTorrent(t *testing.T) {
 	var random [100]byte
 	_, err = rand.Read(random[:])
 	if err != nil {
-		for i := 0; i < 100; i++ {
+		for i := range 100 {
 			random[i] = byte(mrand.IntN(256))
 		}
 	}
@@ -447,7 +447,7 @@ func TestPostgresDatabase_GetFiles(t *testing.T) {
 	var random [100]byte
 	_, err = rand.Read(random[:])
 	if err != nil {
-		for i := 0; i < 100; i++ {
+		for i := range 100 {
 			random[i] = byte(mrand.IntN(256))
 		}
 	}

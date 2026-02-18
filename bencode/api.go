@@ -31,7 +31,7 @@ func (e *UnmarshalInvalidArgError) Error() string {
 		return "bencode: Unmarshal(nil)"
 	}
 
-	if e.Type.Kind() != reflect.Ptr {
+	if e.Type.Kind() != reflect.Pointer {
 		return "bencode: Unmarshal(non-pointer " + e.Type.String() + ")"
 	}
 	return "bencode: Unmarshal(nil " + e.Type.String() + ")"
@@ -115,7 +115,7 @@ type Unmarshaler interface {
 
 // Marshal the value 'v' to the bencode form, return the result as []byte and
 // an error if any.
-func Marshal(v interface{}) ([]byte, error) {
+func Marshal(v any) ([]byte, error) {
 	var buf bytes.Buffer
 	e := Encoder{w: &buf}
 	err := e.Encode(v)
@@ -125,7 +125,7 @@ func Marshal(v interface{}) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func MustMarshal(v interface{}) []byte {
+func MustMarshal(v any) []byte {
 	b, err := Marshal(v)
 	if err != nil {
 		return []byte{}
@@ -137,7 +137,7 @@ func MustMarshal(v interface{}) []byte {
 // error if any. If there are trailing bytes, this results in ErrUnusedTrailingBytes, but the value
 // will be valid. It's probably more consistent to use Decoder.Decode if you want to rely on this
 // behaviour (inspired by Rust's serde here).
-func Unmarshal(data []byte, v interface{}) (err error) {
+func Unmarshal(data []byte, v any) (err error) {
 	buf := bytes.NewReader(data)
 	dec := Decoder{r: buf}
 	err = dec.Decode(v)

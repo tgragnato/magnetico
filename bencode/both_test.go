@@ -17,7 +17,7 @@ func loadFile(name string, t *testing.T) []byte {
 func testFileInterface(t *testing.T, filename string) {
 	data1 := loadFile(filename, t)
 
-	var iface interface{}
+	var iface any
 	err := Unmarshal(data1, &iface)
 	if err != nil {
 		t.Fatal(err)
@@ -50,12 +50,12 @@ type torrentFile struct {
 		Private     bool   `bencode:"private,omitempty"`
 	} `bencode:"info"`
 
-	Announce     string      `bencode:"announce"`
-	AnnounceList [][]string  `bencode:"announce-list,omitempty"`
-	CreationDate int64       `bencode:"creation date,omitempty"`
-	Comment      string      `bencode:"comment,omitempty"`
-	CreatedBy    string      `bencode:"created by,omitempty"`
-	URLList      interface{} `bencode:"url-list,omitempty"`
+	Announce     string     `bencode:"announce"`
+	AnnounceList [][]string `bencode:"announce-list,omitempty"`
+	CreationDate int64      `bencode:"creation date,omitempty"`
+	Comment      string     `bencode:"comment,omitempty"`
+	CreatedBy    string     `bencode:"created by,omitempty"`
+	URLList      any        `bencode:"url-list,omitempty"`
 }
 
 func testFile(t *testing.T, filename string) {

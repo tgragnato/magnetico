@@ -344,7 +344,7 @@ func (p *Protocol) updateTokenSecret() {
 	if err != nil {
 		len := mrand.IntN(256)
 		p.tokenSecret = make([]byte, len)
-		for i := 0; i < len; i++ {
+		for i := range len {
 			p.tokenSecret[i] = byte(mrand.IntN(256))
 		}
 	}

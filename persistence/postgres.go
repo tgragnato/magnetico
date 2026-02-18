@@ -665,7 +665,7 @@ func (db *postgresDatabase) orderOn(orderBy OrderingCriteria) string {
 	}
 }
 
-func (db *postgresDatabase) executeTemplate(text string, data interface{}, funcs template.FuncMap) string {
+func (db *postgresDatabase) executeTemplate(text string, data any, funcs template.FuncMap) string {
 	t := template.Must(template.New("anon").Funcs(funcs).Parse(text))
 
 	var buf bytes.Buffer

@@ -243,7 +243,7 @@ func Test_routingTable_addHashes(t *testing.T) {
 		}
 		rt.addHashes(hashes)
 		storedHashes := rt.getHashes()
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			if storedHashes[i] != hashes[i] {
 				t.Errorf("expected hash %v, got %v", hashes[i], storedHashes[i])
 			}
@@ -314,7 +314,7 @@ func Test_routingTable_getHashes(t *testing.T) {
 		}
 		rt.addHashes(expectedHashes)
 		hashes := rt.getHashes()
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			if hashes[i] != expectedHashes[i] {
 				t.Errorf("expected hash %v, got %v", expectedHashes[i], hashes[i])
 			}

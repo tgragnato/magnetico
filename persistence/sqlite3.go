@@ -334,7 +334,7 @@ func (db *sqlite3Database) QueryTorrents(
 	})
 
 	// Prepare query
-	queryArgs := make([]interface{}, 0)
+	queryArgs := make([]any, 0)
 	if doJoin {
 		queryArgs = append(queryArgs, query)
 	}
@@ -702,7 +702,7 @@ func (db *sqlite3Database) rollback(tx *sql.Tx) {
 	}
 }
 
-func executeTemplate(text string, data interface{}, funcs template.FuncMap) string {
+func executeTemplate(text string, data any, funcs template.FuncMap) string {
 	t := template.Must(template.New("anon").Funcs(funcs).Parse(text))
 
 	var buf bytes.Buffer

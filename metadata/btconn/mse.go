@@ -239,7 +239,7 @@ func (s *Stream) HandshakeIncoming(
 		return
 	}
 	req3 := hashInt("req3", S)
-	for i := 0; i < sha1.Size; i++ {
+	for i := range sha1.Size {
 		hashRead[i] ^= req3[i]
 	}
 	sKey := getSKey(hashRead)
@@ -381,7 +381,7 @@ func privateKey() *big.Int {
 	b := make([]byte, 20)
 	_, err := rand.Read(b)
 	if err != nil {
-		for i := 0; i < 20; i++ {
+		for i := range 20 {
 			b[i] = byte(mrand.IntN(256))
 		}
 	}
@@ -417,7 +417,7 @@ func hashes(S *big.Int, sKey []byte) (hashS, hashSKey []byte) { // nolint:gocrit
 	req1 := hashInt("req1", S)
 	req2 := HashSKey(sKey)
 	req3 := hashInt("req3", S)
-	for i := 0; i < sha1.Size; i++ {
+	for i := range sha1.Size {
 		req3[i] ^= req2[i]
 	}
 	return req1, req3
@@ -455,7 +455,7 @@ func padRandom() ([]byte, error) {
 	}
 	_, err = rand.Read(b)
 	if err != nil {
-		for i := 0; i < len(b); i++ {
+		for i := range b {
 			b[i] = byte(mrand.IntN(256))
 		}
 	}

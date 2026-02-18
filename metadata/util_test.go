@@ -170,7 +170,7 @@ func TestValidateInfo(t *testing.T) {
 func TestRandomDigit(t *testing.T) {
 	t.Parallel()
 
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		digit := randomDigit()
 		if digit < '0' || digit > '9' {
 			t.Errorf("Expected a digit in range(0 - 9), got %c", digit)
@@ -181,7 +181,7 @@ func TestRandomDigit(t *testing.T) {
 func TestPeerId(t *testing.T) {
 	t.Parallel()
 
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		peerID := randomID()
 		lenPeerID := len(peerID)
 		if lenPeerID > PeerIDLength {
@@ -271,7 +271,7 @@ func TestUnmarshalMetainfo(t *testing.T) {
 
 	metadataBytes := make([]byte, 100)
 	if _, err := rand.Read(metadataBytes); err != nil {
-		for i := 0; i < 100; i++ {
+		for i := range 100 {
 			metadataBytes[i] = byte(mrand.IntN(256))
 		}
 	}

@@ -13,7 +13,7 @@ func Fuzz(f *testing.F) {
 	f.Fuzz(func(t *testing.T, b []byte) {
 		t.Parallel()
 
-		var d interface{}
+		var d any
 		err := Unmarshal(b, &d)
 		if err != nil {
 			t.Skip(err)
@@ -22,7 +22,7 @@ func Fuzz(f *testing.F) {
 		if err != nil {
 			t.Errorf("Marshal error: %v", err)
 		}
-		var d0 interface{}
+		var d0 any
 		err = Unmarshal(b0, &d0)
 		if err != nil {
 			t.Errorf("Unmarshal error: %v", err)
@@ -41,7 +41,7 @@ func FuzzInterfaceRoundTrip(f *testing.F) {
 	f.Fuzz(func(t *testing.T, b []byte) {
 		t.Parallel()
 
-		var d interface{}
+		var d any
 		err := Unmarshal(b, &d)
 		if err != nil {
 			t.Skip()
@@ -50,7 +50,7 @@ func FuzzInterfaceRoundTrip(f *testing.F) {
 		if err != nil {
 			t.Errorf("Marshal error: %v", err)
 		}
-		var d0 interface{}
+		var d0 any
 		err = Unmarshal(b0, &d0)
 		if err != nil {
 			t.Errorf("Unmarshal error: %v", err)

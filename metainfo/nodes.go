@@ -13,7 +13,7 @@ type Node string
 var _ bencode.Unmarshaler = (*Node)(nil)
 
 func (n *Node) UnmarshalBencode(b []byte) (err error) {
-	var iface interface{}
+	var iface any
 	err = bencode.Unmarshal(b, &iface)
 	if err != nil {
 		return
@@ -21,7 +21,7 @@ func (n *Node) UnmarshalBencode(b []byte) (err error) {
 	switch v := iface.(type) {
 	case string:
 		*n = Node(v)
-	case []interface{}:
+	case []any:
 		func() {
 			defer func() {
 				r := recover()

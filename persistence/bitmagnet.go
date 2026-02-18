@@ -79,7 +79,7 @@ func (b *bitmagnet) AddNewTorrent(infoHash []byte, name string, files []File) er
 	for _, file := range files {
 		totalSize += file.Size
 	}
-	data, err := json.Marshal(map[string]interface{}{
+	data, err := json.Marshal(map[string]any{
 		"infoHash":    hex.EncodeToString(infoHash),
 		"name":        name,
 		"size":        totalSize,

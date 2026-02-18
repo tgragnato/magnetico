@@ -342,7 +342,7 @@ func randomNodeID() []byte {
 	nodeID := make([]byte, 20)
 	_, err := rand.Read(nodeID)
 	if err != nil {
-		for i := 0; i < 20; i++ {
+		for i := range 20 {
 			nodeID[i] = byte(mrand.IntN(256))
 		}
 	}
