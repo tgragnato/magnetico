@@ -85,7 +85,7 @@ func (db *sqlite3Database) DoesTorrentExist(infoHash []byte) (bool, error) {
 	// If rows.Next() returns true, meaning that the torrent is in the database, return true; else
 	// return false.
 	exists := rows.Next()
-	if rows.Err() != nil {
+	if err := rows.Err(); err != nil {
 		return false, err
 	}
 
