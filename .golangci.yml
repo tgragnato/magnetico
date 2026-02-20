@@ -4,7 +4,7 @@ run:
   concurrency: 4
   tests: true
   allow-parallel-runners: true
-  go: '1.25'
+  go: '1.26'
 
 linters:
   enable:

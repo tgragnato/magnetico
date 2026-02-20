@@ -22,7 +22,7 @@ jobs:
 
     strategy:
       matrix:
-        go-version: [ '1.24', '1.25' ]
+        go-version: [ '1.25', '1.26' ]
 
     steps:
 
@@ -42,11 +42,11 @@ jobs:
 
     - name: Test
       run: CGO_ENABLED=1 go test -v -race -tags fts5 ./...
-      if: ${{ matrix.go-version == '1.24' }}
+      if: ${{ matrix.go-version == '1.25' }}
 
     - name: Test
       run: CGO_ENABLED=1 go test -v -race -tags fts5 ./... -covermode=atomic -coverprofile=coverage.out
-      if: ${{ matrix.go-version == '1.25' }}
+      if: ${{ matrix.go-version == '1.26' }}
 
     - name: Upload coverage report
       uses: codecov/codecov-action@v5
@@ -56,13 +56,13 @@ jobs:
         files: ./coverage.out
         flags: unittests
         verbose: true
-      if: ${{ matrix.go-version == '1.25' }}
+      if: ${{ matrix.go-version == '1.26' }}
 
     - name: GoLang CI Lint
       uses: golangci/golangci-lint-action@v9
       with:
         version: latest
-      if: ${{ matrix.go-version == '1.25' }}
+      if: ${{ matrix.go-version == '1.26' }}
 
   docker:
 
