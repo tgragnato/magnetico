@@ -112,6 +112,8 @@ func apiTorrents(w http.ResponseWriter, r *http.Request) {
 		Limit            uint64   `schema:"limit"`
 	}
 
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, "error while parsing the URL: "+err.Error(), http.StatusBadRequest)
@@ -219,6 +221,8 @@ func apiTorrentsTotal(w http.ResponseWriter, r *http.Request) {
 		// while `byKeyword` indicates querying the total count that matches the given query.
 		QueryType string `schema:"queryType"`
 	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	err := r.ParseForm()
 	if err != nil {
