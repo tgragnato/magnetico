@@ -9,7 +9,7 @@ require (
 	github.com/andybalholm/brotli v1.2.0
 	github.com/bits-and-blooms/bloom/v3 v3.7.1
 	github.com/goccy/go-yaml v1.19.2
-	github.com/grafana/pyroscope-go v1.2.7
+	github.com/grafana/pyroscope-go v1.2.8
 	github.com/jackc/pgx/v5 v5.9.1
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/klauspost/compress v1.18.5
