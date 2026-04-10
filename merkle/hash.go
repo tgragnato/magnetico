@@ -6,52 +6,56 @@ import (
 )
 
 func NewHash() *Hash {
-	h := &Hash{
-		nextBlock: sha256.New(),
-	}
-	return h
+	return &Hash{}
 }
 
 type Hash struct {
 	blocks    [][sha256.Size]byte
-	nextBlock hash.Hash
+	nextBlock [BlockSize]byte
 	// How many bytes have been written to nextBlock so far.
 	nextBlockWritten int
 }
 
-func (h *Hash) remaining() int {
-	return BlockSize - h.nextBlockWritten
-}
-
 func (h *Hash) Write(p []byte) (n int, err error) {
-	for len(p) > 0 {
-		var n1 int
-		n1, err = h.nextBlock.Write(p[:min(len(p), h.remaining())])
-		n += n1
+	if h.nextBlockWritten != 0 {
+		n1 := copy(h.nextBlock[h.nextBlockWritten:], p)
 		h.nextBlockWritten += n1
+		n += n1
 		p = p[n1:]
-		if h.remaining() == 0 {
-			h.blocks = append(h.blocks, h.nextBlockSum())
-			h.nextBlock.Reset()
+		if h.nextBlockWritten == BlockSize {
+			h.blocks = append(h.blocks, sha256.Sum256(h.nextBlock[:]))
 			h.nextBlockWritten = 0
 		}
-		if err != nil {
-			break
-		}
+	}
+
+	for len(p) >= BlockSize {
+		h.blocks = append(h.blocks, sha256.Sum256(p[:BlockSize]))
+		p = p[BlockSize:]
+		n += BlockSize
+	}
+
+	if len(p) != 0 {
+		n1 := copy(h.nextBlock[:], p)
+		h.nextBlockWritten = n1
+		n += n1
 	}
 	return
 }
 
 func (h *Hash) nextBlockSum() (sum [sha256.Size]byte) {
-	copy(sum[:], h.nextBlock.Sum(sum[:0]))
-	return
+	if h.nextBlockWritten == 0 {
+		return
+	}
+	return sha256.Sum256(h.nextBlock[:h.nextBlockWritten])
 }
 
 func (h *Hash) curBlocks() [][sha256.Size]byte {
-	blocks := h.blocks
-	if h.nextBlockWritten != 0 {
-		blocks = append(blocks, h.nextBlockSum())
+	if h.nextBlockWritten == 0 {
+		return h.blocks
 	}
+	blocks := make([][sha256.Size]byte, len(h.blocks)+1)
+	copy(blocks, h.blocks)
+	blocks[len(h.blocks)] = h.nextBlockSum()
 	return blocks
 }
 
@@ -65,7 +69,11 @@ func (h *Hash) Sum(b []byte) []byte {
 func (h *Hash) SumMinLength(b []byte, length int) []byte {
 	blocks := h.curBlocks()
 	minBlocks := (length + BlockSize - 1) / BlockSize
-	blocks = append(blocks, make([][sha256.Size]byte, minBlocks-len(blocks))...)
+	if minBlocks > len(blocks) {
+		padded := make([][sha256.Size]byte, minBlocks)
+		copy(padded, blocks)
+		blocks = padded
+	}
 	sum := RootWithPadHash(blocks, [sha256.Size]byte{})
 	return append(b, sum[:]...)
 }
@@ -73,7 +81,6 @@ func (h *Hash) SumMinLength(b []byte, length int) []byte {
 // Reset resets the Hash to its initial state.
 func (h *Hash) Reset() {
 	h.blocks = h.blocks[:0]
-	h.nextBlock.Reset()
 	h.nextBlockWritten = 0
 }
 
@@ -84,7 +91,7 @@ func (h *Hash) Size() int {
 
 // BlockSize returns the block size of the hash.
 func (h *Hash) BlockSize() int {
-	return h.nextBlock.BlockSize()
+	return sha256.BlockSize
 }
 
 var _ hash.Hash = (*Hash)(nil)
