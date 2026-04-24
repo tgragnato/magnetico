@@ -111,6 +111,19 @@ $  htpasswd -bnBC 12 "USERNAME" "PASSWORD"
 USERNAME:$2y$12$YE01LZ8jrbQbx6c0s2hdZO71dSjn2p/O9XsYJpz.5968yCysUgiaG
 ```
 
+### Keeping the database up to date
+
+To keep your database as fresh and fast as possible, run the crawler continuously and tune the DHT discovery parameters.
+
+- `--daemon` runs only the crawler; `--web` runs only the web UI. Running both together keeps discovery and browsing active.
+- `--max-rps` controls the DHT request rate. If your network and host can handle it, increasing this value improves how quickly the crawler explores the network.
+- `--indexer-max-neighbors` increases how many DHT neighbors each indexer tracks. More neighbors usually means better coverage and faster discovery.
+- `--indexer-addr` can be specified multiple times to bind more local addresses/interfaces, improving parallel discovery.
+- `--bootstrap-node` should point to reliable DHT nodes so the crawler can recover quickly after restart.
+- avoid overly strict `--filter-nodes-cidrs` unless you need filter mode; otherwise the crawler may see fewer peers.
+
+Remember that BitTorrent DHT discovery is probabilistic: new torrents appear in the database only after peers announce them on the network. There is no guaranteed behavior, but keeping the crawler always running with higher request rate and broader DHT coverage will make new torrents visible much faster.
+
 ### Screenshots
 
 | ![The Homepage](/doc/homepage.png) | ![Searching for torrents](/doc/search.png) | ![Search result](/doc/result.png) |
