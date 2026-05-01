@@ -12,7 +12,7 @@ require (
 	github.com/grafana/pyroscope-go v1.2.8
 	github.com/jackc/pgx/v5 v5.9.2
 	github.com/jessevdk/go-flags v1.6.1
-	github.com/klauspost/compress v1.18.5
+	github.com/klauspost/compress v1.18.6
 	github.com/mattn/go-sqlite3 v1.14.44
 	github.com/multiformats/go-multihash v0.2.3
 	github.com/pebbe/zmq4 v1.4.0
