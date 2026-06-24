@@ -271,7 +271,7 @@ func TestNewGetPeersResponseWithNodes(t *testing.T) {
 
 func TestNewGetPeersResponseWithValues(t *testing.T) {
 	t.Parallel()
-	if !validateGetPeersResponseMessage(NewGetPeersResponseWithValues([]byte("tt"), []byte("qwertyuopasdfghjklzx"), []byte("token"), []CompactPeer{})) {
+	if !validateGetPeersResponseMessage(NewGetPeersResponseWithValues([]byte("tt"), []byte("qwertyuopasdfghjklzx"), []byte("token"), []CompactPeer{}, nil, nil)) {
 		t.Errorf("NewGetPeersResponseWithValues returned an invalid message!")
 	}
 }
@@ -529,6 +529,8 @@ func TestOnMessage_GetPeersResponse(t *testing.T) {
 			[]byte("abcdefghij0123456789"),
 			[]byte("token"),
 			[]CompactPeer{},
+			nil,
+			nil,
 		),
 		&net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 6881},
 	)
