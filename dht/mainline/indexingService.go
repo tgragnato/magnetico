@@ -295,6 +295,8 @@ func (is *IndexingService) onGetPeersQuery(msg *Message, addr *net.UDPAddr) {
 			is.nodeID,
 			is.protocol.CalculateToken(addr.IP),
 			compactPeers,
+			nil,
+			nil,
 		),
 		addr,
 	)
