@@ -1,3 +1,23 @@
+## [2.4.0](https://github.com/tgragnato/magnetico/compare/v2.3.0...v2.4.0) (2026-06-25)
+
+
+### Features
+
+* **dht:** support bep33 in the mainline implementation ([aa204ab](https://github.com/tgragnato/magnetico/commit/aa204ab46463b0c92e474a1b81b10eb41d68925d))
+* **metainfo:** add json and mapstructure tags to metainfo structs ([e7a6d67](https://github.com/tgragnato/magnetico/commit/e7a6d67beedda8af79e30cbf6827da467dda020c))
+
+
+### Bug Fixes
+
+* **dht:** handle temporary closed channels in the event loop ([dc18025](https://github.com/tgragnato/magnetico/commit/dc18025140d6bdb452b14b2b477b882813ef9962))
+* **sqlite3:** improve error handling in DoesTorrentExist function ([6bc0f00](https://github.com/tgragnato/magnetico/commit/6bc0f0008cfd1358d734a42ea6aa35876a94ad32))
+* **web:** limit request body size in apiTorrents and apiTorrentsTotal handlers ([99cdf05](https://github.com/tgragnato/magnetico/commit/99cdf051fd25ea2bc0cd77d5882731e458540746))
+
+
+### Performance Improvements
+
+* **merkle:** optimize merkle hashing and test coverage ([70a2f4f](https://github.com/tgragnato/magnetico/commit/70a2f4f1f3e3ade6ed73b0a94cb3613a51c4e377))
+
 ## [2.3.0](https://github.com/tgragnato/magnetico/compare/v2.2.1...v2.3.0) (2025-06-28)
 
 
