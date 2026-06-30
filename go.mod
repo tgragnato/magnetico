@@ -6,7 +6,7 @@ toolchain go1.26.0
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
-	github.com/andybalholm/brotli v1.2.1
+	github.com/andybalholm/brotli v1.2.2
 	github.com/goccy/go-yaml v1.19.2
 	github.com/grafana/pyroscope-go v1.3.1
 	github.com/jackc/pgx/v5 v5.10.0
