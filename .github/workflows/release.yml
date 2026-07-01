@@ -118,6 +118,15 @@ jobs:
           tags: ghcr.io/${{ github.repository }}:${{ steps.changelog.outputs.tag }}, ghcr.io/${{ github.repository }}:latest
           push: true
 
+      - name: Extract CGo binaries from Docker Image
+        run: |
+          docker create --name extract-amd64 --platform linux/amd64 ghcr.io/${{ github.repository }}:${{ steps.changelog.outputs.tag }}
+          docker cp extract-amd64:/usr/bin/magnetico magnetico-linux-amd64-cgo
+          docker rm extract-amd64
+          docker create --name extract-arm64 --platform linux/arm64 ghcr.io/${{ github.repository }}:${{ steps.changelog.outputs.tag }}
+          docker cp extract-arm64:/usr/bin/magnetico magnetico-linux-arm64-cgo
+          docker rm extract-arm64
+
       - name: Download workflow artifacts
         uses: actions/download-artifact@v8
         with:
@@ -130,4 +139,7 @@ jobs:
           tag_name: ${{ steps.changelog.outputs.tag }}
           body: ${{ steps.changelog.outputs.clean_changelog }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          files: magnetico-*-*/magnetico-*-*
+          files: |
+            magnetico-*-*/magnetico-*-*
+            magnetico-linux-amd64-cgo
+            magnetico-linux-arm64-cgo
