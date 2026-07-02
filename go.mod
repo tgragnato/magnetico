@@ -11,7 +11,7 @@ require (
 	github.com/grafana/pyroscope-go v1.3.1
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/jessevdk/go-flags v1.6.1
-	github.com/klauspost/compress v1.18.7
+	github.com/klauspost/compress v1.19.0
 	github.com/mattn/go-sqlite3 v1.14.47
 	github.com/multiformats/go-multihash v0.2.3
 	github.com/pebbe/zmq4 v1.4.0
