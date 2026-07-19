@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -121,7 +122,7 @@ func torrentsInfohashHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set(ContentType, ContentTypeHtml)
-	if err := torrent(string(infohash), *torrentMetadata, files).Render(w); err != nil {
+	if err := torrent(hex.EncodeToString(infohash), *torrentMetadata, files).Render(w); err != nil {
 		http.Error(w, "Torrent render "+err.Error(), http.StatusInternalServerError)
 	}
 }
