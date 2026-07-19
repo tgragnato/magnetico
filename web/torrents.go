@@ -1,10 +1,13 @@
 package web
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	g "maragu.dev/gomponents"
@@ -13,9 +16,91 @@ import (
 	"tgragnato.it/magnetico/v2/persistence"
 )
 
-func torrents() g.Node {
+const defaultLimit = 20
+
+func torrentOrderedValue(t persistence.TorrentMetadata, orderBy persistence.OrderingCriteria) float64 {
+	switch orderBy {
+	case persistence.ByDiscoveredOn:
+		return float64(t.DiscoveredOn)
+	case persistence.ByRelevance:
+		return t.Relevance
+	case persistence.ByTotalSize:
+		return float64(t.Size)
+	case persistence.ByNFiles:
+		return float64(t.NFiles)
+	default:
+		return float64(t.DiscoveredOn)
+	}
+}
+
+func torrentItem(t persistence.TorrentMetadata) g.Node {
+	infohashHex := hex.EncodeToString(t.InfoHash)
+	return Li(
+		Div(
+			H3(A(Href("/torrents/"+infohashHex), g.Text(t.Name))),
+			A(
+				Href(fmt.Sprintf("magnet:?xt=urn:btih:%s&dn=%s", infohashHex, url.QueryEscape(t.Name))),
+				Img(Src("/static/assets/magnet.gif"), Alt("Magnet link")),
+				Title("Download this torrent using magnet"),
+			),
+			Small(g.Text(infohashHex)),
+		),
+		g.Text(bytesToHuman(t.Size)+", "+time.Unix(t.DiscoveredOn, 0).Format("02/01/2006")),
+	)
+}
+
+func loadMoreButton(oob bool, query string, epoch int64, orderByStr string, ascending bool, lastID uint64, lastOrderedValue float64, disabled bool) g.Node {
+	attrs := []g.Node{ID("load-more")}
+	if oob {
+		attrs = append(attrs, g.Attr("hx-swap-oob", "true"))
+	}
+	if disabled {
+		return Button(append(attrs, g.Attr("disabled", ""), g.Text("No More Results"))...)
+	}
+	params := url.Values{}
+	params.Set("epoch", strconv.FormatInt(epoch, 10))
+	params.Set("lastID", strconv.FormatUint(lastID, 10))
+	params.Set("lastOrderedValue", strconv.FormatFloat(lastOrderedValue, 'f', -1, 64))
+	params.Set("orderBy", orderByStr)
+	params.Set("ascending", strconv.FormatBool(ascending))
+	if query != "" {
+		params.Set("query", query)
+	}
+	return Button(append(attrs,
+		g.Attr("hx-get", "/torrents/results?"+params.Encode()),
+		g.Attr("hx-target", "main ul"),
+		g.Attr("hx-swap", "beforeend"),
+		g.Text("Load More Results"),
+	)...)
+}
+
+func torrents(query string, epoch int64, orderByStr string, ascending bool, results []persistence.TorrentMetadata) g.Node {
+	title := "Search - magnetico"
+	if query != "" {
+		title = query + " - magnetico"
+	}
+
+	feedHref := "/feed"
+	if query != "" {
+		feedHref = "/feed?query=" + url.QueryEscape(query)
+	}
+
+	items := make([]g.Node, len(results))
+	for i, t := range results {
+		items[i] = torrentItem(t)
+	}
+
+	var button g.Node
+	if len(results) < defaultLimit {
+		button = loadMoreButton(false, "", 0, "", false, 0, 0, true)
+	} else {
+		last := results[len(results)-1]
+		ob, _ := parseOrderBy(orderByStr)
+		button = loadMoreButton(false, query, epoch, orderByStr, ascending, last.ID, torrentOrderedValue(last, ob), false)
+	}
+
 	return c.HTML5(c.HTML5Props{
-		Title:       "Search - magnetico",
+		Title:       title,
 		Description: "A self-hosted BitTorrent DHT search engine",
 		Language:    "en",
 		Head: []g.Node{
@@ -24,34 +109,11 @@ func torrents() g.Node {
 			Link(Rel("stylesheet"), Href("/static/styles/reset.css")),
 			Link(Rel("stylesheet"), Href("/static/styles/essential.css")),
 			Link(Rel("stylesheet"), Href("/static/styles/torrents.css")),
-			Script(Src("/static/scripts/mustache-v2.3.0.min.js")),
-			Script(Src("/static/scripts/common.js")),
-			Script(Src("/static/scripts/torrents.js")),
-			Script(
-				ID("item-template"),
-				Type("text/x-handlebars-template"),
-				Li(
-					Div(
-						H3(A(Href("/torrents/{{ infoHash }}"), g.Text("{{ name }}"))),
-						A(
-							Href("magnet:?xt=urn:btih:{{ infoHash }}&dn={{ name }}"),
-							Img(
-								Src("/static/assets/magnet.gif"),
-								Alt("Magnet link")),
-							Title("Download this torrent using magnet"),
-						),
-						Small(g.Text("{{ infoHash }}")),
-					),
-					g.Text("{{ size }}, {{ discoveredOn }}"),
-				),
-			),
+			Script(Src("/static/scripts/htmx-2.0.10.js")),
 		},
 		Body: []g.Node{
 			Header(
-				Div(
-					A(Href("/"),
-						B(g.Text("magnetico"))),
-				),
+				Div(A(Href("/"), B(g.Text("magnetico")))),
 				Form(
 					Action("/torrents"),
 					Method("get"),
@@ -61,37 +123,129 @@ func torrents() g.Node {
 						Type("search"),
 						Name("query"),
 						Placeholder("Search the BitTorrent DHT"),
+						g.If(query != "", Value(query)),
 					),
 				),
 				Div(
 					A(
-						Href("/feed"),
+						Href(feedHref),
 						ID("feed-anchor"),
-						Img(
-							Src("/static/assets/feed.png"),
-							Alt("RSS feed icon"),
-							Title("subscribe to the RSS feed"),
-						),
+						Img(Src("/static/assets/feed.png"), Alt("RSS feed icon"), Title("subscribe to the RSS feed")),
 						g.Text("subscribe"),
 					),
 				),
 			),
-			Main(Ul()),
-			Footer(
-				Button(
-					g.Attr("onclick", "load();"),
-					g.Text("Load More Results"),
-				),
-			),
+			Main(Ul(items...)),
+			Footer(button),
 		},
 	})
 }
 
 func torrentsHandler(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query().Get("query")
+	epoch := time.Now().Unix()
+
+	orderByStr := "DISCOVERED_ON"
+	ascending := false
+	if query != "" {
+		orderByStr = "RELEVANCE"
+		ascending = true
+	}
+
+	orderBy, _ := parseOrderBy(orderByStr)
+	results, err := database.QueryTorrents(query, epoch, orderBy, ascending, defaultLimit, nil, nil)
+	if err != nil {
+		http.Error(w, "QueryTorrents: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set(ContentType, ContentTypeHtml)
-	if err := torrents().Render(w); err != nil {
+	if err := torrents(query, epoch, orderByStr, ascending, results).Render(w); err != nil {
 		http.Error(w, "Torrents render "+err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func torrentsResultsHandler(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	query := q.Get("query")
+
+	epoch := time.Now().Unix()
+	if q.Has("epoch") {
+		var err error
+		epoch, err = strconv.ParseInt(q.Get("epoch"), 10, 64)
+		if err != nil {
+			http.Error(w, "invalid epoch: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+
+	orderByStr := "DISCOVERED_ON"
+	if query != "" {
+		orderByStr = "RELEVANCE"
+	}
+	if q.Has("orderBy") {
+		orderByStr = q.Get("orderBy")
+	}
+	orderBy, err := parseOrderBy(orderByStr)
+	if err != nil {
+		http.Error(w, "invalid orderBy: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	ascending := false
+	if q.Has("ascending") {
+		ascending, err = strconv.ParseBool(q.Get("ascending"))
+		if err != nil {
+			http.Error(w, "invalid ascending: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+
+	var lastOrderedValue *float64
+	var lastID *uint64
+	if q.Has("lastID") && q.Has("lastOrderedValue") {
+		lov, err := strconv.ParseFloat(q.Get("lastOrderedValue"), 64)
+		if err != nil {
+			http.Error(w, "invalid lastOrderedValue: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		lid, err := strconv.ParseUint(q.Get("lastID"), 10, 64)
+		if err != nil {
+			http.Error(w, "invalid lastID: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		lastOrderedValue = &lov
+		lastID = &lid
+	}
+
+	results, err := database.QueryTorrents(query, epoch, orderBy, ascending, defaultLimit, lastOrderedValue, lastID)
+	if err != nil {
+		http.Error(w, "QueryTorrents: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var sb strings.Builder
+	for _, t := range results {
+		if err := torrentItem(t).Render(&sb); err != nil {
+			http.Error(w, "render: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	var button g.Node
+	if len(results) < defaultLimit {
+		button = loadMoreButton(true, "", 0, "", false, 0, 0, true)
+	} else {
+		last := results[len(results)-1]
+		button = loadMoreButton(true, query, epoch, orderByStr, ascending, last.ID, torrentOrderedValue(last, orderBy), false)
+	}
+	if err := button.Render(&sb); err != nil {
+		http.Error(w, "render: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set(ContentType, ContentTypeHtml)
+	fmt.Fprint(w, sb.String())
 }
 
 func apiTorrents(w http.ResponseWriter, r *http.Request) {

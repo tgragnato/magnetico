@@ -1,23 +1,45 @@
 package web
 
 import (
-	"bytes"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+
+	"tgragnato.it/magnetico/v2/persistence"
 )
 
 func TestStatistics(t *testing.T) {
 	t.Parallel()
 
-	var buffer bytes.Buffer
-	if err := statistics().Render(&buffer); err != nil {
+	rec := httptest.NewRecorder()
+	if err := statistics(persistence.NewStatistics()).Render(rec); err != nil {
 		t.Errorf("statistics render: %v", err)
+	}
+}
+
+func TestStatisticsWithData(t *testing.T) {
+	t.Parallel()
+
+	stats := persistence.NewStatistics()
+	stats.NDiscovered["2024-01"] = 42
+	stats.NFiles["2024-01"] = 100
+	stats.TotalSize["2024-01"] = 1024 * 1024 * 1024
+
+	rec := httptest.NewRecorder()
+	if err := statistics(stats).Render(rec); err != nil {
+		t.Errorf("statistics render: %v", err)
+	}
+	html := rec.Body.String()
+	if !strings.Contains(html, "Torrents Discovered") {
+		t.Errorf("chart title not found in HTML")
 	}
 }
 
 func TestStatisticsHandler(t *testing.T) {
 	t.Parallel()
+
+	initDb()
 
 	req, err := http.NewRequest("GET", "/statistics", nil)
 	if err != nil {
@@ -37,6 +59,47 @@ func TestStatisticsHandler(t *testing.T) {
 
 	if contentType := res.Header.Get("Content-Type"); contentType != ContentTypeHtml {
 		t.Errorf("expected Content-Type text/html; got %v", contentType)
+	}
+}
+
+func TestStatisticsPartialHandler(t *testing.T) {
+	t.Parallel()
+
+	initDb()
+
+	tests := []struct {
+		name           string
+		queryParams    string
+		expectedStatus int
+	}{
+		{"default params", "", http.StatusOK},
+		{"hours", "n=24&unit=hours", http.StatusOK},
+		{"days", "n=7&unit=days", http.StatusOK},
+		{"weeks", "n=4&unit=weeks", http.StatusOK},
+		{"months", "n=3&unit=months", http.StatusOK},
+		{"years", "n=1&unit=years", http.StatusOK},
+		{"invalid unit", "n=24&unit=invalid", http.StatusBadRequest},
+		{"invalid n", "n=abc&unit=hours", http.StatusBadRequest},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, err := http.NewRequest("GET", "/statistics/partial?"+tt.queryParams, nil)
+			if err != nil {
+				t.Fatalf("could not create request: %v", err)
+			}
+
+			rec := httptest.NewRecorder()
+			handler := http.HandlerFunc(statisticsPartialHandler)
+			handler.ServeHTTP(rec, req)
+
+			res := rec.Result()
+			defer res.Body.Close()
+
+			if res.StatusCode != tt.expectedStatus {
+				t.Errorf("expected status %v; got %v", tt.expectedStatus, res.StatusCode)
+			}
+		})
 	}
 }
 
