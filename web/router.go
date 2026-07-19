@@ -73,7 +73,9 @@ func makeRouter() *http.ServeMux {
 
 	router.HandleFunc("GET /robots.txt", middlewares(robotsHandler))
 	router.HandleFunc("GET /feed", middlewares(feedHandler))
+	router.HandleFunc("GET /statistics/partial", middlewares(statisticsPartialHandler))
 	router.HandleFunc("GET /statistics", middlewares(statisticsHandler))
+	router.HandleFunc("GET /torrents/results", middlewares(torrentsResultsHandler))
 	router.HandleFunc("GET /torrents/{infohash}", middlewares(infohashMiddleware(torrentsInfohashHandler)))
 	router.HandleFunc("GET /torrents", middlewares(torrentsHandler))
 
