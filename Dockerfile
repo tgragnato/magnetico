@@ -3,7 +3,7 @@ ENV CGO_ENABLED=1
 ENV CGO_CFLAGS=-D_LARGEFILE64_SOURCE
 ENV CGO_LDFLAGS='-fuse-ld=lld -static -lstdc++ -lsodium -lzmq'
 ENV CC=clang
-RUN apk add --no-cache clang lld libc-dev musl-dev libstdc++ libsodium-dev libsodium-static zeromq-dev libzmq-static
+RUN apk add --no-cache clang gcc g++ lld libc-dev musl-dev libstdc++ libsodium-dev libsodium-static zeromq-dev libzmq-static
 WORKDIR /workspace/bin
 RUN ln -s magnetico magneticod
 RUN ln -s magnetico magneticow
