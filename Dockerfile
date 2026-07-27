@@ -1,4 +1,4 @@
-FROM golang:alpine3.21 AS builder
+FROM golang:alpine3.24 AS builder
 ENV CGO_ENABLED=1
 ENV CGO_CFLAGS=-D_LARGEFILE64_SOURCE
 ENV CGO_LDFLAGS='-fuse-ld=lld -static -lstdc++ -lsodium -lzmq'
