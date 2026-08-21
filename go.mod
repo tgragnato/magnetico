@@ -12,7 +12,7 @@ require (
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/klauspost/compress v1.19.2
-	github.com/mattn/go-sqlite3 v1.14.49
+	github.com/mattn/go-sqlite3 v1.14.50
 	github.com/multiformats/go-multihash v0.2.3
 	github.com/pebbe/zmq4 v1.4.0
 	github.com/prometheus/client_golang v1.24.1
