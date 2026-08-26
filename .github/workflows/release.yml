@@ -19,26 +19,26 @@ jobs:
     strategy:
       matrix:
         include:
-          - { go-version: 1.26, go-os: linux, go-arch: amd64 }
-          - { go-version: 1.26, go-os: linux, go-arch: 386 }
-          - { go-version: 1.26, go-os: linux, go-arch: arm64 }
-          - { go-version: 1.26, go-os: linux, go-arch: arm }
-          - { go-version: 1.26, go-os: openbsd, go-arch: amd64 }
-          - { go-version: 1.26, go-os: openbsd, go-arch: 386 }
-          - { go-version: 1.26, go-os: openbsd, go-arch: arm64 }
-          - { go-version: 1.26, go-os: openbsd, go-arch: arm }
-          - { go-version: 1.26, go-os: darwin, go-arch: arm64 }
-          - { go-version: 1.26, go-os: freebsd, go-arch: amd64 }
+          - { go-os: linux, go-arch: amd64 }
+          - { go-os: linux, go-arch: 386 }
+          - { go-os: linux, go-arch: arm64 }
+          - { go-os: linux, go-arch: arm }
+          - { go-os: openbsd, go-arch: amd64 }
+          - { go-os: openbsd, go-arch: 386 }
+          - { go-os: openbsd, go-arch: arm64 }
+          - { go-os: openbsd, go-arch: arm }
+          - { go-os: darwin, go-arch: arm64 }
+          - { go-os: freebsd, go-arch: amd64 }
 
     steps:
 
       - name: Checkout repository
         uses: actions/checkout@v7
         
-      - name: Set up Go ${{ matrix.go-version }}
+      - name: Set up Go 1.27
         uses: actions/setup-go@v7
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: 1.27
         
       - name: Build binary
         run: go build -o magnetico-${{ matrix.go-os }}-${{ matrix.go-arch }} .
