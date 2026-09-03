@@ -2,6 +2,7 @@
 *Autonomous (self-hosted) BitTorrent DHT search engine suite.*
 
 [![Go](https://github.com/tgragnato/magnetico/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/tgragnato/magnetico/actions/workflows/go.yml)
+[![Test Cross Compilation without CGo](https://github.com/tgragnato/magnetico/actions/workflows/cross.yml/badge.svg)](https://github.com/tgragnato/magnetico/actions/workflows/cross.yml)
 [![CodeQL](https://github.com/tgragnato/magnetico/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/tgragnato/magnetico/actions/workflows/codeql.yml)
 [![Codecov](https://codecov.io/gh/tgragnato/magnetico/branch/main/graph/badge.svg)](https://codecov.io/gh/tgragnato/magnetico)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/tgragnato/magnetico)
