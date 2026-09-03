@@ -22,8 +22,8 @@ func isEmptyValue(v reflect.Value) bool {
 		return z
 	case reflect.Struct:
 		z := true
-		for i := 0; i < v.NumField(); i++ {
-			z = z && isEmptyValue(v.Field(i))
+		for _, field := range v.Fields() {
+			z = z && isEmptyValue(field)
 		}
 		return z
 	default:

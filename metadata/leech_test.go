@@ -58,9 +58,8 @@ func TestWriteAll(t *testing.T) {
 	data := []byte("Hello, World!")
 
 	var wg sync.WaitGroup
-	wg.Add(1)
 
-	go func() {
+	wg.Go(func() {
 		buffer := new(bytes.Buffer)
 		_, err := io.Copy(buffer, peer2)
 		if err != nil {
@@ -69,8 +68,7 @@ func TestWriteAll(t *testing.T) {
 		if !reflect.DeepEqual(data, buffer.Bytes()) {
 			t.Errorf("Expected to read %v, but got %v", data, buffer.Bytes())
 		}
-		wg.Done()
-	}()
+	})
 
 	if err := leech.writeAll(data); err != nil {
 		t.Errorf("Unexpected error: %s", err.Error())
@@ -88,9 +86,8 @@ func TestReadExactly(t *testing.T) {
 	data := []byte("Hello, World!")
 
 	var wg sync.WaitGroup
-	wg.Add(1)
 
-	go func() {
+	wg.Go(func() {
 		received, err := leech.readExactly(uint(len(data)))
 		if err != nil {
 			t.Error(err)
@@ -98,8 +95,7 @@ func TestReadExactly(t *testing.T) {
 		if !reflect.DeepEqual(data, received) {
 			t.Errorf("Expected to read %v, but got %v", data, received)
 		}
-		wg.Done()
-	}()
+	})
 
 	if _, err := peer2.Write(data); err != nil {
 		t.Errorf("Unexpected error: %s", err.Error())
@@ -151,10 +147,8 @@ func TestRequestAllPieces(t *testing.T) {
 			leech := &Leech{conn: peer1, metadataSize: tt.metadataSize}
 
 			var wg sync.WaitGroup
-			wg.Add(1)
 
-			go func() {
-				defer wg.Done()
+			wg.Go(func() {
 				buffer := new(bytes.Buffer)
 				_, err := io.Copy(buffer, peer2)
 				if err != nil {
@@ -172,7 +166,7 @@ func TestRequestAllPieces(t *testing.T) {
 				if requests != tt.expectedCalls {
 					t.Errorf("Expected %d requests, but got %d", tt.expectedCalls, requests)
 				}
-			}()
+			})
 
 			err := leech.requestAllPieces()
 			if (err != nil) != tt.expectedError {

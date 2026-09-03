@@ -52,7 +52,7 @@ func (bf *BloomFilter) InsertIP(ip net.IP) {
 func (bf *BloomFilter) Estimate() float64 {
 	var zeroBits uint = 0
 	for _, b := range bf.bytes {
-		for i := 0; i < 8; i++ {
+		for i := range 8 {
 			if (b & (0x01 << i)) == 0 {
 				zeroBits++
 			}
