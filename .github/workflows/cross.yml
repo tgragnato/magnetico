@@ -8,10 +8,49 @@ on:
 
 jobs:
 
+  generate-matrix:
+
+    name: Generate Target Matrix
+    runs-on: ubuntu-latest
+
+    permissions:
+      actions: read
+      contents: read
+      packages: read
+      security-events: read
+      pull-requests: read
+
+    outputs:
+      targets: ${{ steps.set-targets.outputs.targets }}
+
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: 1.27
+
+      - name: Generate Target Matrix
+        id: set-targets
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const { execSync } = require('node:child_process');
+            const output = execSync('go tool dist list', { encoding: 'utf8' });
+            const targets = output
+              .split(/\r?\n/)
+              .map((line) => line.trim())
+              .filter((line) => /^(linux|freebsd|openbsd|darwin)\//.test(line))
+              .map((target) => {
+                const [goos, goarch] = target.split('/');
+                return { target, goos, goarch };
+              });
+            core.setOutput('targets', JSON.stringify(targets));
+
   cross:
 
     name: Cross Compilation
     runs-on: ubuntu-latest
+    needs: generate-matrix
 
     permissions:
       actions: read
@@ -22,33 +61,7 @@ jobs:
 
     strategy:
       matrix:
-        include:
-          - { go-os: linux, go-arch: amd64 }
-          - { go-os: linux, go-arch: 386 }
-          - { go-os: linux, go-arch: arm64 }
-          - { go-os: linux, go-arch: arm }
-          - { go-os: linux, go-arch: loong64 }
-          - { go-os: linux, go-arch: mips }
-          - { go-os: linux, go-arch: mips64 }
-          - { go-os: linux, go-arch: mips64le }
-          - { go-os: linux, go-arch: mipsle }
-          - { go-os: linux, go-arch: ppc64 }
-          - { go-os: linux, go-arch: ppc64le }
-          - { go-os: linux, go-arch: riscv64 }
-          - { go-os: linux, go-arch: s390x }
-          - { go-os: openbsd, go-arch: amd64 }
-          - { go-os: openbsd, go-arch: 386 }
-          - { go-os: openbsd, go-arch: arm64 }
-          - { go-os: openbsd, go-arch: arm }
-          - { go-os: openbsd, go-arch: ppc64 }
-          - { go-os: openbsd, go-arch: riscv64 }
-          - { go-os: freebsd, go-arch: amd64 }
-          - { go-os: freebsd, go-arch: 386 }
-          - { go-os: freebsd, go-arch: arm64 }
-          - { go-os: freebsd, go-arch: arm }
-          - { go-os: freebsd, go-arch: riscv64 }
-          - { go-os: darwin, go-arch: amd64 }
-          - { go-os: darwin, go-arch: arm64 }
+        target: ${{ fromJson(needs.generate-matrix.outputs.targets) }}
 
     steps:
 
@@ -63,6 +76,6 @@ jobs:
     - name: Build
       env:
         CGO_ENABLED: 0
-        GOOS: ${{ matrix.go-os }}
-        GOARCH: ${{ matrix.go-arch }}
+        GOOS: ${{ matrix.target.goos }}
+        GOARCH: ${{ matrix.target.goarch }}
       run: go build -v .
