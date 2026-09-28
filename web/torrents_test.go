@@ -1,11 +1,11 @@
 package web
 
 import (
-	"bytes"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"tgragnato.it/magnetico/v2/persistence"
 )
@@ -13,14 +13,35 @@ import (
 func TestTorrents(t *testing.T) {
 	t.Parallel()
 
-	var buffer bytes.Buffer
-	if err := torrents().Render(&buffer); err != nil {
+	rec := httptest.NewRecorder()
+	if err := torrents("", time.Now().Unix(), "DISCOVERED_ON", false, nil).Render(rec); err != nil {
 		t.Errorf("torrents render: %v", err)
+	}
+}
+
+func TestTorrentsWithQuery(t *testing.T) {
+	t.Parallel()
+
+	results := []persistence.TorrentMetadata{
+		{ID: 1, InfoHash: make([]byte, 20), Name: "Test Torrent", Size: 1024, DiscoveredOn: 1710000000, NFiles: 1},
+	}
+	rec := httptest.NewRecorder()
+	if err := torrents("hello", time.Now().Unix(), "RELEVANCE", true, results).Render(rec); err != nil {
+		t.Errorf("torrents render: %v", err)
+	}
+	html := rec.Body.String()
+	if !strings.Contains(html, "hello - magnetico") {
+		t.Errorf("title not found in HTML")
+	}
+	if !strings.Contains(html, "Test Torrent") {
+		t.Errorf("torrent name not found in HTML")
 	}
 }
 
 func TestTorrentsHandler(t *testing.T) {
 	t.Parallel()
+
+	initDb()
 
 	req, err := http.NewRequest("GET", "/torrents", nil)
 	if err != nil {
@@ -40,6 +61,28 @@ func TestTorrentsHandler(t *testing.T) {
 
 	if contentType := res.Header.Get("Content-Type"); contentType != ContentTypeHtml {
 		t.Errorf("expected Content-Type text/html; got %v", contentType)
+	}
+}
+
+func TestTorrentsResultsHandler(t *testing.T) {
+	t.Parallel()
+
+	initDb()
+
+	req, err := http.NewRequest("GET", "/torrents/results", nil)
+	if err != nil {
+		t.Fatalf("could not create request: %v", err)
+	}
+
+	rec := httptest.NewRecorder()
+	handler := http.HandlerFunc(torrentsResultsHandler)
+	handler.ServeHTTP(rec, req)
+
+	res := rec.Result()
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		t.Errorf("expected status OK; got %v", res.Status)
 	}
 }
 
