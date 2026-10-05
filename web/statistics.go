@@ -231,6 +231,7 @@ func statistics(stats *persistence.Statistics) g.Node {
 					Form(
 						g.Attr("hx-get", "/statistics/partial"),
 						g.Attr("hx-target", "#charts"),
+						g.Attr("hx-swap", "outerHTML"),
 						g.Attr("hx-trigger", "change"),
 						P(
 							g.Text("Show statistics for the past ..."),

@@ -34,6 +34,9 @@ func TestStatisticsWithData(t *testing.T) {
 	if !strings.Contains(html, "Torrents Discovered") {
 		t.Errorf("chart title not found in HTML")
 	}
+	if !strings.Contains(html, `hx-swap="outerHTML"`) {
+		t.Errorf("statistics form does not replace the charts container")
+	}
 }
 
 func TestStatisticsHandler(t *testing.T) {
