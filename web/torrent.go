@@ -15,7 +15,7 @@ import (
 
 func torrent(infohash string, torrentMetadata persistence.TorrentMetadata, files []persistence.File) g.Node {
 	return c.HTML5(c.HTML5Props{
-Title:       torrentMetadata.Name + " - magnetico",
+		Title:       torrentMetadata.Name + " - magnetico",
 		Description: "A self-hosted BitTorrent DHT search engine",
 		Language:    "en",
 		Head: []g.Node{
