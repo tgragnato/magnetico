@@ -18,7 +18,7 @@ require (
 	github.com/prometheus/client_golang v1.24.1
 	github.com/rabbitmq/amqp091-go v1.15.0
 	golang.org/x/crypto v0.57.0
-	maragu.dev/gomponents v1.3.0
+	maragu.dev/gomponents v1.4.0
 )
 
 require (
