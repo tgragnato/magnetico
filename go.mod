@@ -15,7 +15,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.52
 	github.com/multiformats/go-multihash v0.2.3
 	github.com/pebbe/zmq4 v1.4.0
-	github.com/prometheus/client_golang v1.24.1
+	github.com/prometheus/client_golang v1.25.0
 	github.com/rabbitmq/amqp091-go v1.15.0
 	golang.org/x/crypto v0.57.0
 	maragu.dev/gomponents v1.4.0
