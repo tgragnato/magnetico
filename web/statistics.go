@@ -16,23 +16,24 @@ import (
 	"tgragnato.it/magnetico/v2/persistence"
 )
 
+const maxStatisticsN = 365
+
 func statisticsFrom(n int, unit string) string {
-	var dur time.Duration
+	n = min(max(n, 0), maxStatisticsN)
+	now := time.Now().UTC()
+	var from time.Time
 	switch unit {
-	case "hours":
-		dur = time.Duration(n) * time.Hour
 	case "days":
-		dur = time.Duration(n) * 24 * time.Hour
+		from = now.AddDate(0, 0, -n)
 	case "weeks":
-		dur = time.Duration(n) * 7 * 24 * time.Hour
+		from = now.AddDate(0, 0, -7*n)
 	case "months":
-		dur = time.Duration(n) * 30 * 24 * time.Hour
+		from = now.AddDate(0, -n, 0)
 	case "years":
-		dur = time.Duration(n) * 365 * 24 * time.Hour
+		from = now.AddDate(-n, 0, 0)
 	default:
-		dur = time.Duration(n) * time.Hour
+		from = now.Add(-time.Duration(n) * time.Hour)
 	}
-	from := time.Now().UTC().Add(-dur)
 	switch unit {
 	case "years":
 		return fmt.Sprintf("%d", from.Year())
@@ -288,7 +289,7 @@ func statisticsPartialHandler(w http.ResponseWriter, r *http.Request) {
 	if q.Has("n") {
 		var err error
 		n, err = strconv.Atoi(q.Get("n"))
-		if err != nil || n <= 0 {
+		if err != nil || n <= 0 || n > maxStatisticsN {
 			http.Error(w, "invalid n", http.StatusBadRequest)
 			return
 		}
