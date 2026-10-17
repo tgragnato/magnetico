@@ -114,7 +114,7 @@ func bytesToHuman(bytes uint64) string {
 	if bytes < 1024 {
 		return fmt.Sprintf("%d B", bytes)
 	}
-	sizes := []string{"B", "KiB", "MiB", "GiB", "TiB", "PiB"}
+	sizes := []string{"B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"}
 	i := int(math.Floor(math.Log(float64(bytes)) / math.Log(1024)))
 	val := float64(bytes) / math.Pow(1024, float64(i))
 	return fmt.Sprintf("%.1f %s", val, sizes[i])
