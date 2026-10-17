@@ -90,6 +90,19 @@ func TestTorrentsResultsHandler(t *testing.T) {
 	if res.StatusCode != http.StatusOK {
 		t.Errorf("expected status OK; got %v", res.Status)
 	}
+
+	for _, orderBy := range []string{"UPDATED_ON", "N_SEEDERS", "N_LEECHERS"} {
+		req, err := http.NewRequest("GET", "/torrents/results?orderBy="+orderBy, nil)
+		if err != nil {
+			t.Fatalf("could not create request: %v", err)
+		}
+
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("orderBy=%s: expected status %v; got %v", orderBy, http.StatusBadRequest, rec.Code)
+		}
+	}
 }
 
 func TestApiTorrents(t *testing.T) {
@@ -142,6 +155,24 @@ func TestApiTorrents(t *testing.T) {
 			queryParams:    "limit=notanumber",
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "error while parsing the URL: strconv.ParseUint: parsing \"notanumber\": invalid syntax",
+		},
+		{
+			name:           "unsupported orderBy updated on",
+			queryParams:    "orderBy=UPDATED_ON",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "invalid orderBy: ordering criterion",
+		},
+		{
+			name:           "unsupported orderBy seeders",
+			queryParams:    "orderBy=N_SEEDERS",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "invalid orderBy: ordering criterion",
+		},
+		{
+			name:           "unsupported orderBy leechers",
+			queryParams:    "orderBy=N_LEECHERS",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "invalid orderBy: ordering criterion",
 		},
 	}
 

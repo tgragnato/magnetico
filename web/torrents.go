@@ -192,6 +192,10 @@ func torrentsResultsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid orderBy: "+err.Error(), http.StatusBadRequest)
 		return
 	}
+	if err := validateOrderBy(orderBy); err != nil {
+		http.Error(w, "invalid orderBy: "+err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	ascending := false
 	if q.Has("ascending") {
@@ -300,7 +304,12 @@ func apiTorrents(w http.ResponseWriter, r *http.Request) {
 		orderBy, err = parseOrderBy(tq.OrderBy)
 		if err != nil {
 			http.Error(w, "error while parsing the URL: "+err.Error(), http.StatusBadRequest)
+			return
 		}
+	}
+	if err := validateOrderBy(orderBy); err != nil {
+		http.Error(w, "invalid orderBy: "+err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	if r.Form.Has("ascending") {
@@ -475,6 +484,15 @@ func parseOrderBy(s string) (persistence.OrderingCriteria, error) {
 
 	default:
 		return persistence.ByDiscoveredOn, fmt.Errorf("unknown orderBy string: %s", s)
+	}
+}
+
+func validateOrderBy(orderBy persistence.OrderingCriteria) error {
+	switch orderBy {
+	case persistence.ByRelevance, persistence.ByTotalSize, persistence.ByDiscoveredOn, persistence.ByNFiles:
+		return nil
+	default:
+		return fmt.Errorf("ordering criterion %d is not supported", orderBy)
 	}
 }
 
