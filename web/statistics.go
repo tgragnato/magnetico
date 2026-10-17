@@ -214,7 +214,8 @@ func statistics(stats *persistence.Statistics) g.Node {
 			Link(Rel("stylesheet"), Href("/static/styles/reset.css")),
 			Link(Rel("stylesheet"), Href("/static/styles/essential.css")),
 			Link(Rel("stylesheet"), Href("/static/styles/statistics.css")),
-			Script(Src("/static/scripts/htmx-2.0.10.js")),
+			Meta(Name("htmx-config"), Content(`{"noSwap":[204,304,"4xx","5xx"]}`)),
+			Script(Src("/static/scripts/htmx-4.0.0.min.js")),
 		},
 		Body: []g.Node{
 			Header(
