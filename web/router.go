@@ -5,7 +5,6 @@ import (
 	"embed"
 	"fmt"
 	"log"
-	"math"
 	"net/http"
 	"time"
 
@@ -115,7 +114,11 @@ func bytesToHuman(bytes uint64) string {
 		return fmt.Sprintf("%d B", bytes)
 	}
 	sizes := []string{"B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"}
-	i := int(math.Floor(math.Log(float64(bytes)) / math.Log(1024)))
-	val := float64(bytes) / math.Pow(1024, float64(i))
+	val := float64(bytes)
+	i := 0
+	for val >= 1023.95 && i < len(sizes)-1 {
+		val /= 1024
+		i++
+	}
 	return fmt.Sprintf("%.1f %s", val, sizes[i])
 }
