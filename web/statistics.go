@@ -129,7 +129,8 @@ func renderChartSVG(title string, data map[string]uint64, yFormatter func(float6
 		y := float64(padT+chartH) - (v/maxVal)*float64(chartH)
 
 		var escapedLabel strings.Builder
-		xml.EscapeText(&escapedLabel, []byte(yFormatter(v)))
+		// strings.Builder never returns write errors
+		_ = xml.EscapeText(&escapedLabel, []byte(yFormatter(v)))
 
 		fmt.Fprintf(&innerSVG, `<line x1="%d" y1="%.0f" x2="%d" y2="%.0f" stroke="#ccc" stroke-width="1"/>`, padL, y, W-padR, y)
 		fmt.Fprintf(&innerSVG, `<text x="%d" y="%.0f" text-anchor="end" dominant-baseline="middle" font-size="11">%s</text>`, padL-5, y, escapedLabel.String())
@@ -147,7 +148,8 @@ func renderChartSVG(title string, data map[string]uint64, yFormatter func(float6
 		}
 
 		var escapedLabel strings.Builder
-		xml.EscapeText(&escapedLabel, []byte(label))
+		// strings.Builder never returns write errors
+		_ = xml.EscapeText(&escapedLabel, []byte(label))
 
 		fmt.Fprintf(&innerSVG, `<text x="%.0f" y="%d" text-anchor="middle" font-size="10">%s</text>`, x, padT+chartH+16, escapedLabel.String())
 	}
