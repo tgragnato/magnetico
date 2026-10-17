@@ -33,6 +33,12 @@ func TestTorrentsWithQuery(t *testing.T) {
 	if !strings.Contains(html, "hello - magnetico") {
 		t.Errorf("title not found in HTML")
 	}
+	if !strings.Contains(html, `/static/scripts/htmx-4.0.0.min.js`) {
+		t.Errorf("htmx 4 script not found in HTML")
+	}
+	if !strings.Contains(html, `name="htmx-config"`) || !strings.Contains(html, `noSwap`) {
+		t.Errorf("htmx 4 response-swap configuration not found in HTML")
+	}
 	if !strings.Contains(html, "Test Torrent") {
 		t.Errorf("torrent name not found in HTML")
 	}

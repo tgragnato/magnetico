@@ -37,6 +37,12 @@ func TestStatisticsWithData(t *testing.T) {
 	if !strings.Contains(html, `hx-swap="outerHTML"`) {
 		t.Errorf("statistics form does not replace the charts container")
 	}
+	if !strings.Contains(html, `/static/scripts/htmx-4.0.0.min.js`) {
+		t.Errorf("htmx 4 script not found in HTML")
+	}
+	if !strings.Contains(html, `name="htmx-config"`) || !strings.Contains(html, `noSwap`) {
+		t.Errorf("htmx 4 response-swap configuration not found in HTML")
+	}
 }
 
 func TestStatisticsHandler(t *testing.T) {
