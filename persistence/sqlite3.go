@@ -447,26 +447,21 @@ func (db *sqlite3Database) GetStatistics(from string, n uint) (*Statistics, erro
 		return nil, errors.New("parsing ISO8601 error " + err.Error())
 	}
 
-	var toTime time.Time
 	var timef string // time format: https://www.sqlite.org/lang_datefunc.html
 
 	switch gran {
 	case Year:
-		toTime = fromTime.AddDate(int(n), 0, 0)
 		timef = "%Y"
 	case Month:
-		toTime = fromTime.AddDate(0, int(n), 0)
 		timef = "%Y-%m"
 	case Week:
-		toTime = fromTime.AddDate(0, 0, int(n)*7)
 		timef = "%Y-%W"
 	case Day:
-		toTime = fromTime.AddDate(0, 0, int(n))
 		timef = "%Y-%m-%d"
 	case Hour:
-		toTime = fromTime.Add(time.Duration(n) * time.Hour)
 		timef = "%Y-%m-%dT%H"
 	}
+	toTime := statisticsToTime(*fromTime, gran, n)
 
 	// TODO: make it faster!
 	rows, err := db.conn.Query(fmt.Sprintf(`

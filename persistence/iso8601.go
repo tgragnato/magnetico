@@ -37,7 +37,7 @@ func ParseISO8601(s string) (*time.Time, Granularity, error) {
 	if matches := monthRE.FindStringSubmatch(s); len(matches) != 0 {
 		month := parseMonth(matches[2])
 		year := parseYear(matches[1])
-		t := time.Date(year, month, 31, 23, 59, 59, 0, time.UTC)
+		t := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
 		return &t, Month, nil
 	}
 
@@ -66,6 +66,23 @@ func ParseISO8601(s string) (*time.Time, Granularity, error) {
 	}
 
 	return nil, -1, fmt.Errorf("string does not match any formats")
+}
+
+func statisticsToTime(fromTime time.Time, gran Granularity, n uint) time.Time {
+	switch gran {
+	case Year:
+		return fromTime.AddDate(int(n), 0, 0)
+	case Month:
+		return fromTime.AddDate(0, int(n)+1, 0).Add(-time.Second)
+	case Week:
+		return fromTime.AddDate(0, 0, int(n)*7)
+	case Day:
+		return fromTime.AddDate(0, 0, int(n))
+	case Hour:
+		return fromTime.Add(time.Duration(n) * time.Hour)
+	default:
+		return fromTime
+	}
 }
 
 func daysOfMonth(month time.Month, year int) int {

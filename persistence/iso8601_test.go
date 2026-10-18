@@ -49,6 +49,44 @@ func TestParseISO8601(t *testing.T) {
 	}
 }
 
+func TestParseISO8601MonthBoundaries(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		date string
+		want time.Time
+	}{
+		{"2026-02", time.Date(2026, time.February, 1, 0, 0, 0, 0, time.UTC)},
+		{"2024-02", time.Date(2024, time.February, 1, 0, 0, 0, 0, time.UTC)},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.date, func(t *testing.T) {
+			got, gran, err := ParseISO8601(tt.date)
+			if err != nil {
+				t.Fatalf("ParseISO8601(%q): %v", tt.date, err)
+			}
+			if gran != Month {
+				t.Fatalf("ParseISO8601(%q) granularity = %v, want %v", tt.date, gran, Month)
+			}
+			if !got.Equal(tt.want) {
+				t.Errorf("ParseISO8601(%q) = %v, want %v", tt.date, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestStatisticsToTimeMonthBoundary(t *testing.T) {
+	t.Parallel()
+
+	from := time.Date(2026, time.February, 1, 0, 0, 0, 0, time.UTC)
+	got := statisticsToTime(from, Month, 1)
+	want := time.Date(2026, time.March, 31, 23, 59, 59, 0, time.UTC)
+	if !got.Equal(want) {
+		t.Errorf("statisticsToTime(%v, Month, 1) = %v, want %v", from, got, want)
+	}
+}
+
 func TestDaysOfMonth(t *testing.T) {
 	t.Parallel()
 
