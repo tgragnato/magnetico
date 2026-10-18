@@ -105,6 +105,26 @@ func TestTorrentsResultsHandler(t *testing.T) {
 	}
 }
 
+func TestTorrentsResultsHandlerRejectsIncompleteCursor(t *testing.T) {
+	t.Parallel()
+
+	for _, queryParams := range []string{"lastID=123", "lastOrderedValue=123.45"} {
+		req, err := http.NewRequest("GET", "/torrents/results?"+queryParams, nil)
+		if err != nil {
+			t.Fatalf("could not create request: %v", err)
+		}
+
+		rec := httptest.NewRecorder()
+		torrentsResultsHandler(rec, req)
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("query=%s: expected status %v; got %v", queryParams, http.StatusBadRequest, rec.Code)
+		}
+		if !strings.Contains(rec.Body.String(), "must be supplied altogether") {
+			t.Errorf("query=%s: expected cursor validation error; got %q", queryParams, rec.Body.String())
+		}
+	}
+}
+
 func TestApiTorrents(t *testing.T) {
 	t.Parallel()
 

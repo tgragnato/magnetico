@@ -168,6 +168,11 @@ func torrentsHandler(w http.ResponseWriter, r *http.Request) {
 
 func torrentsResultsHandler(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
+	if q.Has("lastID") != q.Has("lastOrderedValue") {
+		http.Error(w, "`lastOrderedValue`, `lastID` must be supplied altogether, if supplied.", http.StatusBadRequest)
+		return
+	}
+
 	query := q.Get("query")
 
 	epoch := time.Now().Unix()
