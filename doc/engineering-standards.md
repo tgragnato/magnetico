@@ -52,14 +52,14 @@ Run before every commit:
 
 ```sh
 goimports -w .               # format + fix import grouping (subsumes gofmt)
-go vet ./...                 # static analysis
-go test ./...                # unit testing
+go vet -tags fts5 ./...      # static analysis
+go test -tags fts5 ./...     # unit testing
 ```
 
 Run periodically:
 
 ```sh
-go test -race ./...          # race detector — mandatory, not optional 
+go test -race -tags fts5 ./... # race detector — mandatory, not optional
 go mod tidy                  # keep go.mod/go.sum clean
 golangci-lint run            # extended linting (if installed)
 ```
