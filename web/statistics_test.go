@@ -5,9 +5,45 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"tgragnato.it/magnetico/v2/persistence"
 )
+
+func TestStatisticsFromAt(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		n    int
+		unit string
+		now  time.Time
+		want string
+	}{
+		{
+			name: "month-end subtracts from month start",
+			n:    1,
+			unit: "months",
+			now:  time.Date(2026, time.March, 31, 12, 0, 0, 0, time.UTC),
+			want: "2026-02",
+		},
+		{
+			name: "leap day retains target year",
+			n:    1,
+			unit: "years",
+			now:  time.Date(2024, time.February, 29, 12, 0, 0, 0, time.UTC),
+			want: "2023",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := statisticsFromAt(tt.n, tt.unit, tt.now); got != tt.want {
+				t.Errorf("statisticsFromAt(%d, %q, %v) = %q, want %q", tt.n, tt.unit, tt.now, got, tt.want)
+			}
+		})
+	}
+}
 
 func TestStatistics(t *testing.T) {
 	t.Parallel()

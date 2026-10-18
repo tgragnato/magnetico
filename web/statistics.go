@@ -19,8 +19,12 @@ import (
 const maxStatisticsN = 365
 
 func statisticsFrom(n int, unit string) string {
+	return statisticsFromAt(n, unit, time.Now().UTC())
+}
+
+func statisticsFromAt(n int, unit string, now time.Time) string {
 	n = min(max(n, 0), maxStatisticsN)
-	now := time.Now().UTC()
+	now = now.UTC()
 	var from time.Time
 	switch unit {
 	case "days":
@@ -28,7 +32,8 @@ func statisticsFrom(n int, unit string) string {
 	case "weeks":
 		from = now.AddDate(0, 0, -7*n)
 	case "months":
-		from = now.AddDate(0, -n, 0)
+		monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+		from = monthStart.AddDate(0, -n, 0)
 	case "years":
 		from = now.AddDate(-n, 0, 0)
 	default:
