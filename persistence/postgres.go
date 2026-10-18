@@ -415,26 +415,21 @@ func (db *postgresDatabase) GetStatistics(from string, n uint) (*Statistics, err
 		return nil, errors.New("parsing ISO8601 error " + err.Error())
 	}
 
-	var toTime time.Time
 	var timef string
 
 	switch gran {
 	case Year:
-		toTime = fromTime.AddDate(int(n), 0, 0)
 		timef = "2006"
 	case Month:
-		toTime = fromTime.AddDate(0, int(n), 0)
 		timef = "2006-01"
 	case Week:
-		toTime = fromTime.AddDate(0, 0, int(n)*7)
 		timef = "2006-01-02"
 	case Day:
-		toTime = fromTime.AddDate(0, 0, int(n))
 		timef = "2006-01-02"
 	case Hour:
-		toTime = fromTime.Add(time.Duration(n) * time.Hour)
 		timef = "2006-01-02 15:04"
 	}
+	toTime := statisticsToTime(*fromTime, gran, n)
 
 	rows, err := db.conn.Query(`
 		SELECT
@@ -470,9 +465,9 @@ func (db *postgresDatabase) GetStatistics(from string, n uint) (*Statistics, err
 		epoch, _ := strconv.ParseInt(dT, 10, 64)
 		dT = time.Unix(epoch, 0).Format(timef)
 
-		stats.NDiscovered[dT] = nD
-		stats.TotalSize[dT] = tS
-		stats.NFiles[dT] = nF
+		stats.NDiscovered[dT] += nD
+		stats.TotalSize[dT] += tS
+		stats.NFiles[dT] += nF
 	}
 
 	return stats, nil
