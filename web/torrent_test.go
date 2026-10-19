@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -16,7 +17,7 @@ func TestTorrent(t *testing.T) {
 
 	infohashV1 := "abcdef1234567890abcdef1234567890abcdef12"
 	torrentMetadata := persistence.TorrentMetadata{
-		Name:         "Test Torrent",
+		Name:         "Test & # Torrent",
 		Size:         12345678,
 		DiscoveredOn: 1710000000,
 		NFiles:       2,
@@ -33,8 +34,15 @@ func TestTorrent(t *testing.T) {
 	}
 	html := rec.Body.String()
 
-	if !strings.Contains(html, "Test Torrent") {
+	if !strings.Contains(html, "Test &amp; # Torrent") {
 		t.Errorf("Torrent name not found in HTML")
+	}
+	expectedMagnetHref := `href="magnet:?xt=urn:btih:` + infohashV1 + `&amp;dn=` + url.QueryEscape(torrentMetadata.Name) + `"`
+	if !strings.Contains(html, expectedMagnetHref) {
+		t.Errorf("Magnet href not found in HTML: got %s", html)
+	}
+	if !strings.Contains(html, "<small>"+infohashV1+"</small>") {
+		t.Errorf("Infohash not found in HTML: got %s", html)
 	}
 	if !strings.Contains(html, "file1.txt") || !strings.Contains(html, "file2.bin") {
 		t.Errorf("File names not found in HTML")
