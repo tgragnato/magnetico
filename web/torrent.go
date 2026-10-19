@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	g "maragu.dev/gomponents"
@@ -51,13 +52,13 @@ func torrent(infohash string, torrentMetadata persistence.TorrentMetadata, files
 						ID("title"),
 						H2(g.Text(fmt.Sprintf("%v", torrentMetadata.Name))),
 						A(
-							Href(fmt.Sprintf("magnet:?xt=urn:btih:%x&dn=%v", infohash, torrentMetadata.Name)),
+							Href(fmt.Sprintf("magnet:?xt=urn:btih:%s&dn=%s", infohash, url.QueryEscape(torrentMetadata.Name))),
 							Img(
 								Src("/static/assets/magnet.gif"),
 								Alt("Magnet link"),
 								Title("Download this torrent using magnet"),
 							),
-							Small(g.Text(fmt.Sprintf("%x", infohash))),
+							Small(g.Text(infohash)),
 						),
 					),
 					Table(
