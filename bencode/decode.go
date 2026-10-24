@@ -542,7 +542,7 @@ func (d *Decoder) readOneValue() bool {
 		if b >= '0' && b <= '9' {
 			start := d.buf.Len() - 1
 			d.readUntil(':')
-			length, err := strconv.ParseInt(d.buf.String()[start:], 10, 64)
+			length, err := strconv.ParseInt(string(d.buf.Bytes()[start:]), 10, 64)
 			checkForIntParseError(err, d.Offset-1)
 
 			d.buf.WriteString(":")
