@@ -126,6 +126,7 @@ func (rt *routingTable) dump(ipv4 bool) []net.UDPAddr {
 		}
 		if ipv4 && addr.IP.To4() != nil || !ipv4 && addr.IP.To4() == nil {
 			nodes = append(nodes, addr)
+			counter++
 		}
 	}
 
