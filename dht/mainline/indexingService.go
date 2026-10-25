@@ -190,7 +190,7 @@ func (is *IndexingService) onSampleInfohashesResponse(msg *Message, addr *net.UD
 	// request samples
 	for i := 0; i < len(msg.R.Samples)/20; i++ {
 		var infoHash [20]byte
-		copy(infoHash[:], msg.R.Samples[i:(i+1)*20])
+		copy(infoHash[:], msg.R.Samples[i*20:(i+1)*20])
 		info_hashes = append(info_hashes, infoHash)
 
 		msg := NewGetPeersQuery(is.nodeID, infoHash[:])
