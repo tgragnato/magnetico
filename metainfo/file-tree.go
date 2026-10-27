@@ -1,9 +1,7 @@
 package metainfo
 
 import (
-	"bytes"
 	"errors"
-	"fmt"
 	"iter"
 	"maps"
 	"slices"
@@ -25,34 +23,30 @@ type FileTree struct {
 	Dir  map[string]FileTree
 }
 
-// UnmarshalBencode parses the tree in a single pass over data, iteratively, so that cost is linear
-// in the input size and independent of nesting depth.
-func (ft *FileTree) UnmarshalBencode(data []byte) error {
+// UnmarshalBencodeStream decodes the tree in a single pass over the input, iteratively, so that
+// cost is linear in the input size and independent of nesting depth.
+func (ft *FileTree) UnmarshalBencodeStream(s *bencode.Stream) error {
 	type frame struct {
 		tree FileTree
 		key  string // key of the child currently being parsed
 	}
 
-	if len(data) == 0 || data[0] != 'd' {
-		return errors.New("file tree: expected dictionary")
+	if err := s.EnterDict(); err != nil {
+		return err
 	}
 	stack := []frame{{tree: FileTree{Dir: make(map[string]FileTree)}}}
-	pos := 1
 
 	for {
-		if pos >= len(data) {
-			return errors.New("file tree: unexpected end of data")
-		}
 		top := &stack[len(stack)-1]
+		key, ok, err := s.NextKey()
+		if err != nil {
+			return err
+		}
 
-		if data[pos] == 'e' {
-			pos++
+		if !ok {
 			done := top.tree
 			stack = stack[:len(stack)-1]
 			if len(stack) == 0 {
-				if pos != len(data) {
-					return fmt.Errorf("file tree: %d unused trailing bytes", len(data)-pos)
-				}
 				*ft = done
 				return nil
 			}
@@ -61,88 +55,26 @@ func (ft *FileTree) UnmarshalBencode(data []byte) error {
 			continue
 		}
 
-		keyBytes, next, err := readBencodeString(data, pos)
-		if err != nil {
-			return err
-		}
-		pos = next
-		if pos >= len(data) {
-			return errors.New("file tree: unexpected end of data")
-		}
-
-		if len(keyBytes) == 0 {
-			end, err := skipBencodeValue(data, pos)
-			if err != nil {
+		if key == FileTreePropertiesKey {
+			if err := s.Decode(&top.tree.File); err != nil {
 				return err
 			}
-			if err := bencode.Unmarshal(data[pos:end], &top.tree.File); err != nil {
-				return err
-			}
-			pos = end
 			continue
 		}
 
-		if data[pos] != 'd' {
-			return errors.New("file tree: expected dictionary")
+		if err := s.EnterDict(); err != nil {
+			return err
 		}
-		top.key = string(keyBytes)
+		top.key = key
 		stack = append(stack, frame{tree: FileTree{Dir: make(map[string]FileTree)}})
-		pos++
 	}
 }
 
-// readBencodeString reads a length-prefixed string at pos and returns it with the following offset.
-func readBencodeString(data []byte, pos int) ([]byte, int, error) {
-	n, i := 0, pos
-	for ; i < len(data) && data[i] >= '0' && data[i] <= '9'; i++ {
-		n = n*10 + int(data[i]-'0')
-		if n > len(data) {
-			return nil, 0, errors.New("file tree: string length out of range")
-		}
-	}
-	if i == pos || i >= len(data) || data[i] != ':' {
-		return nil, 0, errors.New("file tree: expected string")
-	}
-	i++
-	if n > len(data)-i {
-		return nil, 0, errors.New("file tree: unexpected end of data")
-	}
-	return data[i : i+n], i + n, nil
-}
+var _ bencode.StreamUnmarshaler = (*FileTree)(nil)
 
-// skipBencodeValue returns the offset just past the value starting at pos, without recursion.
-func skipBencodeValue(data []byte, pos int) (int, error) {
-	depth := 0
-	for {
-		if pos >= len(data) {
-			return 0, errors.New("file tree: unexpected end of data")
-		}
-		switch c := data[pos]; {
-		case c == 'i':
-			e := bytes.IndexByte(data[pos:], 'e')
-			if e < 0 {
-				return 0, errors.New("file tree: unterminated integer")
-			}
-			pos += e + 1
-		case c >= '0' && c <= '9':
-			_, next, err := readBencodeString(data, pos)
-			if err != nil {
-				return 0, err
-			}
-			pos = next
-		case c == 'l' || c == 'd':
-			depth++
-			pos++
-		case c == 'e' && depth > 0:
-			depth--
-			pos++
-		default:
-			return 0, errors.New("file tree: invalid bencode value")
-		}
-		if depth == 0 {
-			return pos, nil
-		}
-	}
+// UnmarshalBencode keeps the buffer-based API; the decoder itself prefers UnmarshalBencodeStream.
+func (ft *FileTree) UnmarshalBencode(data []byte) error {
+	return bencode.Unmarshal(data, ft)
 }
 
 var _ bencode.Unmarshaler = (*FileTree)(nil)

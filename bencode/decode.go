@@ -597,6 +597,10 @@ func (d *Decoder) parseValue(v reflect.Value) (bool, error) {
 		v = v.Elem()
 	}
 
+	if s, ok := asStreamUnmarshaler(v); ok {
+		return d.parseStream(s, v)
+	}
+
 	if d.parseUnmarshaler(v) {
 		return true, nil
 	}

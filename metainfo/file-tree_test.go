@@ -3,6 +3,8 @@ package metainfo
 import (
 	"strings"
 	"testing"
+
+	"tgragnato.it/magnetico/v2/bencode"
 )
 
 func TestMarshalBencode(t *testing.T) {
@@ -200,7 +202,7 @@ func TestFileTreeUnmarshalRoundTripAndDeep(t *testing.T) {
 		t.Fatal(err)
 	}
 	var got FileTree
-	if err := got.UnmarshalBencode(enc); err != nil {
+	if err := bencode.Unmarshal(enc, &got); err != nil {
 		t.Fatal(err)
 	}
 	if f := got.Dir["a"].Dir["f"].File; f.Length != 7 || f.PiecesRoot != "root" {
@@ -209,12 +211,12 @@ func TestFileTreeUnmarshalRoundTripAndDeep(t *testing.T) {
 
 	const depth = 200000
 	deep := strings.Repeat("d1:a", depth) + "de" + strings.Repeat("e", depth)
-	if err := new(FileTree).UnmarshalBencode([]byte(deep)); err != nil {
+	if err := bencode.Unmarshal([]byte(deep), new(FileTree)); err != nil {
 		t.Fatal(err)
 	}
 
 	for _, bad := range []string{"", "i1e", "d1:a", "d1:ai1ee", "d1:adeee", "d5:abe"} {
-		if err := new(FileTree).UnmarshalBencode([]byte(bad)); err == nil {
+		if err := bencode.Unmarshal([]byte(bad), new(FileTree)); err == nil {
 			t.Errorf("expected error for %q", bad)
 		}
 	}
