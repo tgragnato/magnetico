@@ -12,6 +12,11 @@ func ValidatePieceLayers(
 	fileTree *FileTree,
 	pieceLength int64,
 ) (err error) {
+	var (
+		pad       [32]byte
+		padReady  bool
+		validated = make(map[[32]byte]struct{})
+	)
 	fileTree.Walk(nil, func(path []string, ft *FileTree) {
 		if err != nil {
 			return
@@ -21,6 +26,9 @@ func ValidatePieceLayers(
 		}
 		piecesRoot := ft.PiecesRootAsByteArray()
 		if reflect.DeepEqual(piecesRoot, [32]byte{}) {
+			return
+		}
+		if _, done := validated[piecesRoot]; done {
 			return
 		}
 		filePieceLayers, ok := pieceLayers[string(piecesRoot[:])]
@@ -37,11 +45,15 @@ func ValidatePieceLayers(
 		}
 		var layerHashes [][32]byte
 		layerHashes, err = merkle.CompactLayerToSliceHashes(filePieceLayers)
-		root := merkle.RootWithPadHash(layerHashes, HashForPiecePad(pieceLength))
+		if !padReady {
+			pad, padReady = HashForPiecePad(pieceLength), true
+		}
+		root := merkle.RootWithPadHash(layerHashes, pad)
 		if root != piecesRoot {
 			err = fmt.Errorf("file %q: expected hash %x got %x", path, piecesRoot, root)
 			return
 		}
+		validated[piecesRoot] = struct{}{}
 	})
 	return
 }
