@@ -1,6 +1,7 @@
 package metainfo
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -184,4 +185,37 @@ func equalPaths(a, b []string) bool {
 		}
 	}
 	return true
+}
+
+func TestFileTreeUnmarshalRoundTripAndDeep(t *testing.T) {
+	t.Parallel()
+
+	orig := FileTree{Dir: map[string]FileTree{
+		"a": {Dir: map[string]FileTree{
+			"f": {File: FileTreeFile{Length: 7, PiecesRoot: "root"}},
+		}},
+	}}
+	enc, err := orig.MarshalBencode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got FileTree
+	if err := got.UnmarshalBencode(enc); err != nil {
+		t.Fatal(err)
+	}
+	if f := got.Dir["a"].Dir["f"].File; f.Length != 7 || f.PiecesRoot != "root" {
+		t.Fatalf("unexpected file %+v", f)
+	}
+
+	const depth = 200000
+	deep := strings.Repeat("d1:a", depth) + "de" + strings.Repeat("e", depth)
+	if err := new(FileTree).UnmarshalBencode([]byte(deep)); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, bad := range []string{"", "i1e", "d1:a", "d1:ai1ee", "d1:adeee", "d5:abe"} {
+		if err := new(FileTree).UnmarshalBencode([]byte(bad)); err == nil {
+			t.Errorf("expected error for %q", bad)
+		}
+	}
 }

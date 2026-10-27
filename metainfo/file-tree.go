@@ -1,7 +1,9 @@
 package metainfo
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
 	"iter"
 	"maps"
 	"slices"
@@ -23,29 +25,124 @@ type FileTree struct {
 	Dir  map[string]FileTree
 }
 
-func (ft *FileTree) UnmarshalBencode(bytes []byte) (err error) {
-	var dir map[string]bencode.Bytes
-	err = bencode.Unmarshal(bytes, &dir)
-	if err != nil {
-		return
+// UnmarshalBencode parses the tree in a single pass over data, iteratively, so that cost is linear
+// in the input size and independent of nesting depth.
+func (ft *FileTree) UnmarshalBencode(data []byte) error {
+	type frame struct {
+		tree FileTree
+		key  string // key of the child currently being parsed
 	}
-	if propBytes, ok := dir[""]; ok {
-		err = bencode.Unmarshal(propBytes, &ft.File)
+
+	if len(data) == 0 || data[0] != 'd' {
+		return errors.New("file tree: expected dictionary")
+	}
+	stack := []frame{{tree: FileTree{Dir: make(map[string]FileTree)}}}
+	pos := 1
+
+	for {
+		if pos >= len(data) {
+			return errors.New("file tree: unexpected end of data")
+		}
+		top := &stack[len(stack)-1]
+
+		if data[pos] == 'e' {
+			pos++
+			done := top.tree
+			stack = stack[:len(stack)-1]
+			if len(stack) == 0 {
+				if pos != len(data) {
+					return fmt.Errorf("file tree: %d unused trailing bytes", len(data)-pos)
+				}
+				*ft = done
+				return nil
+			}
+			parent := &stack[len(stack)-1]
+			parent.tree.Dir[parent.key] = done
+			continue
+		}
+
+		keyBytes, next, err := readBencodeString(data, pos)
 		if err != nil {
-			return
+			return err
+		}
+		pos = next
+		if pos >= len(data) {
+			return errors.New("file tree: unexpected end of data")
+		}
+
+		if len(keyBytes) == 0 {
+			end, err := skipBencodeValue(data, pos)
+			if err != nil {
+				return err
+			}
+			if err := bencode.Unmarshal(data[pos:end], &top.tree.File); err != nil {
+				return err
+			}
+			pos = end
+			continue
+		}
+
+		if data[pos] != 'd' {
+			return errors.New("file tree: expected dictionary")
+		}
+		top.key = string(keyBytes)
+		stack = append(stack, frame{tree: FileTree{Dir: make(map[string]FileTree)}})
+		pos++
+	}
+}
+
+// readBencodeString reads a length-prefixed string at pos and returns it with the following offset.
+func readBencodeString(data []byte, pos int) ([]byte, int, error) {
+	n, i := 0, pos
+	for ; i < len(data) && data[i] >= '0' && data[i] <= '9'; i++ {
+		n = n*10 + int(data[i]-'0')
+		if n > len(data) {
+			return nil, 0, errors.New("file tree: string length out of range")
 		}
 	}
-	delete(dir, "")
-	ft.Dir = make(map[string]FileTree, len(dir))
-	for key, bytes := range dir {
-		var sub FileTree
-		err = sub.UnmarshalBencode(bytes)
-		if err != nil {
-			return
-		}
-		ft.Dir[key] = sub
+	if i == pos || i >= len(data) || data[i] != ':' {
+		return nil, 0, errors.New("file tree: expected string")
 	}
-	return
+	i++
+	if n > len(data)-i {
+		return nil, 0, errors.New("file tree: unexpected end of data")
+	}
+	return data[i : i+n], i + n, nil
+}
+
+// skipBencodeValue returns the offset just past the value starting at pos, without recursion.
+func skipBencodeValue(data []byte, pos int) (int, error) {
+	depth := 0
+	for {
+		if pos >= len(data) {
+			return 0, errors.New("file tree: unexpected end of data")
+		}
+		switch c := data[pos]; {
+		case c == 'i':
+			e := bytes.IndexByte(data[pos:], 'e')
+			if e < 0 {
+				return 0, errors.New("file tree: unterminated integer")
+			}
+			pos += e + 1
+		case c >= '0' && c <= '9':
+			_, next, err := readBencodeString(data, pos)
+			if err != nil {
+				return 0, err
+			}
+			pos = next
+		case c == 'l' || c == 'd':
+			depth++
+			pos++
+		case c == 'e' && depth > 0:
+			depth--
+			pos++
+		default:
+			return 0, errors.New("file tree: invalid bencode value")
+		}
+		if depth == 0 {
+			return pos, nil
+		}
+	}
 }
 
 var _ bencode.Unmarshaler = (*FileTree)(nil)
