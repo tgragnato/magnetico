@@ -143,6 +143,70 @@ func TestBuildFromFilePathOrder(t *testing.T) {
 	}
 }
 
+func TestBuildFromFilePathIgnoresHostileFileTree(t *testing.T) {
+	t.Parallel()
+
+	base := t.TempDir()
+	root := filepath.Join(base, "root")
+	if err := os.Mkdir(root, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "a"), []byte("local"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	secret := []byte("secret")
+	if err := os.WriteFile(filepath.Join(base, "secret"), secret, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	info := Info{
+		MetaVersion: 2,
+		PieceLength: 16384,
+		FileTree: FileTree{Dir: map[string]FileTree{
+			"..": {Dir: map[string]FileTree{
+				"secret": {File: FileTreeFile{Length: int64(len(secret))}},
+			}},
+		}},
+	}
+	if err := info.BuildFromFilePath(root); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if info.HasV2() || info.FileTree.IsDir() {
+		t.Error("expected the retained v2 file tree to be dropped")
+	}
+	if len(info.Files) != 1 || info.Files[0].Path[0] != "a" {
+		t.Errorf("expected only the local file, got %v", info.Files)
+	}
+	want, err := GeneratePieces(strings.NewReader("local"), info.PieceLength, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(info.Pieces) != string(want) {
+		t.Error("pieces were not computed from the local file")
+	}
+}
+
+func TestBuildFromFilePathRejectsSymlinkEscape(t *testing.T) {
+	t.Parallel()
+
+	base := t.TempDir()
+	root := filepath.Join(base, "root")
+	if err := os.Mkdir(root, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(base, "secret"), []byte("secret"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(filepath.Join(base, "secret"), filepath.Join(root, "link")); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+
+	info := Info{PieceLength: 16384}
+	if err := info.BuildFromFilePath(root); err == nil {
+		t.Error("expected an error for a symlink escaping the root")
+	}
+}
+
 func testUnmarshal(t *testing.T, input string, expected *MetaInfo) {
 	var actual MetaInfo
 	err := bencode.Unmarshal([]byte(input), &actual)

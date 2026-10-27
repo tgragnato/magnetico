@@ -52,7 +52,11 @@ func (info *Info) BuildFromFilePath(root string) (err error) {
 			return b
 		}
 	}()
+	// Drop state decoded from untrusted input so the v1 list built below is the one used.
 	info.Files = nil
+	info.Length = 0
+	info.FileTree = FileTree{}
+	info.MetaVersion = 0
 	err = filepath.Walk(root, func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -84,8 +88,19 @@ func (info *Info) BuildFromFilePath(root string) (err error) {
 	if info.PieceLength == 0 {
 		info.PieceLength = ChoosePieceLength(info.TotalLength())
 	}
+	var dirRoot *os.Root
+	if len(info.Files) > 0 {
+		dirRoot, err = os.OpenRoot(root)
+		if err != nil {
+			return fmt.Errorf("error opening root: %w", err)
+		}
+		defer dirRoot.Close()
+	}
 	err = info.GeneratePieces(func(fi FileInfo) (io.ReadCloser, error) {
-		return os.Open(filepath.Join(root, strings.Join(fi.BestPath(), string(filepath.Separator))))
+		if dirRoot == nil {
+			return os.Open(root)
+		}
+		return dirRoot.Open(filepath.Join(fi.BestPath()...))
 	})
 	if err != nil {
 		err = fmt.Errorf("error generating pieces: %s", err)
