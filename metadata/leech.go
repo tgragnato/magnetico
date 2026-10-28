@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math"
 	"net"
 	"time"
 
@@ -16,6 +15,9 @@ import (
 )
 
 const MAX_METADATA_SIZE = 10 * 1024 * 1024
+
+// BEP 9 metadata piece size.
+const pieceSize = 16 * 1024
 
 type rootDict struct {
 	M            mDict `bencode:"m"`
@@ -133,7 +135,7 @@ func (l *Leech) doExHandshake() error {
 
 func (l *Leech) requestAllPieces() error {
 	// Request all the pieces of metadata
-	nPieces := int(math.Ceil(float64(l.metadataSize) / math.Pow(2, 14)))
+	nPieces := int((l.metadataSize + pieceSize - 1) / pieceSize)
 	if nPieces == 0 {
 		return errors.New("metadataSize is zero")
 	}
@@ -287,19 +289,28 @@ func (l *Leech) Do(deadline time.Time) {
 			//
 			// Hence...
 			//   ... if the length of @metadataPiece is more than 16kiB, we err.
-			if len(metadataPiece) > 16*1024 {
+			if len(metadataPiece) > pieceSize {
 				l.OnError(fmt.Errorf("metadataPiece > 16kiB"))
 				return
 			}
 
 			piece := rExtDict.Piece
-			// metadata[piece * 2**14: piece * 2**14 + len(metadataPiece)] = metadataPiece is how it'd be done in Python
-			copy(l.metadata[piece*int(math.Pow(2, 14)):piece*int(math.Pow(2, 14))+len(metadataPiece)], metadataPiece)
+			// The first check also prevents overflow in the offset computation.
+			if piece < 0 || piece > len(l.metadata)/pieceSize {
+				l.OnError(fmt.Errorf("invalid metadata piece index %d", piece))
+				return
+			}
+			offset := piece * pieceSize
+			if offset+len(metadataPiece) > len(l.metadata) {
+				l.OnError(fmt.Errorf("metadata piece %d exceeds metadata size", piece))
+				return
+			}
+			copy(l.metadata[offset:], metadataPiece)
 			l.metadataReceived += uint(len(metadataPiece))
 
 			// ... if the length of @metadataPiece is less than 16kiB AND metadata is NOT
 			// complete then we err.
-			if len(metadataPiece) < 16*1024 && l.metadataReceived != l.metadataSize {
+			if len(metadataPiece) < pieceSize && l.metadataReceived != l.metadataSize {
 				l.OnError(fmt.Errorf("metadataPiece < 16 kiB but incomplete"))
 				return
 			}
