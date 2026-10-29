@@ -24,8 +24,15 @@ func TestLoadCred(t *testing.T) {
 		{
 			name:        "Empty credentials",
 			credContent: "",
-			expectedErr: false,
-			expectedMap: map[string][]byte{},
+			expectedErr: true,
+			expectedMap: nil,
+		},
+		{
+			name:        "Final credential without newline",
+			credContent: "alice:$2y$12$YE01LZ8jrbQbx6c0s2hdZO71dSjn2p/O9XsYJpz.5968yCysUgiaG",
+			expectedMap: map[string][]byte{
+				"alice": []byte("$2y$12$YE01LZ8jrbQbx6c0s2hdZO71dSjn2p/O9XsYJpz.5968yCysUgiaG"),
+			},
 		},
 	}
 

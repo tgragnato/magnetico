@@ -9,48 +9,59 @@ import (
 )
 
 func TestBasicAuth(t *testing.T) {
-	t.Parallel()
-
 	password := "password123"
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	UpdateCredentials(map[string][]byte{
-		"testuser": hashedPassword,
-	})
+	validCredentials := map[string][]byte{"testuser": hashedPassword}
+	defer UpdateCredentials(nil)
 
 	tests := []struct {
 		name           string
+		credentials    map[string][]byte
 		username       string
 		password       string
 		expectedStatus int
 	}{
 		{
 			name:           "Valid credentials",
+			credentials:    validCredentials,
 			username:       "testuser",
 			password:       "password123",
 			expectedStatus: http.StatusOK,
 		},
 		{
 			name:           "Invalid username",
+			credentials:    validCredentials,
 			username:       "invaliduser",
 			password:       "password123",
 			expectedStatus: http.StatusUnauthorized,
 		},
 		{
 			name:           "Invalid password",
+			credentials:    validCredentials,
 			username:       "testuser",
 			password:       "wrongpassword",
 			expectedStatus: http.StatusUnauthorized,
 		},
 		{
 			name:           "No credentials",
-			username:       "",
-			password:       "",
+			credentials:    validCredentials,
 			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "Empty credentials map still requires authentication",
+			credentials:    map[string][]byte{},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "Nil credentials disables authentication",
+			credentials:    nil,
+			expectedStatus: http.StatusOK,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			UpdateCredentials(tt.credentials)
 			req, err := http.NewRequest("GET", "/", nil)
 			if err != nil {
 				t.Fatal(err)

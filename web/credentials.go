@@ -25,7 +25,10 @@ var (
 // Source: https://stackoverflow.com/a/39591234/4466589
 func basicAuth(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if len(credentials) == 0 {
+		credentialsRWMutex.RLock()
+		credentialsDisabled := credentials == nil
+		credentialsRWMutex.RUnlock()
+		if credentialsDisabled {
 			handler(w, r)
 			return
 		}

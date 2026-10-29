@@ -18,18 +18,22 @@ func (o *OpFlags) LoadCred() error {
 	if err != nil {
 		return fmt.Errorf("error while opening file: %s", err.Error())
 	}
+	defer file.Close()
 
 	reader := bufio.NewReader(file)
+	credentials := make(map[string][]byte)
 	for lineno := 1; true; lineno++ {
 		line, err := reader.ReadBytes('\n')
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
+		if err != nil && err != io.EOF {
 			return fmt.Errorf("error while reading line %d: %s", lineno, err.Error())
 		}
+		if err == io.EOF && len(line) == 0 {
+			break
+		}
 
-		line = line[:len(line)-1] // strip '\n'
+		if err == nil {
+			line = line[:len(line)-1] // strip '\n'
+		}
 
 		/* The following regex checks if the line satisfies the following conditions:
 		 *
@@ -47,8 +51,16 @@ func (o *OpFlags) LoadCred() error {
 		}
 
 		tokens := bytes.Split(line, []byte(":"))
-		o.Credentials[string(tokens[0])] = tokens[1]
+		credentials[string(tokens[0])] = tokens[1]
+		if err == io.EOF {
+			break
+		}
 	}
+
+	if len(credentials) == 0 {
+		return fmt.Errorf("credentials file contains no users")
+	}
+	o.Credentials = credentials
 
 	return nil
 }

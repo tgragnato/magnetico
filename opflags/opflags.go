@@ -55,8 +55,9 @@ func (o *OpFlags) check() error {
 	}
 
 	if o.RunWeb {
-		o.Credentials = make(map[string][]byte)
-		if err := o.LoadCred(); err != nil {
+		if o.CredentialsPath == "" {
+			o.Credentials = nil
+		} else if err := o.LoadCred(); err != nil {
 			return err
 		}
 	}
