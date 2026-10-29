@@ -84,3 +84,39 @@ func TestBasicAuth(t *testing.T) {
 		})
 	}
 }
+
+func TestBasicAuthUsesUpdatedCredentials(t *testing.T) {
+	oldHash, err := bcrypt.GenerateFromPassword([]byte("old-password"), bcrypt.DefaultCost)
+	if err != nil {
+		t.Fatal(err)
+	}
+	newHash, err := bcrypt.GenerateFromPassword([]byte("new-password"), bcrypt.DefaultCost)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer UpdateCredentials(nil)
+
+	handler := basicAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	requestStatus := func(password string) int {
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req.SetBasicAuth("testuser", password)
+		rr := httptest.NewRecorder()
+		handler.ServeHTTP(rr, req)
+		return rr.Code
+	}
+
+	UpdateCredentials(map[string][]byte{"testuser": oldHash})
+	if got := requestStatus("old-password"); got != http.StatusOK {
+		t.Fatalf("old credential status = %d, want %d", got, http.StatusOK)
+	}
+
+	UpdateCredentials(map[string][]byte{"testuser": newHash})
+	if got := requestStatus("old-password"); got != http.StatusUnauthorized {
+		t.Errorf("revoked credential status = %d, want %d", got, http.StatusUnauthorized)
+	}
+	if got := requestStatus("new-password"); got != http.StatusOK {
+		t.Errorf("new credential status = %d, want %d", got, http.StatusOK)
+	}
+}

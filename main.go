@@ -36,6 +36,9 @@ func main() {
 			log.Printf("Could not close database! %s\n", err.Error())
 		}
 	}()
+	if opFlags.RunWeb {
+		web.UpdateCredentials(opFlags.Credentials)
+	}
 
 	// Export the database to file if requested.
 	if opFlags.Export != "" {
@@ -60,15 +63,16 @@ func main() {
 	signal.Notify(sighupChan, syscall.SIGHUP)
 	go func() {
 		for range sighupChan {
-			if opFlags.Credentials == nil {
+			if !opFlags.RunWeb || opFlags.CredentialsPath == "" {
 				// Ignoring SIGHUP since no credential file was supplied
 				continue
 			}
 
-			opFlags.Credentials = make(map[string][]byte)
-			if err := opFlags.LoadCred(); err != nil {
+			reloadedFlags := opflags.OpFlags{CredentialsPath: opFlags.CredentialsPath}
+			if err := reloadedFlags.LoadCred(); err != nil {
 				log.Fatalf("couldn't load credentials %s\n", err.Error())
 			}
+			web.UpdateCredentials(reloadedFlags.Credentials)
 		}
 	}()
 
@@ -85,7 +89,7 @@ func main() {
 	}
 
 	if opFlags.RunWeb {
-		go web.StartWeb(opFlags.Addr, opFlags.Timeout, opFlags.Credentials, database)
+		go web.StartWeb(opFlags.Addr, opFlags.Timeout, database)
 	}
 
 	if !opFlags.RunDaemon {

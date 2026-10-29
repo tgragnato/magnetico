@@ -26,20 +26,19 @@ var (
 func basicAuth(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		credentialsRWMutex.RLock()
-		credentialsDisabled := credentials == nil
-		credentialsRWMutex.RUnlock()
-		if credentialsDisabled {
+		if credentials == nil {
+			credentialsRWMutex.RUnlock()
 			handler(w, r)
 			return
 		}
 
 		username, password, ok := r.BasicAuth()
 		if !ok { // No credentials provided
+			credentialsRWMutex.RUnlock()
 			authenticate(w)
 			return
 		}
 
-		credentialsRWMutex.RLock()
 		hashedPassword, ok := credentials[username]
 		credentialsRWMutex.RUnlock()
 		if !ok { // User not found

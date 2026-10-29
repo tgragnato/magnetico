@@ -30,8 +30,7 @@ const (
 	InfohashKey     InfohashKeyType = "infohash"
 )
 
-func StartWeb(address string, timeout uint, cred map[string][]byte, db persistence.Database) {
-	credentials = cred
+func StartWeb(address string, timeout uint, db persistence.Database) {
 	database = db
 	log.Printf("magnetico is ready to serve on %s!\n", address)
 	timeoutDuration := time.Duration(timeout) * time.Second
