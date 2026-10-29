@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -29,6 +30,10 @@ type Torrent struct {
 		URL  string `xml:"url,attr"`
 		Type string `xml:"type,attr"`
 	} `xml:"enclosure"`
+}
+
+func magnetLink(infohash, name string) string {
+	return fmt.Sprintf("magnet:?xt=urn:btih:%s&dn=%s", infohash, url.QueryEscape(name))
 }
 
 func feedHandler(w http.ResponseWriter, r *http.Request) {
@@ -88,11 +93,7 @@ func feedHandler(w http.ResponseWriter, r *http.Request) {
 				URL  string `xml:"url,attr"`
 				Type string `xml:"type,attr"`
 			}{
-				URL: fmt.Sprintf(
-					"magnet:?xt=urn:btih:%s&dn=%s",
-					infohash,
-					torrent.Name,
-				),
+				URL:  magnetLink(infohash, torrent.Name),
 				Type: "application/x-bittorrent",
 			},
 		})

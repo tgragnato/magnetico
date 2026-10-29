@@ -3,8 +3,26 @@ package web
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 )
+
+func TestMagnetLinkEscapesName(t *testing.T) {
+	t.Parallel()
+
+	name := "Example & tr=http://attacker.invalid/announce"
+	link, err := url.Parse(magnetLink("abcdef", name))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got := link.Query().Get("dn"); got != name {
+		t.Errorf("display name = %q, want %q", got, name)
+	}
+	if got := link.Query().Get("tr"); got != "" {
+		t.Errorf("unexpected tracker parameter %q", got)
+	}
+}
 
 func TestFeedHandler(t *testing.T) {
 	t.Parallel()
