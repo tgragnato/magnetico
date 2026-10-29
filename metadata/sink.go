@@ -61,12 +61,19 @@ func (ms *Sink) Sink(res dht.Result) {
 		return
 	}
 
-	go ms.leech(infoHash, peerAddrs[1:], peerAddrs[0])
+	go ms.leech(infoHash, peerAddrs)
 }
 
-func (ms *Sink) leech(infoHash [20]byte, peerAddrs []net.TCPAddr, firstPeer net.TCPAddr) {
+func (ms *Sink) leech(infoHash [20]byte, peerAddrs []net.TCPAddr) {
 	ms.incomingInfoHashes.push(infoHash, peerAddrs)
-	NewLeech(infoHash, &firstPeer, ms.PeerID, LeechEventHandlers{
+
+	// pop only returns peers that passed the address policy in push.
+	firstPeer := ms.incomingInfoHashes.pop(infoHash)
+	if firstPeer == nil {
+		return
+	}
+
+	NewLeech(infoHash, firstPeer, ms.PeerID, LeechEventHandlers{
 		OnSuccess: ms.flush,
 		OnError:   ms.onLeechError,
 	}).Do(time.Now().Add(ms.deadline))

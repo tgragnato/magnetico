@@ -48,6 +48,30 @@ func TestSink_Sink(t *testing.T) {
 	}
 }
 
+func TestSink_leechRejectsDisallowedPeers(t *testing.T) {
+	t.Parallel()
+
+	sink := NewSink(time.Minute, 2, []net.IPNet{})
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		sink.leech([20]byte{1}, []net.TCPAddr{
+			{IP: net.ParseIP("127.0.0.1"), Port: 6881},
+			{IP: net.ParseIP("10.0.0.1"), Port: 6881},
+			{IP: net.ParseIP("1.0.0.1"), Port: 80},
+		})
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("leech must not dial peers rejected by the address policy")
+	}
+	if len(sink.incomingInfoHashes.infoHashes) != 0 {
+		t.Error("no peer should be queued when all are disallowed")
+	}
+}
+
 func TestSink_Terminate(t *testing.T) {
 	t.Parallel()
 
