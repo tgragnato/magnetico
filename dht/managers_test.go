@@ -5,6 +5,7 @@ import (
 	"net"
 	"reflect"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -60,31 +61,74 @@ func TestChannelOutput(t *testing.T) {
 	manager.Terminate()
 }
 
-func TestOnIndexingResult(t *testing.T) {
+func TestOnIndexingResultDrainsFullChannelWithoutBlockingOrDropping(t *testing.T) {
 	t.Parallel()
 
-	address := ManagerAddress + ":" + strconv.Itoa(rand.IntN(64511)+1024)
-	manager := NewManager([]string{address}, MaxNeighbours, []string{"dht.tgragnato.it"}, []net.IPNet{})
-
-	result := mainline.IndexingResult{}
-	outputChan := make(chan Result, ChanSize)
-	manager.mu.Lock()
-	manager.output = outputChan
-	manager.mu.Unlock()
+	oldOutput := make(chan Result, ChanSize)
+	manager := &Manager{output: oldOutput}
+	expected := make([]Result, 0, ChanSize+1)
 
 	for range ChanSize {
-		manager.onIndexingResult(result)
+		result := &TestResult{infoHash: [20]byte{byte(len(expected) + 1)}}
+		expected = append(expected, result)
+		oldOutput <- result
 	}
+	newResult := mainline.IndexingResult{}
+	expected = append(expected, newResult)
 
-	// Verify that the result is sent to the output channel
+	done := make(chan struct{})
+	go func() {
+		manager.onIndexingResult(newResult)
+		close(done)
+	}()
+
 	select {
-	case receivedResult := <-outputChan:
-		if !reflect.DeepEqual(receivedResult, result) {
-			t.Errorf("\nReceived result %v, \nExpected result %v", receivedResult, result)
-		}
-	default:
-		t.Error("Expected result not received")
+	case <-done:
+	case <-time.After(DefaultTimeOut):
+		t.Fatal("draining full output channel blocked")
 	}
 
-	manager.Terminate()
+	if _, ok := <-oldOutput; ok {
+		t.Fatal("old output channel was not closed after draining")
+	}
+
+	output := manager.Output()
+	for i, want := range expected {
+		select {
+		case got := <-output:
+			if !reflect.DeepEqual(got, want) {
+				t.Errorf("result %d = %v, want %v", i, got, want)
+			}
+		case <-time.After(DefaultTimeOut):
+			t.Fatalf("result %d was lost during channel swap", i)
+		}
+	}
+}
+
+func TestOnIndexingResultConcurrentProducersDoNotDropResults(t *testing.T) {
+	t.Parallel()
+
+	const resultCount = 64
+	manager := &Manager{output: make(chan Result, 1)}
+	var producers sync.WaitGroup
+	producers.Add(resultCount)
+	for range resultCount {
+		go func() {
+			defer producers.Done()
+			manager.onIndexingResult(mainline.IndexingResult{})
+		}()
+	}
+	producers.Wait()
+
+	output := manager.Output()
+	for range resultCount {
+		select {
+		case result := <-output:
+			if result == nil {
+				t.Fatal("received nil result")
+			}
+		case <-time.After(DefaultTimeOut):
+			t.Fatal("a concurrent result was lost")
+		}
+	}
 }
