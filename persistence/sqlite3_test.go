@@ -3,23 +3,122 @@
 package persistence
 
 import (
+	"context"
+	"net"
 	"net/url"
 	"reflect"
+	"strings"
 	"testing"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
 func newDb(t *testing.T) Database {
-	db, e := makeSqlite3Database(&url.URL{
+	t.Helper()
+	db, err := makeSqlite3Database(&url.URL{
 		Scheme:   "sqlite3",
-		Path:     t.Name(),
+		Path:     strings.ReplaceAll(t.Name(), "/", "_"),
 		RawQuery: "cache=shared&mode=memory",
 	})
-	if e != nil {
-		t.Errorf("newDb(t): Could not create in-memory database %s. error = %v", t.Name(), e)
+	if err != nil {
+		t.Fatalf("newDb(t): could not create in-memory database %s: %v", t.Name(), err)
 	}
+	t.Cleanup(func() {
+		if err := db.Close(); err != nil {
+			t.Errorf("close test database: %v", err)
+		}
+	})
 	return db
+}
+
+func Test_sqlite3Database_DHTRoutingTable(t *testing.T) {
+	t.Parallel()
+	db := newDb(t)
+	_, filter, err := net.ParseCIDR("127.0.0.0/8")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.ConfigureDHTRoutingTable(2, []net.IPNet{*filter}); err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	first := net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 6881}
+	second := net.UDPAddr{IP: net.IPv4(127, 0, 0, 2), Port: 6882}
+	if err := db.AddDHTNodes(ctx, []net.UDPAddr{first, first, second, {IP: net.IPv4(10, 0, 0, 1), Port: 6883}}); err != nil {
+		t.Fatal(err)
+	}
+	if empty, err := db.IsDHTRoutingEmpty(ctx); err != nil || empty {
+		t.Fatalf("IsDHTRoutingEmpty() = (%v, %v), want (false, nil)", empty, err)
+	}
+	if nodes, err := db.DumpDHTNodes(ctx, true); err != nil || len(nodes) != 2 {
+		t.Fatalf("DumpDHTNodes(IPv4) returned %d nodes and error %v, want 2 nodes and nil", len(nodes), err)
+	}
+	if nodes, err := db.DumpDHTNodes(ctx, false); err != nil || len(nodes) != 0 {
+		t.Fatalf("DumpDHTNodes(IPv6) returned %d nodes and error %v, want 0 nodes and nil", len(nodes), err)
+	}
+	if nodes, err := db.GetDHTNodes(ctx); err != nil || len(nodes) != 2 {
+		t.Fatalf("GetDHTNodes() returned %d nodes and error %v, want 2 nodes and nil", len(nodes), err)
+	}
+	if nodes, err := db.GetDHTNodes(ctx); err != nil || len(nodes) != 1 || nodes[0].Port != first.Port {
+		t.Fatalf("second GetDHTNodes() = (%v, %v), want only %v", nodes, err, first)
+	}
+	if empty, err := db.IsDHTRoutingEmpty(ctx); err != nil || !empty {
+		t.Fatalf("IsDHTRoutingEmpty() after consumption = (%v, %v), want (true, nil)", empty, err)
+	}
+	if err := db.AddDHTHashes(ctx, [][20]byte{{1}, {2}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.AddDHTHashes(ctx, [][20]byte{{3}}); err != nil {
+		t.Fatal(err)
+	}
+	hashes, err := db.GetDHTHashes(ctx)
+	if err != nil || hashes[0] != [20]byte{3} || hashes[1] != [20]byte{2} {
+		t.Fatalf("GetDHTHashes() = %v, %v, want first slot replaced and second retained", hashes[:2], err)
+	}
+}
+
+func Test_sqlite3Database_DHTOutbox(t *testing.T) {
+	t.Parallel()
+	db := newDb(t)
+	message := DHTOutboundMessage{
+		Destination: net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 6881},
+		Payload:     []byte("payload"),
+		QueuedAt:    1,
+	}
+	if err := db.EnqueueDHTMessage(context.Background(), message); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.EnqueueDHTMessage(context.Background(), DHTOutboundMessage{
+		Destination: message.Destination,
+		Payload:     []byte("next"),
+		QueuedAt:    2,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	first, found, err := db.NextDHTMessage(context.Background())
+	if err != nil || !found || first.ID == "" || string(first.Payload) != "payload" {
+		t.Fatalf("NextDHTMessage() = (%+v, %v, %v), want queued payload", first, found, err)
+	}
+	if err := db.ReleaseDHTMessage(context.Background(), first.ID); err != nil {
+		t.Fatal(err)
+	}
+	second, found, err := db.NextDHTMessage(context.Background())
+	if err != nil || !found || string(second.Payload) != "next" {
+		t.Fatalf("NextDHTMessage() after release = (%+v, %v, %v), want next message", second, found, err)
+	}
+	if err := db.AckDHTMessage(context.Background(), second.ID); err != nil {
+		t.Fatal(err)
+	}
+	retried, found, err := db.NextDHTMessage(context.Background())
+	if err != nil || !found || retried.ID != first.ID {
+		t.Fatalf("NextDHTMessage() after next ack = (%+v, %v, %v), want released message", retried, found, err)
+	}
+	if err := db.AckDHTMessage(context.Background(), retried.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, found, err := db.NextDHTMessage(context.Background()); err != nil || found {
+		t.Fatalf("NextDHTMessage() after ack found=%v err=%v, want no message", found, err)
+	}
 }
 
 func Test_sqlite3Database_DoesTorrentExist(t *testing.T) {

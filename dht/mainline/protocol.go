@@ -2,6 +2,7 @@ package mainline
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"crypto/sha1"
 	mrand "math/rand/v2"
@@ -18,6 +19,7 @@ type Protocol struct {
 	transport     *Transport
 	eventHandlers ProtocolEventHandlers
 	started       bool
+	tokenDone     chan struct{}
 }
 
 type ProtocolEventHandlers struct {
@@ -41,18 +43,27 @@ func NewProtocol(laddr string, eventHandlers ProtocolEventHandlers, maxNeighbors
 	return
 }
 
-func (p *Protocol) Start() {
+func (p *Protocol) Start(ctx context.Context) {
 	if p.started {
 		panic("Attempting to Start() a mainline/Protocol that has been already started!")
 	}
 	p.started = true
 
-	p.transport.Start()
+	p.transport.Start(ctx)
 	p.updateTokenSecret()
 
+	p.tokenDone = make(chan struct{})
 	go func() {
-		for range time.NewTicker(10 * time.Minute).C {
-			p.updateTokenSecret()
+		defer close(p.tokenDone)
+		ticker := time.NewTicker(10 * time.Minute)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				p.updateTokenSecret()
+			}
 		}
 	}()
 }
@@ -63,6 +74,9 @@ func (p *Protocol) Terminate() {
 	}
 
 	p.transport.Terminate()
+	if p.tokenDone != nil {
+		<-p.tokenDone
+	}
 }
 
 func (p *Protocol) onMessage(msg *Message, addr *net.UDPAddr) {
