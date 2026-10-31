@@ -250,7 +250,7 @@ func (r *rabbitMQ) dhtEventsLocked() ([]rabbitDHTEvent, error) {
 	if !r.dhtConfigured || r.dhtQueue == nil {
 		return nil, fmt.Errorf("persistence: RabbitMQ DHT routing is not configured")
 	}
-	queue, err := r.ch.QueueInspect(r.dhtQueue.Name)
+	queue, err := r.ch.QueueDeclarePassive(r.dhtQueue.Name, true, false, false, false, amqp.Table{})
 	if err != nil {
 		return nil, fmt.Errorf("persistence: inspect RabbitMQ DHT queue: %w", err)
 	}
