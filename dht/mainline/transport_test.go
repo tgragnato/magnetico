@@ -1,11 +1,14 @@
 package mainline
 
 import (
+	"context"
 	"math/rand/v2"
 	"net"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 )
 
 const (
@@ -67,39 +70,28 @@ func TestTransport_WriteMessages(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name           string
-		throttlingRate int
-		msg            *Message
-		addr           *net.UDPAddr
-		wantErr        bool
+		name    string
+		msg     *Message
+		addr    *net.UDPAddr
+		wantErr bool
 	}{
 		{
-			name:           "Nil message",
-			throttlingRate: 10,
-			msg:            nil,
-			addr:           &net.UDPAddr{IP: net.ParseIP("::1"), Port: 8080},
-			wantErr:        false,
+			name:    "Nil message",
+			msg:     nil,
+			addr:    &net.UDPAddr{IP: net.ParseIP("::1"), Port: 8080},
+			wantErr: false,
 		},
 		{
-			name:           "Nil address",
-			throttlingRate: 10,
-			msg:            &Message{Q: "ping"},
-			addr:           nil,
-			wantErr:        false,
+			name:    "Nil address",
+			msg:     &Message{Q: "ping"},
+			addr:    nil,
+			wantErr: false,
 		},
 		{
-			name:           "Valid message and address",
-			throttlingRate: 10,
-			msg:            &Message{Q: "ping"},
-			addr:           &net.UDPAddr{IP: net.ParseIP("::1"), Port: 8080},
-			wantErr:        false,
-		},
-		{
-			name:           "Throttle limit reached",
-			throttlingRate: 0,
-			msg:            &Message{Q: "ping"},
-			addr:           &net.UDPAddr{IP: net.ParseIP("::1"), Port: 8080},
-			wantErr:        false,
+			name:    "Valid message and address",
+			msg:     &Message{Q: "ping"},
+			addr:    &net.UDPAddr{IP: net.ParseIP("::1"), Port: 8080},
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
@@ -109,8 +101,7 @@ func TestTransport_WriteMessages(t *testing.T) {
 				func(m *Message, u *net.UDPAddr) {},
 				1000,
 			)
-			transport.throttlingRate = tt.throttlingRate
-			transport.Start()
+			transport.Start(context.Background())
 			defer transport.Terminate()
 
 			if err := transport.WriteMessages(tt.msg, tt.addr); (err != nil) != tt.wantErr {
@@ -118,6 +109,76 @@ func TestTransport_WriteMessages(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestOutboundRateLimiterSpacesMessages(t *testing.T) {
+	t.Parallel()
+	limiter := NewOutboundRateLimiter(100)
+	started := time.Now()
+	for range 3 {
+		if err := limiter.Wait(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if elapsed := time.Since(started); elapsed < 15*time.Millisecond {
+		t.Fatalf("three sends took %v, want at least 15ms at 100 RPS", elapsed)
+	}
+}
+
+func TestOutboundRateLimiterSharesBudgetAcrossWorkers(t *testing.T) {
+	t.Parallel()
+	limiter := NewOutboundRateLimiter(50)
+	started := time.Now()
+	var workers sync.WaitGroup
+	for range 4 {
+		workers.Add(1)
+		go func() {
+			defer workers.Done()
+			if err := limiter.Wait(context.Background()); err != nil {
+				t.Errorf("rate limiter wait: %v", err)
+			}
+		}()
+	}
+	workers.Wait()
+	if elapsed := time.Since(started); elapsed < 45*time.Millisecond {
+		t.Fatalf("four concurrent sends took %v, want at least 45ms at shared 50 RPS", elapsed)
+	}
+}
+
+func TestTransportEnqueuesDatagramGlobally(t *testing.T) {
+	t.Parallel()
+	database := newRoutingDatabase(t, 10, nil)
+	queue := NewOutboundQueueState(10)
+	transport := NewTransport("127.0.0.1:0", func(*Message, *net.UDPAddr) {}, 10)
+	transport.ConfigureOutboundQueue(database, queue)
+	ctx, cancel := context.WithCancel(context.Background())
+	transport.Start(ctx)
+	t.Cleanup(func() {
+		cancel()
+		transport.Terminate()
+	})
+
+	message := &Message{
+		Y: "q",
+		T: []byte("aa"),
+		Q: "ping",
+		A: QueryArguments{ID: make([]byte, 20)},
+	}
+	destination := &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 6881}
+	if err := transport.WriteMessages(message, destination); err != nil {
+		t.Fatal(err)
+	}
+	queued, found, err := database.NextDHTMessage(ctx)
+	if err != nil || !found || string(queued.Payload) == "" {
+		t.Fatalf("NextDHTMessage() = (%+v, %v, %v), want a globally queued payload", queued, found, err)
+	}
+	if queued.Destination.IP.String() != destination.IP.String() || queued.Destination.Port != destination.Port {
+		t.Fatalf("queued destination = %v, want %v", queued.Destination, destination)
+	}
+	if err := database.AckDHTMessage(ctx, queued.ID); err != nil {
+		t.Fatal(err)
+	}
+	queue.Acknowledge()
 }
 
 func TestTransportFull(t *testing.T) {

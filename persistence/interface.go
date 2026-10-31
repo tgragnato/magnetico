@@ -1,14 +1,18 @@
 package persistence
 
 import (
+	"context"
+	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/klauspost/compress/zstd"
 )
@@ -18,6 +22,21 @@ type Database interface {
 	DoesTorrentExist(infoHash []byte) (bool, error)
 	AddNewTorrent(infoHash []byte, name string, files []File) error
 	Close() error
+	ConfigureDHTRoutingTable(maxNeighbors uint, filterNodes []net.IPNet) error
+	AddDHTNodes(context.Context, []net.UDPAddr) error
+	GetDHTNodes(context.Context) ([]net.UDPAddr, error)
+	IsDHTRoutingEmpty(context.Context) (bool, error)
+	DumpDHTNodes(context.Context, bool) ([]net.UDPAddr, error)
+	AddDHTHashes(context.Context, [][20]byte) error
+	GetDHTHashes(context.Context) ([10][20]byte, error)
+	// EnqueueDHTMessage persists an outbound datagram.
+	EnqueueDHTMessage(context.Context, DHTOutboundMessage) error
+	// NextDHTMessage returns the oldest pending datagram without removing it.
+	NextDHTMessage(context.Context) (DHTOutboundMessage, bool, error)
+	// AckDHTMessage removes a datagram after its UDP write succeeds.
+	AckDHTMessage(context.Context, string) error
+	// ReleaseDHTMessage leaves a datagram pending and moves it behind other queued messages.
+	ReleaseDHTMessage(context.Context, string) error
 
 	// GetNumberOfTorrents returns the number of torrents saved in the database. Might be an
 	// approximation.
@@ -47,6 +66,36 @@ type Database interface {
 	GetStatistics(from string, n uint) (*Statistics, error)
 	// Export returns a channel that will be used to dump all the torrents in the database.
 	Export() (chan SimpleTorrentSummary, error)
+}
+
+// DHTOutboundMessage is a UDP datagram waiting in the shared outbound queue.
+type DHTOutboundMessage struct {
+	ID          string      `json:"id"`
+	Destination net.UDPAddr `json:"destination"`
+	Payload     []byte      `json:"payload"`
+	QueuedAt    int64       `json:"queued_at"`
+}
+
+func prepareDHTOutboundMessage(message DHTOutboundMessage) (DHTOutboundMessage, error) {
+	if message.Destination.Port < 1 || message.Destination.Port > 65535 {
+		return DHTOutboundMessage{}, errors.New("DHT outbound message has invalid destination port")
+	}
+	if len(message.Payload) == 0 {
+		return DHTOutboundMessage{}, errors.New("DHT outbound message has an empty payload")
+	}
+	if message.ID == "" {
+		var id [16]byte
+		if _, err := rand.Read(id[:]); err != nil {
+			return DHTOutboundMessage{}, fmt.Errorf("generate DHT outbound message ID: %w", err)
+		}
+		message.ID = hex.EncodeToString(id[:])
+	}
+	if message.QueuedAt == 0 {
+		message.QueuedAt = time.Now().UnixNano()
+	}
+	message.Destination.IP = append(net.IP(nil), message.Destination.IP...)
+	message.Payload = append([]byte(nil), message.Payload...)
+	return message, nil
 }
 
 type OrderingCriteria uint8

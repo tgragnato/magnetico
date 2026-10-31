@@ -862,6 +862,7 @@ func TestPostgresDatabase_SetupDatabase(t *testing.T) {
 			DROP TABLE IF EXISTS files_old;
 			INSERT INTO migrations \(schema_version\) VALUES \(1\);
 	`).WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec("CREATE TABLE IF NOT EXISTS dht_nodes").WillReturnResult(sqlmock.NewResult(0, 0))
 
 	mock.ExpectCommit()
 

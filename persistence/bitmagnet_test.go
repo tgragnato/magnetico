@@ -1,6 +1,8 @@
 package persistence
 
 import (
+	"context"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -8,6 +10,108 @@ import (
 	"testing"
 	"time"
 )
+
+func Test_bitmagnet_DHTRoutingTable(t *testing.T) {
+	t.Parallel()
+
+	_, filter, err := net.ParseCIDR("127.0.0.0/8")
+	if err != nil {
+		t.Fatal(err)
+	}
+	db := &bitmagnet{}
+	if err := db.ConfigureDHTRoutingTable(2, []net.IPNet{*filter}); err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+
+	first := net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 6881}
+	second := net.UDPAddr{IP: net.IPv4(127, 0, 0, 2), Port: 6882}
+	if err := db.AddDHTNodes(ctx, []net.UDPAddr{first, first, second, {IP: net.IPv4(10, 0, 0, 1), Port: 6883}}); err != nil {
+		t.Fatal(err)
+	}
+	if empty, err := db.IsDHTRoutingEmpty(ctx); err != nil || empty {
+		t.Fatalf("IsEmpty() = (%v, %v), want (false, nil)", empty, err)
+	}
+
+	dumped, err := db.DumpDHTNodes(ctx, true)
+	if err != nil || len(dumped) != 2 {
+		t.Fatalf("Dump() returned %d nodes and error %v, want 2 nodes and nil", len(dumped), err)
+	}
+	if dumped, err := db.DumpDHTNodes(ctx, false); err != nil || len(dumped) != 0 {
+		t.Fatalf("Dump(IPv6) returned %d nodes and error %v, want 0 nodes and nil", len(dumped), err)
+	}
+
+	got, err := db.GetDHTNodes(ctx)
+	if err != nil || len(got) != 2 {
+		t.Fatalf("GetNodes() returned %d nodes and error %v, want 2 nodes and nil", len(got), err)
+	}
+	got, err = db.GetDHTNodes(ctx)
+	if err != nil || len(got) != 1 || !got[0].IP.Equal(first.IP) || got[0].Port != first.Port {
+		t.Fatalf("second GetNodes() = (%v, %v), want only %v", got, err, first)
+	}
+	if empty, err := db.IsDHTRoutingEmpty(ctx); err != nil || !empty {
+		t.Fatalf("IsEmpty() after consumption = (%v, %v), want (true, nil)", empty, err)
+	}
+
+	initialHashes := [][20]byte{{1}, {2}}
+	if err := db.AddDHTHashes(ctx, initialHashes); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.AddDHTHashes(ctx, [][20]byte{{3}}); err != nil {
+		t.Fatal(err)
+	}
+	gotHashes, err := db.GetDHTHashes(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotHashes[0] != [20]byte{3} || gotHashes[1] != [20]byte{2} {
+		t.Fatalf("GetHashes() = %v, want first hash replaced and second retained", gotHashes[:2])
+	}
+}
+
+func Test_bitmagnet_DHTOutbox(t *testing.T) {
+	t.Parallel()
+	db := &bitmagnet{}
+	message := DHTOutboundMessage{
+		Destination: net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 6881},
+		Payload:     []byte("payload"),
+		QueuedAt:    1,
+	}
+	if err := db.EnqueueDHTMessage(context.Background(), message); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.EnqueueDHTMessage(context.Background(), DHTOutboundMessage{
+		Destination: message.Destination,
+		Payload:     []byte("next"),
+		QueuedAt:    2,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	queued, found, err := db.NextDHTMessage(context.Background())
+	if err != nil || !found || queued.ID == "" || string(queued.Payload) != "payload" {
+		t.Fatalf("NextDHTMessage() = (%+v, %v, %v), want queued payload", queued, found, err)
+	}
+	if err := db.ReleaseDHTMessage(context.Background(), queued.ID); err != nil {
+		t.Fatal(err)
+	}
+	next, found, err := db.NextDHTMessage(context.Background())
+	if err != nil || !found || string(next.Payload) != "next" {
+		t.Fatalf("NextDHTMessage() after release = (%+v, %v, %v), want next message", next, found, err)
+	}
+	if err := db.AckDHTMessage(context.Background(), next.ID); err != nil {
+		t.Fatal(err)
+	}
+	retried, found, err := db.NextDHTMessage(context.Background())
+	if err != nil || !found || retried.ID != queued.ID {
+		t.Fatalf("NextDHTMessage() after next ack = (%+v, %v, %v), want released message", retried, found, err)
+	}
+	if err := db.AckDHTMessage(context.Background(), retried.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, found, err := db.NextDHTMessage(context.Background()); err != nil || found {
+		t.Fatalf("NextDHTMessage() after ack found=%v err=%v, want no message", found, err)
+	}
+}
 
 func Test_bitmagnet_AddNewTorrent(t *testing.T) {
 	t.Parallel()

@@ -8,9 +8,11 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"text/template"
 	"time"
 	"unicode/utf8"
@@ -21,8 +23,12 @@ import (
 )
 
 type postgresDatabase struct {
-	conn        *sql.DB
-	isCockroach bool
+	conn            *sql.DB
+	isCockroach     bool
+	dhtMu           sync.Mutex
+	dhtMaxNeighbors uint
+	dhtFilterNodes  []net.IPNet
+	dhtConfigured   bool
 }
 
 func makePostgresDatabase(url_ *url.URL) (Database, error) {
@@ -56,6 +62,317 @@ func makePostgresDatabase(url_ *url.URL) (Database, error) {
 
 func (db *postgresDatabase) Engine() databaseEngine {
 	return Postgres
+}
+
+func (db *postgresDatabase) ConfigureDHTRoutingTable(maxNeighbors uint, filterNodes []net.IPNet) error {
+	db.dhtMu.Lock()
+	defer db.dhtMu.Unlock()
+	db.dhtMaxNeighbors = maxNeighbors
+	db.dhtFilterNodes = append([]net.IPNet(nil), filterNodes...)
+	db.dhtConfigured = true
+	return nil
+}
+
+func (db *postgresDatabase) AddDHTNodes(ctx context.Context, nodes []net.UDPAddr) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	db.dhtMu.Lock()
+	defer db.dhtMu.Unlock()
+	if !db.dhtConfigured {
+		return errors.New("DHT routing table is not configured")
+	}
+	filtered := make([]string, 0, len(nodes))
+	for _, node := range nodes {
+		if postgresDHTNodeAllowed(node, db.dhtFilterNodes) {
+			filtered = append(filtered, node.String())
+		}
+	}
+	if len(filtered) == 0 {
+		return nil
+	}
+	tx, err := db.conn.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("postgres: begin DHT node update: %w", err)
+	}
+	defer db.rollback(tx)
+	var count uint64
+	if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM dht_nodes").Scan(&count); err != nil {
+		return fmt.Errorf("postgres: count DHT nodes: %w", err)
+	}
+	if count+uint64(len(filtered)) > uint64(db.dhtMaxNeighbors)*uint64(db.dhtMaxNeighbors) {
+		if _, err := tx.ExecContext(ctx, "DELETE FROM dht_nodes"); err != nil {
+			return fmt.Errorf("postgres: clear DHT nodes: %w", err)
+		}
+	}
+	for _, addr := range filtered {
+		if _, err := tx.ExecContext(ctx, `
+			INSERT INTO dht_nodes (addr, sightings) VALUES ($1, 1)
+			ON CONFLICT (addr) DO UPDATE SET sightings = dht_nodes.sightings + 1
+		`, addr); err != nil {
+			return fmt.Errorf("postgres: add DHT node: %w", err)
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("postgres: commit DHT node update: %w", err)
+	}
+	return nil
+}
+
+func (db *postgresDatabase) GetDHTNodes(ctx context.Context) ([]net.UDPAddr, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	db.dhtMu.Lock()
+	defer db.dhtMu.Unlock()
+	if !db.dhtConfigured {
+		return nil, errors.New("DHT routing table is not configured")
+	}
+	tx, err := db.conn.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("postgres: begin DHT node selection: %w", err)
+	}
+	defer db.rollback(tx)
+	rows, err := tx.QueryContext(ctx, "SELECT addr, sightings FROM dht_nodes LIMIT $1 FOR UPDATE", db.dhtMaxNeighbors)
+	if err != nil {
+		return nil, fmt.Errorf("postgres: select DHT nodes: %w", err)
+	}
+	type node struct {
+		addr      string
+		sightings int64
+	}
+	selected := make([]node, 0, db.dhtMaxNeighbors)
+	for rows.Next() {
+		var current node
+		if err := rows.Scan(&current.addr, &current.sightings); err != nil {
+			db.closeRows(rows)
+			return nil, fmt.Errorf("postgres: scan DHT node: %w", err)
+		}
+		selected = append(selected, current)
+	}
+	if err := rows.Err(); err != nil {
+		db.closeRows(rows)
+		return nil, fmt.Errorf("postgres: iterate DHT nodes: %w", err)
+	}
+	db.closeRows(rows)
+	result := make([]net.UDPAddr, 0, len(selected))
+	for _, current := range selected {
+		addr, err := postgresDHTAddrFromString(current.addr)
+		if err != nil {
+			continue
+		}
+		result = append(result, addr)
+		if current.sightings > 1 {
+			if _, err := tx.ExecContext(ctx, "UPDATE dht_nodes SET sightings = sightings - 1 WHERE addr = $1", current.addr); err != nil {
+				return nil, fmt.Errorf("postgres: decrement DHT node sightings: %w", err)
+			}
+		} else if _, err := tx.ExecContext(ctx, "DELETE FROM dht_nodes WHERE addr = $1", current.addr); err != nil {
+			return nil, fmt.Errorf("postgres: consume DHT node: %w", err)
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("postgres: commit DHT node selection: %w", err)
+	}
+	return result, nil
+}
+
+func (db *postgresDatabase) IsDHTRoutingEmpty(ctx context.Context) (bool, error) {
+	if err := ctx.Err(); err != nil {
+		return false, err
+	}
+	db.dhtMu.Lock()
+	defer db.dhtMu.Unlock()
+	if !db.dhtConfigured {
+		return false, errors.New("DHT routing table is not configured")
+	}
+	var count uint64
+	if err := db.conn.QueryRowContext(ctx, "SELECT COUNT(*) FROM dht_nodes").Scan(&count); err != nil {
+		return false, fmt.Errorf("postgres: count DHT nodes: %w", err)
+	}
+	return count == 0, nil
+}
+
+func (db *postgresDatabase) DumpDHTNodes(ctx context.Context, ipv4 bool) ([]net.UDPAddr, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	db.dhtMu.Lock()
+	defer db.dhtMu.Unlock()
+	if !db.dhtConfigured {
+		return nil, errors.New("DHT routing table is not configured")
+	}
+	rows, err := db.conn.QueryContext(ctx, "SELECT addr FROM dht_nodes")
+	if err != nil {
+		return nil, fmt.Errorf("postgres: select DHT node dump: %w", err)
+	}
+	defer db.closeRows(rows)
+	result := make([]net.UDPAddr, 0, 100)
+	for rows.Next() {
+		var value string
+		if err := rows.Scan(&value); err != nil {
+			return nil, fmt.Errorf("postgres: scan DHT node dump: %w", err)
+		}
+		addr, err := postgresDHTAddrFromString(value)
+		if err != nil || ipv4 != (addr.IP.To4() != nil) {
+			continue
+		}
+		result = append(result, addr)
+		if len(result) == 100 {
+			break
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("postgres: iterate DHT node dump: %w", err)
+	}
+	return result, nil
+}
+
+func (db *postgresDatabase) AddDHTHashes(ctx context.Context, hashes [][20]byte) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	db.dhtMu.Lock()
+	defer db.dhtMu.Unlock()
+	if !db.dhtConfigured {
+		return errors.New("DHT routing table is not configured")
+	}
+	tx, err := db.conn.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("postgres: begin DHT hash update: %w", err)
+	}
+	defer db.rollback(tx)
+	for i := 0; i < len(hashes) && i < 10; i++ {
+		if _, err := tx.ExecContext(ctx, `
+			INSERT INTO dht_hashes (slot, hash) VALUES ($1, $2)
+			ON CONFLICT (slot) DO UPDATE SET hash = EXCLUDED.hash
+		`, i, hashes[i][:]); err != nil {
+			return fmt.Errorf("postgres: update DHT hash slot %d: %w", i, err)
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("postgres: commit DHT hash update: %w", err)
+	}
+	return nil
+}
+
+func (db *postgresDatabase) GetDHTHashes(ctx context.Context) ([10][20]byte, error) {
+	if err := ctx.Err(); err != nil {
+		return [10][20]byte{}, err
+	}
+	db.dhtMu.Lock()
+	defer db.dhtMu.Unlock()
+	if !db.dhtConfigured {
+		return [10][20]byte{}, errors.New("DHT routing table is not configured")
+	}
+	var result [10][20]byte
+	rows, err := db.conn.QueryContext(ctx, "SELECT slot, hash FROM dht_hashes")
+	if err != nil {
+		return result, fmt.Errorf("postgres: select DHT hashes: %w", err)
+	}
+	defer db.closeRows(rows)
+	for rows.Next() {
+		var slot int
+		var hash []byte
+		if err := rows.Scan(&slot, &hash); err != nil {
+			return result, fmt.Errorf("postgres: scan DHT hash: %w", err)
+		}
+		if slot >= 0 && slot < len(result) && len(hash) == len(result[slot]) {
+			copy(result[slot][:], hash)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return result, fmt.Errorf("postgres: iterate DHT hashes: %w", err)
+	}
+	return result, nil
+}
+
+func (db *postgresDatabase) EnqueueDHTMessage(ctx context.Context, message DHTOutboundMessage) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	message, err := prepareDHTOutboundMessage(message)
+	if err != nil {
+		return err
+	}
+	_, err = db.conn.ExecContext(ctx, `
+		INSERT INTO dht_outbox (message_id, queued_at, destination_ip, destination_port, destination_zone, payload)
+		VALUES ($1, $2, $3, $4, $5, $6)
+	`, message.ID, message.QueuedAt, message.Destination.IP.String(), message.Destination.Port, message.Destination.Zone, message.Payload)
+	if err != nil {
+		return fmt.Errorf("postgres: enqueue DHT message: %w", err)
+	}
+	return nil
+}
+
+func (db *postgresDatabase) NextDHTMessage(ctx context.Context) (DHTOutboundMessage, bool, error) {
+	var message DHTOutboundMessage
+	var destinationIP string
+	err := db.conn.QueryRowContext(ctx, `
+		SELECT message_id, queued_at, destination_ip, destination_port, destination_zone, payload
+		FROM dht_outbox ORDER BY queued_at, message_id LIMIT 1
+	`).Scan(&message.ID, &message.QueuedAt, &destinationIP, &message.Destination.Port, &message.Destination.Zone, &message.Payload)
+	if errors.Is(err, sql.ErrNoRows) {
+		return DHTOutboundMessage{}, false, nil
+	}
+	if err != nil {
+		return DHTOutboundMessage{}, false, fmt.Errorf("postgres: read DHT outbox: %w", err)
+	}
+	message.Destination.IP = net.ParseIP(destinationIP)
+	if message.Destination.IP == nil {
+		return DHTOutboundMessage{}, false, fmt.Errorf("postgres: invalid DHT outbox IP %q", destinationIP)
+	}
+	return message, true, nil
+}
+
+func (db *postgresDatabase) AckDHTMessage(ctx context.Context, messageID string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if _, err := db.conn.ExecContext(ctx, "DELETE FROM dht_outbox WHERE message_id = $1", messageID); err != nil {
+		return fmt.Errorf("postgres: acknowledge DHT message: %w", err)
+	}
+	return nil
+}
+
+func (db *postgresDatabase) ReleaseDHTMessage(ctx context.Context, messageID string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if _, err := db.conn.ExecContext(ctx, `
+		UPDATE dht_outbox
+		SET queued_at = (SELECT COALESCE(MAX(queued_at), 0) + 1 FROM dht_outbox)
+		WHERE message_id = $1
+	`, messageID); err != nil {
+		return fmt.Errorf("postgres: release DHT message: %w", err)
+	}
+	return nil
+}
+
+func postgresDHTNodeAllowed(node net.UDPAddr, filterNodes []net.IPNet) bool {
+	if len(filterNodes) > 0 {
+		for _, filterNode := range filterNodes {
+			if filterNode.Contains(node.IP) {
+				return true
+			}
+		}
+		return false
+	}
+	if !node.IP.IsGlobalUnicast() || node.IP.IsPrivate() {
+		return false
+	}
+	return node.Port == 80 || node.Port == 443 || node.Port >= 1024 && node.Port <= 65535
+}
+
+func postgresDHTAddrFromString(value string) (net.UDPAddr, error) {
+	host, port, err := net.SplitHostPort(value)
+	if err != nil {
+		return net.UDPAddr{}, err
+	}
+	portNumber, err := strconv.Atoi(port)
+	if err != nil {
+		return net.UDPAddr{}, err
+	}
+	return net.UDPAddr{IP: net.ParseIP(host), Port: portNumber}, nil
 }
 
 func (db *postgresDatabase) DoesTorrentExist(infoHash []byte) (bool, error) {
@@ -610,15 +927,33 @@ func (db *postgresDatabase) setupDatabase() error {
 		if _, err := tx.Exec(migrationStmt); err != nil {
 			return errors.New("sql.Tx.Exec (v0 -> v1) " + err.Error())
 		}
+		fallthrough
 
-		// Uncomment for future migrations:
-		//	fallthrough
-		//case 2: // FROZEN.
-		//	log.Println("Updating database schema from 1 to 2... (this might take a while)")
-		//	_, err = tx.Exec(`INSERT INTO migrations (schema_version) VALUES (2);`)
-		//	if err != nil {
-		//		return errors.New("sql.Tx.Exec (v1 -> v2) " + err.Error())
-		//	}
+	case 1:
+		log.Println("Updating database schema from 1 to 2...")
+		_, err = tx.Exec(`
+			CREATE TABLE IF NOT EXISTS dht_nodes (
+				addr TEXT PRIMARY KEY,
+				sightings BIGINT NOT NULL
+			);
+			CREATE TABLE IF NOT EXISTS dht_hashes (
+				slot INTEGER PRIMARY KEY,
+				hash BYTEA NOT NULL
+			);
+			CREATE TABLE IF NOT EXISTS dht_outbox (
+				message_id TEXT PRIMARY KEY,
+				queued_at BIGINT NOT NULL,
+				destination_ip TEXT NOT NULL,
+				destination_port INTEGER NOT NULL,
+				destination_zone TEXT NOT NULL,
+				payload BYTEA NOT NULL
+			);
+			CREATE INDEX IF NOT EXISTS dht_outbox_queued ON dht_outbox (queued_at, message_id);
+			INSERT INTO migrations (schema_version) VALUES (2);
+		`)
+		if err != nil {
+			return errors.New("sql.Tx.Exec (v1 -> v2) " + err.Error())
+		}
 	}
 
 	if err = tx.Commit(); err != nil {
