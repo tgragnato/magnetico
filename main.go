@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"os/signal"
@@ -8,7 +9,6 @@ import (
 	"time"
 
 	"tgragnato.it/magnetico/v2/dht"
-	"tgragnato.it/magnetico/v2/dht/mainline"
 	"tgragnato.it/magnetico/v2/metadata"
 	"tgragnato.it/magnetico/v2/opflags"
 	"tgragnato.it/magnetico/v2/persistence"
@@ -26,6 +26,8 @@ func main() {
 	// Handle Ctrl-C gracefully.
 	interruptChan := make(chan os.Signal, 1)
 	signal.Notify(interruptChan, os.Interrupt)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	database, err := persistence.MakeDatabase(opFlags.DatabaseURL)
 	if err != nil {
@@ -97,13 +99,18 @@ func main() {
 		return
 	}
 
-	mainline.DefaultThrottleRate = int(opFlags.MaxRPS)
-	trawlingManager := dht.NewManager(
+	trawlingManager, err := dht.NewManager(
+		ctx,
 		opFlags.IndexerAddrs,
 		opFlags.IndexerMaxNeighbors,
 		opFlags.BootstrappingNodes,
 		opFlags.FilterNodesIpNets,
+		database,
+		opFlags.MaxRPS,
 	)
+	if err != nil {
+		log.Fatalf("Could not configure DHT routing persistence. %s\n", err.Error())
+	}
 	metadataSink := metadata.NewSink(
 		time.Duration(opFlags.LeechDeadline)*time.Second,
 		int(opFlags.LeechMaxN),
@@ -132,6 +139,7 @@ func main() {
 			}
 
 		case <-interruptChan:
+			cancel()
 			trawlingManager.Terminate()
 			stopped = true
 		}

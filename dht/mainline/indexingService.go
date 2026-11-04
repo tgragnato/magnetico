@@ -1,25 +1,30 @@
 package mainline
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/binary"
+	"log"
 	mrand "math/rand/v2"
 	"net"
 	"reflect"
 	"strconv"
 	"time"
 
+	"tgragnato.it/magnetico/v2/persistence"
 	"tgragnato.it/magnetico/v2/stats"
 )
 
 type IndexingService struct {
 	// Private
+	ctx           context.Context
 	protocol      *Protocol
 	started       bool
+	indexDone     chan struct{}
 	eventHandlers IndexingServiceEventHandlers
+	database      persistence.Database
 
 	nodeID []byte
-	nodes  *routingTable
 
 	counter          uint16
 	getPeersRequests map[[2]byte][20]byte // GetPeersQuery.`t` -> infohash
@@ -44,8 +49,9 @@ func (ir IndexingResult) PeerAddrs() []net.TCPAddr {
 	return ir.peerAddrs
 }
 
-func NewIndexingService(laddr string, maxNeighbors uint, eventHandlers IndexingServiceEventHandlers, bootstrapNodes []string, filterNodes []net.IPNet) *IndexingService {
+func NewIndexingService(ctx context.Context, laddr string, maxNeighbors uint, eventHandlers IndexingServiceEventHandlers, bootstrapNodes []string, database persistence.Database, outboundQueue *OutboundQueueState) *IndexingService {
 	service := new(IndexingService)
+	service.ctx = ctx
 	service.protocol = NewProtocol(
 		laddr,
 		ProtocolEventHandlers{
@@ -61,14 +67,19 @@ func NewIndexingService(laddr string, maxNeighbors uint, eventHandlers IndexingS
 		},
 		maxNeighbors,
 	)
+	service.protocol.transport.ConfigureOutboundQueue(database, outboundQueue)
 	service.nodeID = randomNodeID()
-	service.nodes = newRoutingTable(maxNeighbors, filterNodes)
 	service.eventHandlers = eventHandlers
+	service.database = database
 
 	service.getPeersRequests = make(map[[2]byte][20]byte)
 	service.bootstrapNodes = bootstrapNodes
 
 	return service
+}
+
+func (is *IndexingService) SendDatagram(payload []byte, addr *net.UDPAddr) error {
+	return is.protocol.transport.SendDatagram(payload, addr)
 }
 
 func (is *IndexingService) Start() {
@@ -77,21 +88,42 @@ func (is *IndexingService) Start() {
 	}
 	is.started = true
 
-	is.protocol.Start()
-	go is.index()
+	is.protocol.Start(is.ctx)
+	is.indexDone = make(chan struct{})
+	go func() {
+		defer close(is.indexDone)
+		is.index()
+	}()
 }
 
 func (is *IndexingService) Terminate() {
 	is.protocol.Terminate()
+	if is.indexDone != nil {
+		<-is.indexDone
+	}
 }
 
 func (is *IndexingService) index() {
 	ticker := time.NewTicker(time.Second)
-	for ; true; <-ticker.C {
-		if is.nodes.isEmpty() {
-			is.bootstrap()
-		} else if !is.protocol.transport.Full() {
-			is.findNeighbors()
+	defer ticker.Stop()
+	for {
+		select {
+		case <-is.ctx.Done():
+			return
+		case <-ticker.C:
+			empty, err := is.database.IsDHTRoutingEmpty(is.ctx)
+			if err != nil {
+				if is.ctx.Err() == nil {
+					log.Println(err.Error()) //DELETEME
+					go stats.GetInstance().IncDBError(false)
+				}
+				continue
+			}
+			if empty {
+				is.bootstrap()
+			} else if !is.protocol.transport.Full() {
+				is.findNeighbors()
+			}
 		}
 	}
 }
@@ -107,7 +139,7 @@ func (is *IndexingService) bootstrap() {
 			continue
 		}
 		bootstrappingIPs := []net.IP{}
-		if ipAddrs, err := net.LookupIP(dnsName); err == nil {
+		if ipAddrs, err := net.DefaultResolver.LookupIP(is.ctx, "ip", dnsName); err == nil {
 			bootstrappingIPs = append(bootstrappingIPs, ipAddrs...)
 		}
 
@@ -127,7 +159,13 @@ func (is *IndexingService) bootstrap() {
 }
 
 func (is *IndexingService) findNeighbors() {
-	for _, addr := range is.nodes.getNodes() {
+	nodes, err := is.database.GetDHTNodes(is.ctx)
+	if err != nil {
+		log.Println(err.Error()) //DELETEME
+		go stats.GetInstance().IncDBError(false)
+		return
+	}
+	for _, addr := range nodes {
 		go is.protocol.SendMessage(
 			NewSampleInfohashesQuery(is.nodeID, []byte("aa"), randomNodeID()),
 			&addr,
@@ -145,7 +183,7 @@ func (is *IndexingService) onFindNodeResponse(response *Message, addr *net.UDPAd
 	}
 
 	if len(neighbors) > 0 {
-		go is.nodes.addNodes(neighbors)
+		go is.addDHTNodes(neighbors)
 	}
 }
 
@@ -203,7 +241,7 @@ func (is *IndexingService) onSampleInfohashesResponse(msg *Message, addr *net.UD
 		is.counter++
 	}
 
-	go is.nodes.addHashes(info_hashes)
+	go is.addDHTHashes(info_hashes)
 
 	neighbors := []net.UDPAddr{}
 	if msg.R.Num > len(msg.R.Samples)/20 && time.Duration(msg.R.Interval) <= time.Minute {
@@ -216,16 +254,16 @@ func (is *IndexingService) onSampleInfohashesResponse(msg *Message, addr *net.UD
 		neighbors = append(neighbors, node.Addr)
 	}
 	if len(neighbors) > 0 {
-		go is.nodes.addNodes(neighbors)
+		go is.addDHTNodes(neighbors)
 	}
 }
 
 func (is *IndexingService) onPingORAnnouncePeerResponse(msg *Message, addr *net.UDPAddr) {
-	go is.nodes.addNodes([]net.UDPAddr{*addr})
+	go is.addDHTNodes([]net.UDPAddr{*addr})
 }
 
 func (is *IndexingService) onPingQuery(msg *Message, addr *net.UDPAddr) {
-	go is.nodes.addNodes([]net.UDPAddr{*addr})
+	go is.addDHTNodes([]net.UDPAddr{*addr})
 
 	go is.protocol.SendMessage(
 		NewPingResponse(msg.T, is.nodeID),
@@ -255,7 +293,7 @@ func (is *IndexingService) onAnnouncePeerQuery(msg *Message, addr *net.UDPAddr) 
 		})
 	}
 
-	go is.nodes.addNodes(addresses)
+	go is.addDHTNodes(addresses)
 
 	go is.protocol.SendMessage(
 		NewAnnouncePeerResponse(msg.T, is.nodeID),
@@ -265,7 +303,12 @@ func (is *IndexingService) onAnnouncePeerQuery(msg *Message, addr *net.UDPAddr) 
 
 func (is *IndexingService) onFindNodeQuery(msg *Message, addr *net.UDPAddr) {
 	compactNodeInfos := []CompactNodeInfo{}
-	for _, node := range is.nodes.dump(addr.IP.To4() != nil) {
+	nodes, err := is.database.DumpDHTNodes(is.ctx, addr.IP.To4() != nil)
+	if err != nil {
+		log.Println(err.Error()) //DELETEME
+		go stats.GetInstance().IncDBError(false)
+	}
+	for _, node := range nodes {
 		compactNodeInfos = append(compactNodeInfos, CompactNodeInfo{
 			ID:   randomNodeID(),
 			Addr: node,
@@ -277,12 +320,17 @@ func (is *IndexingService) onFindNodeQuery(msg *Message, addr *net.UDPAddr) {
 		addr,
 	)
 
-	go is.nodes.addNodes([]net.UDPAddr{*addr})
+	go is.addDHTNodes([]net.UDPAddr{*addr})
 }
 
 func (is *IndexingService) onGetPeersQuery(msg *Message, addr *net.UDPAddr) {
 	compactPeers := []CompactPeer{}
-	for _, node := range is.nodes.dump(addr.IP.To4() != nil) {
+	nodes, err := is.database.DumpDHTNodes(is.ctx, addr.IP.To4() != nil)
+	if err != nil {
+		log.Println(err.Error()) //DELETEME
+		go stats.GetInstance().IncDBError(false)
+	}
+	for _, node := range nodes {
 		compactPeers = append(compactPeers, CompactPeer{
 			IP:   node.IP,
 			Port: node.Port,
@@ -301,11 +349,11 @@ func (is *IndexingService) onGetPeersQuery(msg *Message, addr *net.UDPAddr) {
 		addr,
 	)
 
-	go is.nodes.addNodes([]net.UDPAddr{*addr})
+	go is.addDHTNodes([]net.UDPAddr{*addr})
 }
 
 func (is *IndexingService) onSampleInfohashesQuery(msg *Message, addr *net.UDPAddr) {
-	go is.nodes.addNodes([]net.UDPAddr{*addr})
+	go is.addDHTNodes([]net.UDPAddr{*addr})
 
 	// the remote is an indexer, send a find_node query to obtain some peers
 	go is.protocol.SendMessage(
@@ -314,7 +362,13 @@ func (is *IndexingService) onSampleInfohashesQuery(msg *Message, addr *net.UDPAd
 	)
 
 	hash_stream := []byte{}
-	for _, info_hash := range is.nodes.getHashes() {
+	hashes, err := is.database.GetDHTHashes(is.ctx)
+	if err != nil {
+		log.Println(err.Error()) //DELETEME
+		go stats.GetInstance().IncDBError(false)
+		return
+	}
+	for _, info_hash := range hashes {
 		if !reflect.DeepEqual(info_hash, [20]byte{}) {
 			hash_stream = append(hash_stream, info_hash[:]...)
 		}
@@ -331,6 +385,20 @@ func (is *IndexingService) onSampleInfohashesQuery(msg *Message, addr *net.UDPAd
 		),
 		addr,
 	)
+}
+
+func (is *IndexingService) addDHTNodes(nodes []net.UDPAddr) {
+	if err := is.database.AddDHTNodes(is.ctx, nodes); err != nil && is.ctx.Err() == nil {
+		log.Println(err.Error()) //DELETEME
+		go stats.GetInstance().IncDBError(false)
+	}
+}
+
+func (is *IndexingService) addDHTHashes(hashes [][20]byte) {
+	if err := is.database.AddDHTHashes(is.ctx, hashes); err != nil && is.ctx.Err() == nil {
+		log.Println(err.Error()) //DELETEME
+		go stats.GetInstance().IncDBError(false)
+	}
 }
 
 // toBigEndianBytes Convert UInt16 To BigEndianBytes

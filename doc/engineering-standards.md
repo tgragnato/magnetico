@@ -189,7 +189,8 @@ Where the code may block or perform I/O, prefer a `context.Context` flow through
 Examples from this repository that already follow this principle are the HTTP server and database access paths. The general rule is:
 
 - accept a context when the function may block on I/O, a database query, or a network operation
-- propagate it through the call chain instead of storing it in a struct field
+- propagate operation- or request-scoped contexts through the call chain instead of storing them in a struct field
+- a process-lifetime root context may be stored by a long-lived service whose lifetime is bounded by that context; its owner must cancel it during shutdown and pass it to the service's workers
 - make long-lived goroutines cancelable, especially when they are started by a parent service or a CLI lifecycle
 
 The standard library `net/http` and database interfaces already encourage this pattern. Keep it consistent.
@@ -229,6 +230,12 @@ Rules for new storage-related code:
 - do not silently swallow a database or transport failure
 - ensure serialisation or export/import flows remain reversible and testable
 
+The `Database` contract also owns the DHT routing state and outbound datagram outbox. All indexer services using the same `Database` instance share that routing state. Keep backend-specific storage and delivery behavior in each implementation; the common interface does not imply identical durability guarantees. Volatile behavior is valid when it is an explicit part of a backend's contract, but must not silently replace a durable backend mechanism.
+
+Outbound outbox delivery is at-least-once: reading a pending message does not remove it, successful UDP write is followed by acknowledgement, and failed or cancelled sends leave it pending. A process failure after sending but before acknowledgement can therefore cause a duplicate datagram. Backend implementations must preserve this contract and clearly state their durability guarantees.
+
+RabbitMQ publishes to durable queues must use persistent messages and wait for publisher confirmation before reporting success.
+
 ---
 
 ## Network and DHT reliability
@@ -240,6 +247,8 @@ Engineering rules for this domain:
 - treat a single peer failure as non-fatal
 - keep node and peer selection bounded, avoid unbounded memory growth
 - use timeout-based logic around network calls and discovery retries
+- apply `maxRPS` as one shared limit across all indexer transports and count every outgoing datagram, including queries and replies; incoming datagrams are not part of this limit
+- route outgoing datagrams through the persistence outbox and shared limiter rather than bypassing the scheduler for selected query types
 - keep the crawler operational even when some peers are slow or misbehaving
 - when a result is duplicate, stale, or structurally invalid, drop it without crashing the broader loop
 
@@ -255,6 +264,7 @@ Rules:
 
 - if a goroutine is owned by a parent function or service, it must be shut down by that owner
 - use channels or cancellation to stop workers cleanly instead of relying on background goroutines to self-resolve in an ad-hoc way
+- the process owner cancels the root context before terminating DHT services and closing persistence; workers must finish or leave pending outbox work recoverable before the backend is closed
 - do not start unbounded goroutines in loops without a clear termination strategy
 - protect shared mutable state with mutexes or channel ownership, not with “best effort” locking scattered across the code
 
@@ -281,6 +291,8 @@ For persistence and network-heavy code, the most important checks are:
 - can the function fail correctly?
 - does it keep the caller contract intact?
 - does it degrade gracefully under duplicate or partial data?
+- do outbox tests cover enqueue, release, acknowledgement, cancellation, and duplicate delivery after interrupted shutdown?
+- do DHT transport tests verify one global outgoing rate across multiple transports, including both queries and replies?
 
 ---
 

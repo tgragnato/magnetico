@@ -3,7 +3,9 @@
 package persistence
 
 import (
+	"context"
 	"errors"
+	"net"
 	"net/url"
 )
 
@@ -23,6 +25,50 @@ func (instance *zeromq) DoesTorrentExist(infoHash []byte) (bool, error) {
 
 func (instance *zeromq) AddNewTorrent(infoHash []byte, name string, files []File) error {
 	return errors.New("add not supported")
+}
+
+func (instance *zeromq) ConfigureDHTRoutingTable(maxNeighbors uint, filterNodes []net.IPNet) error {
+	return errors.New("DHT routing not supported without cgo")
+}
+
+func (instance *zeromq) AddDHTNodes(context.Context, []net.UDPAddr) error {
+	return errors.New("DHT routing not supported without cgo")
+}
+
+func (instance *zeromq) GetDHTNodes(context.Context) ([]net.UDPAddr, error) {
+	return nil, errors.New("DHT routing not supported without cgo")
+}
+
+func (instance *zeromq) IsDHTRoutingEmpty(context.Context) (bool, error) {
+	return false, errors.New("DHT routing not supported without cgo")
+}
+
+func (instance *zeromq) DumpDHTNodes(context.Context, bool) ([]net.UDPAddr, error) {
+	return nil, errors.New("DHT routing not supported without cgo")
+}
+
+func (instance *zeromq) AddDHTHashes(context.Context, [][20]byte) error {
+	return errors.New("DHT routing not supported without cgo")
+}
+
+func (instance *zeromq) GetDHTHashes(context.Context) ([10][20]byte, error) {
+	return [10][20]byte{}, errors.New("DHT routing not supported without cgo")
+}
+
+func (instance *zeromq) EnqueueDHTMessage(context.Context, DHTOutboundMessage) error {
+	return errors.New("DHT outbox not supported without cgo")
+}
+
+func (instance *zeromq) NextDHTMessage(context.Context) (DHTOutboundMessage, bool, error) {
+	return DHTOutboundMessage{}, false, errors.New("DHT outbox not supported without cgo")
+}
+
+func (instance *zeromq) AckDHTMessage(context.Context, string) error {
+	return errors.New("DHT outbox not supported without cgo")
+}
+
+func (instance *zeromq) ReleaseDHTMessage(context.Context, string) error {
+	return errors.New("DHT outbox not supported without cgo")
 }
 
 func (instance *zeromq) Close() error {

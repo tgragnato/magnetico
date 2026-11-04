@@ -1,6 +1,7 @@
 package mainline
 
 import (
+	"context"
 	"net"
 	"testing"
 )
@@ -310,6 +311,8 @@ func TestNewProtocol(t *testing.T) {
 	}()
 
 	service := new(IndexingService)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	protocol := NewProtocol("0.0.0.0:0", ProtocolEventHandlers{
 		OnPingQuery:                  service.onPingQuery,
 		OnFindNodeQuery:              service.onFindNodeQuery,
@@ -321,7 +324,8 @@ func TestNewProtocol(t *testing.T) {
 		OnSampleInfohashesQuery:      service.onSampleInfohashesQuery,
 		OnSampleInfohashesResponse:   service.onSampleInfohashesResponse,
 	}, 1000)
-	protocol.Start()
+	protocol.Start(ctx)
+	cancel()
 	protocol.Terminate()
 }
 
@@ -333,6 +337,7 @@ func TestProtocol_Start(t *testing.T) {
 		}
 	}()
 
+	ctx, cancel := context.WithCancel(context.Background())
 	service := new(IndexingService)
 	protocol := NewProtocol("0.0.0.0:0", ProtocolEventHandlers{
 		OnPingQuery:                  service.onPingQuery,
@@ -345,8 +350,12 @@ func TestProtocol_Start(t *testing.T) {
 		OnSampleInfohashesQuery:      service.onSampleInfohashesQuery,
 		OnSampleInfohashesResponse:   service.onSampleInfohashesResponse,
 	}, 1000)
-	protocol.Start()
-	protocol.Start()
+	defer func() {
+		cancel()
+		protocol.Terminate()
+	}()
+	protocol.Start(ctx)
+	protocol.Start(ctx)
 }
 
 func TestProtocol_Terminate(t *testing.T) {

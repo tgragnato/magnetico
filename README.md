@@ -117,7 +117,7 @@ USERNAME:$2y$12$YE01LZ8jrbQbx6c0s2hdZO71dSjn2p/O9XsYJpz.5968yCysUgiaG
 To keep your database as fresh and fast as possible, run the crawler continuously and tune the DHT discovery parameters.
 
 - `--daemon` runs only the crawler; `--web` runs only the web UI. Running both together keeps discovery and browsing active.
-- `--max-rps` controls the DHT request rate. If your network and host can handle it, increasing this value improves how quickly the crawler explores the network.
+- `--max-rps` sets the global rate for outgoing DHT datagrams across all indexer addresses, including queries and replies. If your network and host can handle it, increasing this value improves how quickly the crawler explores the network.
 - `--indexer-max-neighbors` increases how many DHT neighbors each indexer tracks. More neighbors usually means better coverage and faster discovery.
 - `--indexer-addr` can be specified multiple times to bind more local addresses/interfaces, improving parallel discovery.
 - `--bootstrap-node` should point to reliable DHT nodes so the crawler can recover quickly after restart.
