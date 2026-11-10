@@ -1,12 +1,50 @@
 package persistence
 
 import (
+	"context"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/rabbitmq/amqp091-go"
 )
+
+func TestAwaitRabbitPublisherConfirmation(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name          string
+		confirmation  amqp091.Confirmation
+		closeChannel  bool
+		cancelContext bool
+		wantErr       bool
+	}{
+		{name: "acknowledged", confirmation: amqp091.Confirmation{Ack: true}},
+		{name: "rejected", confirmation: amqp091.Confirmation{DeliveryTag: 1}, wantErr: true},
+		{name: "closed channel", closeChannel: true, wantErr: true},
+		{name: "cancelled context", cancelContext: true, wantErr: true},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			confirmations := make(chan amqp091.Confirmation, 1)
+			if test.closeChannel {
+				close(confirmations)
+			} else if !test.cancelContext {
+				confirmations <- test.confirmation
+			}
+			if test.cancelContext {
+				cancel()
+			}
+
+			err := awaitRabbitPublisherConfirmation(ctx, confirmations)
+			if (err != nil) != test.wantErr {
+				t.Fatalf("awaitRabbitPublisherConfirmation() error = %v, wantErr %v", err, test.wantErr)
+			}
+		})
+	}
+}
 
 func Test_rabbitmq_GetNumberOfTorrents(t *testing.T) {
 	t.Parallel()
@@ -215,11 +253,6 @@ func Test_rabbitmq_connect(t *testing.T) {
 
 func Test_rabbitmq_AddNewTorrent(t *testing.T) {
 	t.Parallel()
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("Test did not panick!")
-		}
-	}()
 
 	r := &rabbitMQ{
 		url:       "",
@@ -229,9 +262,10 @@ func Test_rabbitmq_AddNewTorrent(t *testing.T) {
 		cache:     map[string]time.Time{},
 		Mutex:     sync.Mutex{},
 	}
+	// Test for adding a new torrent
 	err := r.AddNewTorrent([]byte("exampleInfoHash"), "exampleName", []File{})
 	if err == nil {
-		t.Error("rabbitmq.AddNewTorrent() error = nil, want error")
+		t.Fatal("rabbitmq.AddNewTorrent() error = nil, want an error for an invalid channel")
 	}
 }
 

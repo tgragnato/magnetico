@@ -1,12 +1,17 @@
 package mainline
 
 import (
+	"context"
+	"fmt"
 	"math/rand/v2"
 	"net"
 	"sort"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
+
+	"tgragnato.it/magnetico/v2/persistence"
 )
 
 func sortNodes(nodes []net.UDPAddr) {
@@ -16,6 +21,33 @@ func sortNodes(nodes []net.UDPAddr) {
 		}
 		return nodes[i].Port < nodes[j].Port
 	})
+}
+
+func newRoutingDatabase(t *testing.T, maxNeighbors uint, filterNodes []net.IPNet) persistence.Database {
+	t.Helper()
+	name := strings.ReplaceAll(t.Name(), "/", "_")
+	database, err := persistence.MakeDatabase(fmt.Sprintf("sqlite3:///%s?cache=shared&mode=memory", name))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := database.Close(); err != nil {
+			t.Errorf("close test database: %v", err)
+		}
+	})
+	if err := database.ConfigureDHTRoutingTable(maxNeighbors, filterNodes); err != nil {
+		t.Fatal(err)
+	}
+	return database
+}
+
+func getRoutingNodes(t *testing.T, database persistence.Database) []net.UDPAddr {
+	t.Helper()
+	nodes, err := database.GetDHTNodes(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return nodes
 }
 
 func TestUint16BE(t *testing.T) {
@@ -69,15 +101,20 @@ func TestBasicIndexingService(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			is := NewIndexingService(tt.laddr, tt.maxNeighbors, tt.eventHandlers, []string{"dht.tgragnato.it"}, []net.IPNet{})
+			database := newRoutingDatabase(t, tt.maxNeighbors, nil)
+			ctx, cancel := context.WithCancel(context.Background())
+			is := NewIndexingService(ctx, tt.laddr, tt.maxNeighbors, tt.eventHandlers, []string{"dht.tgragnato.it"}, database, NewOutboundQueueState(uint64(tt.maxNeighbors)))
 			if is == nil {
 				t.Error("NewIndexingService() = nil, wanted != nil")
 			}
 			is.Start()
+			t.Cleanup(func() {
+				cancel()
+				is.Terminate()
+			})
 			time.Sleep(time.Second)
 			is.findNeighbors()
 			time.Sleep(time.Second)
-			is.Terminate()
 		})
 	}
 }
@@ -137,16 +174,11 @@ func TestOnFindNodeResponse(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			is := &IndexingService{
-				nodes: newRoutingTable(
-					10,
-					[]net.IPNet{*cidr},
-				),
-			}
+			is := &IndexingService{ctx: context.Background(), database: newRoutingDatabase(t, 10, []net.IPNet{*cidr})}
 			is.onFindNodeResponse(tt.response, tt.addr)
 			time.Sleep(time.Second)
 
-			gotNodes := is.nodes.getNodes()
+			gotNodes := getRoutingNodes(t, is.database)
 			if len(gotNodes) != len(tt.wantNodes) {
 				t.Errorf("onFindNodeResponse() got %d nodes, want %d nodes", len(gotNodes), len(tt.wantNodes))
 			}
@@ -169,11 +201,10 @@ func TestOnAnnouncePeerQuery(t *testing.T) {
 
 	_, cidr, _ := net.ParseCIDR("127.0.0.0/8")
 	transport := &Transport{
-		conn:           &net.UDPConn{},
-		started:        true,
-		onMessage:      func(*Message, *net.UDPAddr) {},
-		throttlingRate: 0,
-		maxNeighbors:   10,
+		conn:         &net.UDPConn{},
+		started:      true,
+		onMessage:    func(*Message, *net.UDPAddr) {},
+		maxNeighbors: 10,
 	}
 
 	tests := []struct {
@@ -242,10 +273,8 @@ func TestOnAnnouncePeerQuery(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			is := &IndexingService{
-				nodes: newRoutingTable(
-					10,
-					[]net.IPNet{*cidr},
-				),
+				ctx:      context.Background(),
+				database: newRoutingDatabase(t, 10, []net.IPNet{*cidr}),
 				protocol: &Protocol{
 					transport: transport,
 				},
@@ -254,7 +283,7 @@ func TestOnAnnouncePeerQuery(t *testing.T) {
 			is.onAnnouncePeerQuery(tt.msg, tt.addr)
 			time.Sleep(time.Second)
 
-			gotNodes := is.nodes.getNodes()
+			gotNodes := getRoutingNodes(t, is.database)
 			if len(gotNodes) != len(tt.wantNodes) {
 				t.Errorf("onAnnouncePeerQuery() got %d nodes, want %d nodes", len(gotNodes), len(tt.wantNodes))
 			}
@@ -277,11 +306,10 @@ func TestOnPingQuery(t *testing.T) {
 
 	_, cidr, _ := net.ParseCIDR("127.0.0.0/8")
 	transport := &Transport{
-		conn:           &net.UDPConn{},
-		started:        true,
-		onMessage:      func(*Message, *net.UDPAddr) {},
-		throttlingRate: 0,
-		maxNeighbors:   10,
+		conn:         &net.UDPConn{},
+		started:      true,
+		onMessage:    func(*Message, *net.UDPAddr) {},
+		maxNeighbors: 10,
 	}
 
 	tests := []struct {
@@ -301,10 +329,8 @@ func TestOnPingQuery(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			is := &IndexingService{
-				nodes: newRoutingTable(
-					10,
-					[]net.IPNet{*cidr},
-				),
+				ctx:      context.Background(),
+				database: newRoutingDatabase(t, 10, []net.IPNet{*cidr}),
 				protocol: &Protocol{
 					transport: transport,
 				},
@@ -313,7 +339,7 @@ func TestOnPingQuery(t *testing.T) {
 			is.onPingQuery(tt.msg, tt.addr)
 			time.Sleep(time.Second)
 
-			gotNodes := is.nodes.getNodes()
+			gotNodes := getRoutingNodes(t, is.database)
 			if len(gotNodes) != 1 {
 				t.Errorf("onPingQuery() got %d nodes, want 1 node", len(gotNodes))
 			}
@@ -333,11 +359,10 @@ func TestOnPingORAnnouncePeerResponse(t *testing.T) {
 
 	_, cidr, _ := net.ParseCIDR("127.0.0.0/8")
 	transport := &Transport{
-		conn:           &net.UDPConn{},
-		started:        true,
-		onMessage:      func(*Message, *net.UDPAddr) {},
-		throttlingRate: 0,
-		maxNeighbors:   10,
+		conn:         &net.UDPConn{},
+		started:      true,
+		onMessage:    func(*Message, *net.UDPAddr) {},
+		maxNeighbors: 10,
 	}
 
 	tests := []struct {
@@ -357,10 +382,8 @@ func TestOnPingORAnnouncePeerResponse(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			is := &IndexingService{
-				nodes: newRoutingTable(
-					10,
-					[]net.IPNet{*cidr},
-				),
+				ctx:      context.Background(),
+				database: newRoutingDatabase(t, 10, []net.IPNet{*cidr}),
 				protocol: &Protocol{
 					transport: transport,
 				},
@@ -369,7 +392,7 @@ func TestOnPingORAnnouncePeerResponse(t *testing.T) {
 			is.onPingORAnnouncePeerResponse(tt.msg, tt.addr)
 			time.Sleep(time.Second)
 
-			gotNodes := is.nodes.getNodes()
+			gotNodes := getRoutingNodes(t, is.database)
 			if len(gotNodes) != 1 {
 				t.Errorf("onPingORAnnouncePeerResponse() got %d nodes, want 1 node", len(gotNodes))
 			}
@@ -389,11 +412,10 @@ func TestOnFindNodeQuery(t *testing.T) {
 
 	_, cidr, _ := net.ParseCIDR("127.0.0.0/8")
 	transport := &Transport{
-		conn:           &net.UDPConn{},
-		started:        true,
-		onMessage:      func(*Message, *net.UDPAddr) {},
-		throttlingRate: 0,
-		maxNeighbors:   10,
+		conn:         &net.UDPConn{},
+		started:      true,
+		onMessage:    func(*Message, *net.UDPAddr) {},
+		maxNeighbors: 10,
 	}
 
 	tests := []struct {
@@ -413,10 +435,8 @@ func TestOnFindNodeQuery(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			is := &IndexingService{
-				nodes: newRoutingTable(
-					10,
-					[]net.IPNet{*cidr},
-				),
+				ctx:      context.Background(),
+				database: newRoutingDatabase(t, 10, []net.IPNet{*cidr}),
 				protocol: &Protocol{
 					transport: transport,
 				},
@@ -425,7 +445,7 @@ func TestOnFindNodeQuery(t *testing.T) {
 			is.onFindNodeQuery(tt.msg, tt.addr)
 			time.Sleep(time.Second)
 
-			gotNodes := is.nodes.getNodes()
+			gotNodes := getRoutingNodes(t, is.database)
 			if len(gotNodes) != 1 {
 				t.Errorf("onFindNodeQuery() got %d nodes, want 1 node", len(gotNodes))
 			}
@@ -443,13 +463,11 @@ func TestOnFindNodeQuery(t *testing.T) {
 func TestOnGetPeersResponse(t *testing.T) {
 	t.Parallel()
 
-	_, cidr, _ := net.ParseCIDR("127.0.0.0/8")
 	transport := &Transport{
-		conn:           &net.UDPConn{},
-		started:        true,
-		onMessage:      func(*Message, *net.UDPAddr) {},
-		throttlingRate: 0,
-		maxNeighbors:   10,
+		conn:         &net.UDPConn{},
+		started:      true,
+		onMessage:    func(*Message, *net.UDPAddr) {},
+		maxNeighbors: 10,
 	}
 
 	tests := []struct {
@@ -521,10 +539,6 @@ func TestOnGetPeersResponse(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			resultChan := make(chan IndexingResult, 1)
 			is := &IndexingService{
-				nodes: newRoutingTable(
-					10,
-					[]net.IPNet{*cidr},
-				),
 				protocol: &Protocol{
 					transport: transport,
 				},
@@ -566,11 +580,10 @@ func TestOnSampleInfohashesResponse(t *testing.T) {
 
 	_, cidr, _ := net.ParseCIDR("127.0.0.0/8")
 	transport := &Transport{
-		conn:           &net.UDPConn{},
-		started:        true,
-		onMessage:      func(*Message, *net.UDPAddr) {},
-		throttlingRate: 0,
-		maxNeighbors:   10,
+		conn:         &net.UDPConn{},
+		started:      true,
+		onMessage:    func(*Message, *net.UDPAddr) {},
+		maxNeighbors: 10,
 	}
 
 	tests := []struct {
@@ -649,10 +662,8 @@ func TestOnSampleInfohashesResponse(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			is := &IndexingService{
-				nodes: newRoutingTable(
-					10,
-					[]net.IPNet{*cidr},
-				),
+				ctx:      context.Background(),
+				database: newRoutingDatabase(t, 10, []net.IPNet{*cidr}),
 				protocol: &Protocol{
 					transport: transport,
 				},
@@ -662,7 +673,7 @@ func TestOnSampleInfohashesResponse(t *testing.T) {
 			is.onSampleInfohashesResponse(tt.msg, tt.addr)
 			time.Sleep(time.Second)
 
-			gotNodes := is.nodes.getNodes()
+			gotNodes := getRoutingNodes(t, is.database)
 			if len(gotNodes) != len(tt.wantNodes) {
 				t.Errorf("onSampleInfohashesResponse() got %d nodes, want %d nodes", len(gotNodes), len(tt.wantNodes))
 			}
@@ -685,10 +696,8 @@ func TestOnGetPeersQuery(t *testing.T) {
 
 	_, cidr, _ := net.ParseCIDR("127.0.0.0/8")
 	is := &IndexingService{
-		nodes: newRoutingTable(
-			10,
-			[]net.IPNet{*cidr},
-		),
+		ctx:      context.Background(),
+		database: newRoutingDatabase(t, 10, []net.IPNet{*cidr}),
 		protocol: NewProtocol("0.0.0.0:0", ProtocolEventHandlers{}, 1000),
 	}
 	addr := &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 6881}
@@ -696,7 +705,7 @@ func TestOnGetPeersQuery(t *testing.T) {
 	is.onGetPeersQuery(NewGetPeersQuery(randomNodeID(), randomNodeID()), addr)
 	time.Sleep(time.Second)
 
-	gotNodes := is.nodes.getNodes()
+	gotNodes := getRoutingNodes(t, is.database)
 	if len(gotNodes) != 1 {
 		t.Errorf("onGetPeersQuery() got %d nodes, want 1 node", len(gotNodes))
 	}

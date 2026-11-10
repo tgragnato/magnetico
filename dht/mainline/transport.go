@@ -1,19 +1,95 @@
 package mainline
 
 import (
+	"context"
 	"log"
 	"net"
+	"sync"
 	"sync/atomic"
 	"time"
 
 	"tgragnato.it/magnetico/v2/bencode"
+	"tgragnato.it/magnetico/v2/persistence"
 	"tgragnato.it/magnetico/v2/stats"
 )
 
-var (
-	//Throttle rate that transport will have at Start time. Set <= 0 for unlimited requests
-	DefaultThrottleRate = -1
-)
+// OutboundRateLimiter spaces outgoing datagrams across all transports sharing it.
+type OutboundRateLimiter struct {
+	interval time.Duration
+	mu       sync.Mutex
+	next     time.Time
+}
+
+type OutboundQueueState struct {
+	pending atomic.Uint64
+	limit   uint64
+}
+
+// NewOutboundQueueState creates the shared pending-message counter and its high-water mark.
+func NewOutboundQueueState(limit uint64) *OutboundQueueState {
+	return &OutboundQueueState{limit: limit}
+}
+
+// Enqueue records a message waiting in the shared outbox.
+func (s *OutboundQueueState) Enqueue() {
+	s.pending.Add(1)
+}
+
+// Acknowledge removes one successfully sent message from the pending count.
+func (s *OutboundQueueState) Acknowledge() {
+	for {
+		current := s.pending.Load()
+		if current == 0 || s.pending.CompareAndSwap(current, current-1) {
+			return
+		}
+	}
+}
+
+// Full reports whether the shared pending count reached its high-water mark.
+func (s *OutboundQueueState) Full() bool {
+	return s != nil && s.pending.Load() >= s.limit
+}
+
+// NewOutboundRateLimiter creates a shared limiter; zero leaves sending unlimited.
+func NewOutboundRateLimiter(maxRPS uint) *OutboundRateLimiter {
+	limiter := &OutboundRateLimiter{}
+	if maxRPS > 0 {
+		limiter.interval = time.Second / time.Duration(maxRPS)
+		if limiter.interval == 0 {
+			limiter.interval = time.Nanosecond
+		}
+	}
+	return limiter
+}
+
+// Wait reserves the next globally available send slot or returns on cancellation.
+func (l *OutboundRateLimiter) Wait(ctx context.Context) error {
+	if l == nil || l.interval <= 0 {
+		return ctx.Err()
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	l.mu.Lock()
+	now := time.Now()
+	if l.next.Before(now) {
+		l.next = now
+	}
+	sendAt := l.next
+	l.next = sendAt.Add(l.interval)
+	l.mu.Unlock()
+
+	if delay := time.Until(sendAt); delay > 0 {
+		timer := time.NewTimer(delay)
+		defer timer.Stop()
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-timer.C:
+		}
+	}
+	return ctx.Err()
+}
 
 type Transport struct {
 	conn    *net.UDPConn
@@ -26,10 +102,11 @@ type Transport struct {
 	// the semantic correctness of the Message is left to Protocol).
 	onMessage func(*Message, *net.UDPAddr)
 
-	throttlingRate         int           //available messages per second. If <=0, it is considered disabled
-	throttleTicketsChannel chan struct{} //channel giving tickets (allowance) to make send a message
-	maxNeighbors           uint
-	queuedCommunications   uint64
+	maxNeighbors         uint
+	queuedCommunications uint64
+	outbox               persistence.Database
+	outboundQueue        *OutboundQueueState
+	ctx                  context.Context
 }
 
 func NewTransport(laddr string, onMessage func(*Message, *net.UDPAddr), maxNeighbors uint) *Transport {
@@ -47,8 +124,6 @@ func NewTransport(laddr string, onMessage func(*Message, *net.UDPAddr), maxNeigh
 	 */
 	t.buffer = make([]byte, 65507)
 	t.onMessage = onMessage
-	t.throttleTicketsChannel = make(chan struct{})
-	t.throttlingRate = DefaultThrottleRate
 	t.maxNeighbors = maxNeighbors
 	t.queuedCommunications = 0
 
@@ -61,7 +136,13 @@ func NewTransport(laddr string, onMessage func(*Message, *net.UDPAddr), maxNeigh
 	return t
 }
 
-func (t *Transport) Start() {
+// ConfigureOutboundQueue routes outgoing messages through the shared persistence outbox.
+func (t *Transport) ConfigureOutboundQueue(database persistence.Database, queueState *OutboundQueueState) {
+	t.outbox = database
+	t.outboundQueue = queueState
+}
+
+func (t *Transport) Start(ctx context.Context) {
 	// Why check whether the Transport `t` started or not, here and not -for instance- in
 	// t.Terminate()?
 	// Because in t.Terminate() the programmer (i.e. you & me) would stumble upon an error while
@@ -74,6 +155,7 @@ func (t *Transport) Start() {
 		panic("Attempting to Start() a mainline/Transport that has been already started!")
 	}
 	t.started = true
+	t.ctx = ctx
 
 	var err error
 	t.conn, err = net.ListenUDP("udp", t.laddr)
@@ -82,11 +164,12 @@ func (t *Transport) Start() {
 	}
 
 	go t.readMessages()
-	go t.Throttle()
 }
 
 func (t *Transport) Terminate() {
-	t.conn.Close()
+	if t.conn != nil {
+		_ = t.conn.Close()
+	}
 }
 
 // readMessages is a goroutine!
@@ -116,53 +199,6 @@ func (t *Transport) readMessages() {
 	}
 }
 
-// Manages throttling for transport. To be called as a routine at Start time. Should never return.
-func (t *Transport) Throttle() {
-	if t.throttlingRate > 0 {
-		resetChannel := make(chan struct{})
-
-		dealer := func(resetRequest chan struct{}) {
-			ticketGiven := 0
-			tooManyTicketGiven := false
-			for {
-				select {
-				case <-t.throttleTicketsChannel:
-					{
-						ticketGiven++
-						if ticketGiven >= t.throttlingRate {
-							tooManyTicketGiven = true
-							break
-						}
-					}
-				case <-resetRequest:
-					{
-						return
-					}
-				}
-
-				if tooManyTicketGiven {
-					break
-				}
-			}
-
-			<-resetRequest
-		}
-
-		go dealer(resetChannel)
-		for range time.Tick(1 * time.Second) {
-			resetChannel <- struct{}{}
-
-			go dealer(resetChannel)
-		}
-
-	} else {
-		// no limit, keep giving tickets to whoever requests it
-		for {
-			<-t.throttleTicketsChannel
-		}
-	}
-}
-
 func (t *Transport) WriteMessages(msg *Message, addr *net.UDPAddr) error {
 	if msg == nil || addr == nil {
 		return nil
@@ -173,18 +209,55 @@ func (t *Transport) WriteMessages(msg *Message, addr *net.UDPAddr) error {
 		return err
 	}
 
-	// get ticket but prioritize get_peers and find_node
-	if msg.Q != "get_peers" && msg.Q != "find_node" {
-		atomic.AddUint64(&t.queuedCommunications, 1)
-		defer atomic.AddUint64(&t.queuedCommunications, ^uint64(0))
-		t.throttleTicketsChannel <- struct{}{}
+	if t.outbox == nil {
+		return t.writeDatagram(data, addr)
 	}
+	message := persistence.DHTOutboundMessage{
+		Destination: *addr,
+		Payload:     data,
+	}
+	if t.outboundQueue != nil {
+		t.outboundQueue.Enqueue()
+	} else {
+		atomic.AddUint64(&t.queuedCommunications, 1)
+	}
+	if err := t.outbox.EnqueueDHTMessage(t.ctx, message); err != nil {
+		if t.outboundQueue != nil {
+			t.outboundQueue.Acknowledge()
+		} else {
+			t.decrementQueued()
+		}
+		return err
+	}
+	return nil
+}
 
-	_, err = t.conn.WriteToUDP(data, addr)
+func (t *Transport) writeDatagram(payload []byte, addr *net.UDPAddr) error {
+	if t.conn == nil {
+		return net.ErrClosed
+	}
+	_, err := t.conn.WriteToUDP(payload, addr)
+	log.Printf("Sent datagram to %s, err: %v\n", addr.String(), err)
 	return err
+}
+
+func (t *Transport) SendDatagram(payload []byte, addr *net.UDPAddr) error {
+	return t.writeDatagram(payload, addr)
+}
+
+func (t *Transport) decrementQueued() {
+	for {
+		current := atomic.LoadUint64(&t.queuedCommunications)
+		if current == 0 || atomic.CompareAndSwapUint64(&t.queuedCommunications, current, current-1) {
+			return
+		}
+	}
 }
 
 // Transport is full if the queued communications are more than the maximum neighbors.
 func (t *Transport) Full() bool {
+	if t.outboundQueue != nil {
+		return t.outboundQueue.Full()
+	}
 	return t.queuedCommunications >= uint64(t.maxNeighbors)
 }
