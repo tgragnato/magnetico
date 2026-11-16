@@ -35,7 +35,7 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pandatix/go-abnf v0.5.5 // indirect
 	github.com/prometheus/client_model v0.6.3 // indirect
-	github.com/prometheus/common v0.73.1 // indirect
+	github.com/prometheus/common v0.74.0 // indirect
 	github.com/prometheus/procfs v0.23.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	golang.org/x/sync v0.25.0 // indirect
