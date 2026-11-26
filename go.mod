@@ -41,5 +41,5 @@ require (
 	golang.org/x/sys v0.50.0 // indirect
 	golang.org/x/text v0.44.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
-	lukechampine.com/blake3 v1.5.1 // indirect
+	lukechampine.com/blake3 v1.5.3 // indirect
 )
